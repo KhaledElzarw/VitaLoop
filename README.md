@@ -2,50 +2,64 @@
 
 VitaLoop is a recurring wellness companion for busy people. It helps users remember small self-care actions throughout the day through calm, practical wellness nudges.
 
-## Current Status
+VitaLoop is a wellness companion, not a medical app.
 
-This repository is in pre-implementation bootstrap. It currently contains product documentation, backlog planning, repository rules, and minimal-code Codex instructions.
+## Local Development
 
-No app source code, package manifest, dependencies, native mobile folders, backend services, analytics, payments, or external integrations have been added yet.
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the web app:
+
+```bash
+npm run dev
+```
+
+Create a production build:
+
+```bash
+npm run build
+```
+
+Run tests:
+
+```bash
+npm test -- --run
+```
+
+Run lint:
+
+```bash
+npm run lint
+```
+
+## Current Architecture
+
+- React, TypeScript, and Vite provide the web foundation.
+- The app uses simple React tab state for Home, Reminders, Settings, Backlog, Watch Preview, and About.
+- Zod schemas define reminder definitions and app settings.
+- Mocked reminder data covers hydration, eye strain, stretch, stand/walk, posture, breathing reset, sleep routine, and mood/energy check-in.
+- Vitest with React Testing Library covers the app shell, navigation, reminders, backlog categories, and settings schema behavior.
+- Styling is minimal custom CSS with a mobile-first shell and bottom navigation.
+- Data is local and mocked. There are no backend services, analytics SDKs, payments, accounts, external API calls, or real notification permissions.
+
+## Future iOS and Android Path
+
+Capacitor is configured with `appName: "VitaLoop"`, `appId: "com.vitaloop.app"`, and `webDir: "dist"` so the web app can later be packaged for iOS and Android.
+
+The current foundation intentionally does not generate `ios/` or `android/` folders. Native shells should be added only when mobile validation is explicitly requested.
+
+## Future Apple Watch Strategy
+
+The Apple Watch direction is a future native SwiftUI companion app after the core mobile experience is stable. It should stay focused on glanceable reminders and simple done, snooze, or skip actions, with a clear WatchConnectivity contract before implementation.
+
+No watchOS source is included in this web foundation.
 
 ## Product Positioning
 
 VitaLoop is calm, useful, and practical. It supports everyday self-care reminders such as hydration, eye strain breaks, stretching, standing or walking, posture checks, breathing and stress resets, sleep routine nudges, and mood or energy check-ins.
 
-VitaLoop is a wellness companion, not a medical app.
-
-## Local Development
-
-Local development tooling has not been scaffolded yet.
-
-Planned next implementation step:
-
-```bash
-# Future task: scaffold React + TypeScript + Vite
-```
-
-Do not install packages or create a package manifest until the implementation scaffold is explicitly requested.
-
-## Validation
-
-Current documentation-only validation:
-
-```bash
-git status --short
-git diff --check
-```
-
-Future implementation validation should include the available lint, typecheck, test, and build commands after tooling exists.
-
-## Roadmap Summary
-
-- P0: Repository bootstrap, product documentation, backlog, React + TypeScript + Vite scaffold, responsive app shell, Capacitor config without native folders, basic validation tooling, README setup instructions.
-- P0: Core screens for Home, Reminders, Settings, Backlog, Watch Preview, and About.
-- P0: Reminder categories for hydration, eye strain, stretch, and stand/walk.
-- P1: Additional reminder categories, settings, pure reminder engine helpers, local storage, accessibility basics, and responsive UX states.
-- P2: Notification planning, mobile packaging, and Apple Watch companion planning.
-- P3: Backend/cloud, monetization, and privacy-conscious analytics.
-
-## Safety Note
-
-VitaLoop is a wellness companion. It is not a medical device, diagnostic tool, treatment tool, or medical advice product. It should not be used for diagnosis, treatment, clinical decision-making, or emergency situations.
+VitaLoop supports general wellness routines and everyday self-care reminders. It is not medical advice, diagnosis, treatment, or emergency guidance.
