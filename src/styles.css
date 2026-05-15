@@ -1,6 +1,21 @@
 :root {
-  color: #1f2a24;
-  background: #f6f4ed;
+  color: #223129;
+  background: #f6f7f3;
+  --color-ink: #223129;
+  --color-muted: #59675f;
+  --color-soft: #f6f7f3;
+  --color-warm: #fff9ef;
+  --color-surface: #fffdf8;
+  --color-card: #ffffff;
+  --color-line: #ddd8ca;
+  --color-line-soft: #ebe6da;
+  --color-primary: #2f6658;
+  --color-primary-strong: #244f46;
+  --color-primary-soft: #e6f2ec;
+  --color-accent: #8b5a3c;
+  --color-focus: #8b5a3c;
+  --shadow-panel: 0 18px 38px rgba(34, 49, 41, 0.1);
+  --shadow-card: 0 10px 24px rgba(34, 49, 41, 0.07);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
@@ -19,17 +34,23 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background: var(--color-soft);
 }
 
 button {
   font: inherit;
 }
 
+button,
+input {
+  accent-color: var(--color-primary);
+}
+
 .app-shell {
   min-height: 100vh;
   background:
-    linear-gradient(180deg, rgba(94, 137, 122, 0.12), transparent 18rem),
-    #f6f4ed;
+    linear-gradient(180deg, #eef5ef 0, #f7f8f3 16rem, #f6f7f3 100%),
+    var(--color-soft);
 }
 
 .skip-link {
@@ -38,7 +59,7 @@ button {
   left: 0.75rem;
   z-index: 10;
   border-radius: 8px;
-  background: #1f2a24;
+  background: var(--color-ink);
   color: #ffffff;
   font-weight: 700;
   padding: 0.6rem 0.8rem;
@@ -58,7 +79,7 @@ button {
 }
 
 .app-header {
-  padding-block: 1.5rem 1rem;
+  padding-block: 1.35rem 0.9rem;
 }
 
 .brand-title,
@@ -70,7 +91,8 @@ button {
 }
 
 .brand-title {
-  font-size: clamp(2rem, 10vw, 3.25rem);
+  color: var(--color-ink);
+  font-size: 2.35rem;
   font-weight: 800;
   line-height: 1;
 }
@@ -78,13 +100,13 @@ button {
 .app-header p {
   max-width: 34rem;
   margin: 0.75rem 0 0;
-  color: #526056;
+  color: var(--color-muted);
 }
 
 .eyebrow,
 .screen-label {
   margin: 0;
-  color: #7c4f34;
+  color: var(--color-accent);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -92,19 +114,19 @@ button {
 }
 
 .app-main {
-  padding-block: 0 6.5rem;
+  padding-block: 0 6.85rem;
 }
 
 .screen-label {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.8rem;
 }
 
 .screen-panel {
-  border: 1px solid #ded8c8;
+  border: 1px solid var(--color-line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.82);
-  padding: 1rem;
-  box-shadow: 0 18px 40px rgba(31, 42, 36, 0.08);
+  background: rgba(255, 253, 248, 0.92);
+  padding: 1.05rem;
+  box-shadow: var(--shadow-panel);
 }
 
 .app-main:focus {
@@ -112,68 +134,74 @@ button {
 }
 
 .screen-panel h1 {
-  font-size: 1.5rem;
+  color: var(--color-ink);
+  font-size: 1.58rem;
   line-height: 1.15;
 }
 
 .screen-panel p {
   margin: 0.75rem 0 0;
-  color: #526056;
+  color: var(--color-muted);
 }
 
 .summary-grid {
   display: grid;
-  gap: 0.75rem;
-  margin-top: 1rem;
+  gap: 0.8rem;
+  margin-top: 1.1rem;
 }
 
 .summary-grid div,
 .reminder-card,
 .backlog-list li {
-  border: 1px solid #e6e0d2;
+  border: 1px solid var(--color-line-soft);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
 }
 
 .summary-grid div {
-  padding: 0.9rem;
+  padding: 0.95rem;
 }
 
 .summary-grid strong {
   display: block;
-  color: #2f6658;
-  font-size: 1.3rem;
+  color: var(--color-primary);
+  font-size: 1.35rem;
+  line-height: 1.1;
 }
 
 .summary-grid span {
-  color: #526056;
+  color: var(--color-muted);
   font-size: 0.9rem;
 }
 
 .reminder-list,
 .backlog-list {
   display: grid;
-  gap: 0.75rem;
-  margin-top: 1rem;
+  gap: 0.85rem;
+  margin-top: 1.1rem;
 }
 
 .reminder-card {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
+  gap: 0.9rem;
   width: 100%;
-  border: 1px solid #e6e0d2;
-  background: #ffffff;
-  padding: 0.9rem;
+  border: 1px solid var(--color-line-soft);
+  background: var(--color-card);
+  padding: 0.95rem;
   color: inherit;
   cursor: pointer;
   text-align: left;
+  box-shadow: var(--shadow-card);
 }
 
 .reminder-card h3 {
   margin-top: 0.25rem;
-  font-size: 1rem;
+  color: var(--color-ink);
+  font-size: 1.05rem;
+  line-height: 1.2;
 }
 
 .reminder-card p {
@@ -181,68 +209,73 @@ button {
 }
 
 .reminder-card[aria-pressed="true"] {
-  border-color: #2f6658;
-  box-shadow: 0 0 0 3px rgba(47, 102, 88, 0.14);
+  border-color: var(--color-primary);
+  background: linear-gradient(180deg, #fbfffc, var(--color-card));
+  box-shadow:
+    inset 0 0 0 1px rgba(47, 102, 88, 0.42),
+    0 14px 28px rgba(47, 102, 88, 0.14);
 }
 
 .reminder-card:focus-visible {
-  outline: 3px solid #7c4f34;
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
 .card-meta {
   display: flex;
   flex: 0 0 auto;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.4rem;
 }
 
 .card-meta span {
   flex: 0 0 auto;
   border-radius: 999px;
-  background: #eef5f1;
-  color: #526056;
+  background: #eef4f0;
+  color: var(--color-muted);
   font-size: 0.82rem;
   padding: 0.2rem 0.55rem;
   white-space: nowrap;
 }
 
 .card-meta .status-enabled {
-  background: #e3f3ec;
-  color: #2f6658;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
 .card-meta .status-muted {
-  background: #f2efe7;
-  color: #7c4f34;
+  background: #f3eee6;
+  color: var(--color-accent);
 }
 
 .category-label {
-  color: #7c4f34;
+  color: var(--color-accent);
   font-size: 0.78rem;
   font-weight: 700;
 }
 
 .next-preview {
-  color: #526056;
+  color: var(--color-muted);
   font-size: 0.88rem;
 }
 
 .next-nudge,
 .details-panel,
 .state-message {
-  margin-top: 1rem;
-  border: 1px solid #ded8c8;
+  margin-top: 1.05rem;
+  border: 1px solid var(--color-line);
   border-radius: 8px;
-  background: #fffaf0;
+  background: var(--color-warm);
   padding: 1rem;
+  box-shadow: var(--shadow-card);
 }
 
 .next-nudge h3,
 .details-panel h3,
 .state-message h3 {
   margin: 0.35rem 0 0;
+  color: var(--color-ink);
   font-size: 1.2rem;
 }
 
@@ -250,8 +283,8 @@ button {
   display: inline-block;
   margin-top: 0.75rem;
   border-radius: 999px;
-  background: #e3f3ec;
-  color: #2f6658;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
   font-size: 0.9rem;
   font-weight: 700;
   padding: 0.25rem 0.65rem;
@@ -272,29 +305,30 @@ button {
 
 .nudge-actions button {
   min-height: 2.5rem;
-  border: 1px solid #2f6658;
+  border: 1px solid var(--color-primary);
   border-radius: 8px;
-  background: #ffffff;
-  color: #2f6658;
+  background: var(--color-card);
+  color: var(--color-primary);
   cursor: pointer;
   font-weight: 700;
-  padding: 0.45rem 0.75rem;
+  padding: 0.5rem 0.85rem;
 }
 
 .nudge-actions button:first-child {
-  background: #2f6658;
+  background: var(--color-primary);
   color: #ffffff;
 }
 
 .nudge-actions button:focus-visible {
-  outline: 3px solid #7c4f34;
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
 .action-status {
   border-radius: 8px;
-  background: #e3f3ec;
-  color: #2f6658;
+  background: var(--color-primary-soft);
+  border: 1px solid rgba(47, 102, 88, 0.22);
+  color: var(--color-primary-strong);
   margin-top: 1rem;
   padding: 0.75rem 0.9rem;
   font-weight: 700;
@@ -312,12 +346,13 @@ button {
 }
 
 .details-panel dt {
-  color: #526056;
+  color: var(--color-muted);
   font-size: 0.86rem;
 }
 
 .details-panel dd {
   margin: 0.15rem 0 0;
+  color: var(--color-ink);
   font-weight: 700;
 }
 
@@ -328,17 +363,19 @@ button {
 
 .backlog-list li {
   padding: 0.85rem 0.9rem;
+  color: var(--color-ink);
   font-weight: 700;
 }
 
 .watch-preview {
   width: min(100%, 16rem);
   margin-top: 1rem;
-  border: 8px solid #1f2a24;
+  border: 8px solid var(--color-ink);
   border-radius: 28px;
   background: #111815;
-  color: #f9f6ec;
+  color: #f9f7ef;
   padding: 1rem;
+  box-shadow: 0 18px 36px rgba(17, 24, 21, 0.18);
 }
 
 .watch-preview span {
@@ -358,16 +395,17 @@ button {
 
 .settings-form {
   display: grid;
-  gap: 1rem;
-  margin-top: 1rem;
+  gap: 1.05rem;
+  margin-top: 1.1rem;
 }
 
 .settings-group {
   margin: 0;
-  border: 1px solid #e6e0d2;
+  border: 1px solid var(--color-line-soft);
   border-radius: 8px;
-  background: #ffffff;
-  padding: 0.9rem;
+  background: var(--color-card);
+  padding: 0.95rem;
+  box-shadow: var(--shadow-card);
 }
 
 .settings-group legend {
@@ -378,7 +416,7 @@ button {
 .field,
 .checkbox-row,
 .choice-card {
-  color: #1f2a24;
+  color: var(--color-ink);
   font-weight: 700;
 }
 
@@ -388,17 +426,17 @@ button {
 }
 
 .field span {
-  color: #526056;
+  color: var(--color-muted);
   font-size: 0.9rem;
 }
 
 .field input {
   width: 100%;
   min-height: 2.75rem;
-  border: 1px solid #d8d0bd;
+  border: 1px solid #d8d2c4;
   border-radius: 8px;
-  background: #fffdf8;
-  color: #1f2a24;
+  background: var(--color-surface);
+  color: var(--color-ink);
   font: inherit;
   padding: 0.55rem 0.7rem;
 }
@@ -425,9 +463,9 @@ button {
 }
 
 .choice-card {
-  border: 1px solid #e6e0d2;
+  border: 1px solid var(--color-line-soft);
   border-radius: 8px;
-  background: #fffdf8;
+  background: var(--color-surface);
   padding: 0.75rem;
   text-transform: capitalize;
 }
@@ -440,17 +478,17 @@ button {
 
 .settings-actions button {
   min-height: 2.75rem;
-  border: 1px solid #2f6658;
+  border: 1px solid var(--color-primary);
   border-radius: 8px;
-  background: #ffffff;
-  color: #2f6658;
+  background: var(--color-card);
+  color: var(--color-primary);
   cursor: pointer;
   font-weight: 700;
   padding: 0.55rem 0.9rem;
 }
 
 .settings-actions button[type="submit"] {
-  background: #2f6658;
+  background: var(--color-primary);
   color: #ffffff;
 }
 
@@ -458,7 +496,7 @@ button {
 .field input:focus-visible,
 .checkbox-row input:focus-visible,
 .choice-card input:focus-visible {
-  outline: 3px solid #7c4f34;
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -471,8 +509,9 @@ button {
 }
 
 .settings-status {
-  background: #e3f3ec;
-  color: #2f6658;
+  background: var(--color-primary-soft);
+  border: 1px solid rgba(47, 102, 88, 0.22);
+  color: var(--color-primary-strong);
 }
 
 .settings-error {
@@ -486,10 +525,14 @@ button {
   bottom: 0;
   left: 0;
   display: grid;
-  grid-template-columns: repeat(6, minmax(6.4rem, 1fr));
+  grid-template-columns: repeat(6, minmax(5.8rem, 1fr));
   overflow-x: auto;
-  border-top: 1px solid #d8d0bd;
-  background: rgba(255, 255, 255, 0.96);
+  border-top: 1px solid rgba(216, 210, 196, 0.9);
+  background: rgba(255, 253, 248, 0.97);
+  box-shadow: 0 -12px 30px rgba(34, 49, 41, 0.1);
+  padding-bottom: env(safe-area-inset-bottom);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
 .bottom-nav button {
@@ -497,26 +540,47 @@ button {
   border: 0;
   border-top: 3px solid transparent;
   background: transparent;
-  color: #526056;
+  color: var(--color-muted);
   cursor: pointer;
   font-size: 0.86rem;
   font-weight: 700;
+  padding: 0.35rem 0.7rem;
   white-space: nowrap;
 }
 
 .bottom-nav button[aria-current="page"] {
-  border-top-color: #2f6658;
-  color: #1f2a24;
+  border-top-color: var(--color-primary);
+  background: rgba(230, 242, 236, 0.72);
+  color: var(--color-ink);
 }
 
 .bottom-nav button:focus-visible {
-  outline: 3px solid #7c4f34;
+  outline: 3px solid var(--color-focus);
   outline-offset: -5px;
+}
+
+@media (hover: hover) {
+  .reminder-card:hover,
+  .nudge-actions button:hover,
+  .settings-actions button:hover,
+  .bottom-nav button:hover {
+    filter: brightness(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skip-link {
+    transition: none;
+  }
 }
 
 @media (min-width: 720px) {
   .app-header {
     padding-top: 2.5rem;
+  }
+
+  .brand-title {
+    font-size: 3.25rem;
   }
 
   .screen-panel {

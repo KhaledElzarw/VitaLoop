@@ -7,6 +7,7 @@
 - [x] Reminder scheduling core: pure quiet-hours/workday checks, intensity-adjusted frequencies, next reminder calculation, and simulated next timing in Home and Reminders.
 - [x] Simulated reminder actions: in-app done, snooze, and skip once actions with deterministic local state and no persistence or notification APIs.
 - [x] Accessibility basics: named landmarks, one active screen heading, skip link, keyboard-reachable controls, and live status messages.
+- [x] Mobile visual polish: calmer palette, improved card hierarchy, selected reminder state, status treatments, and bottom navigation polish.
 
 ## P0 Foundation
 
