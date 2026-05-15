@@ -8,6 +8,7 @@
 - [x] Simulated reminder actions: in-app done, snooze, and skip once actions with deterministic local state and no persistence or notification APIs.
 - [x] Accessibility basics: named landmarks, one active screen heading, skip link, keyboard-reachable controls, and live status messages.
 - [x] Mobile visual polish: calmer palette, improved card hierarchy, selected reminder state, status treatments, and bottom navigation polish.
+- [x] Chrome extension MVP shell: Manifest V3 popup/options pages, local extension settings storage, and no content scripts, background worker, notifications, alarms, host permissions, backend, analytics, or external APIs.
 
 ## P0 Foundation
 
@@ -84,6 +85,14 @@
 - Mobile local notification planning
 - Permission UX
 - Notification copy
+
+## P2 Chrome Extension
+
+- Popup MVP
+- Options page MVP
+- Local extension settings storage
+- Manual load-unpacked validation
+- Future reminder trigger planning without page reading
 
 ## P2 Mobile Packaging
 

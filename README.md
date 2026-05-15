@@ -36,6 +36,26 @@ Run lint:
 npm run lint
 ```
 
+## Chrome Extension MVP
+
+Build the web app and extension pages:
+
+```bash
+npm run build
+```
+
+Load the local extension in Chrome:
+
+1. Open `chrome://extensions`.
+2. Enable Developer mode.
+3. Select Load unpacked.
+4. Choose the `dist` folder.
+5. Test the VitaLoop popup and Options page manually.
+
+The MVP stores settings with `chrome.storage.local` only. It does not include
+content scripts, browser notifications, alarms, a background service worker,
+host permissions, backend services, analytics, external APIs, or page reading.
+
 ## Current Architecture
 
 - React, TypeScript, and Vite provide the web foundation.
@@ -45,6 +65,7 @@ npm run lint
 - Settings use safe local defaults and a small localStorage-backed service for quiet hours, reminder intensity, workday window, timezone, and preferred reminder categories.
 - Pure scheduling helpers calculate quiet-hour blocks, workday eligibility, intensity-adjusted frequencies, and simulated next reminder times without timers or notification APIs.
 - Reminder actions are simulated in app state for now: done, snooze, and skip once do not persist history or trigger notifications.
+- A minimal Manifest V3 Chrome extension MVP builds popup and options pages from the shared reminder settings, scheduling, and action logic.
 - Vitest with React Testing Library covers the app shell, navigation, reminders, backlog categories, and settings schema behavior.
 - Styling is minimal custom CSS with a mobile-first shell and bottom navigation.
 - Data is local and mocked. There are no backend services, analytics SDKs, payments, accounts, external API calls, or real notification permissions.

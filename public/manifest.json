@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "VitaLoop",
+  "version": "0.1.0",
+  "description": "Gentle local-first wellness nudges for busy browser days.",
+  "action": {
+    "default_title": "VitaLoop",
+    "default_popup": "extension/popup.html"
+  },
+  "options_page": "extension/options.html",
+  "permissions": ["storage"]
+}
