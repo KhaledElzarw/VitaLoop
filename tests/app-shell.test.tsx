@@ -92,6 +92,29 @@ describe("VitaLoop app shell", () => {
     ).toBeTruthy();
   });
 
+  it("renders reminder action buttons", () => {
+    render(<HomeScreen reminders={reminders} />);
+
+    const actions = screen.getByLabelText("Reminder actions");
+
+    expect(within(actions).getByRole("button", { name: "Done" })).toBeTruthy();
+    expect(
+      within(actions).getByRole("button", { name: "Snooze" }),
+    ).toBeTruthy();
+    expect(
+      within(actions).getByRole("button", { name: "Skip once" }),
+    ).toBeTruthy();
+  });
+
+  it("updates visible status after a reminder action", () => {
+    render(<HomeScreen reminders={reminders} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+
+    expect(screen.getByRole("status").textContent).toContain("marked done");
+    expect(screen.getByRole("heading", { name: "Stand/walk" })).toBeTruthy();
+  });
+
   it("shows selected reminder details", () => {
     render(<RemindersScreen reminders={reminders} />);
 

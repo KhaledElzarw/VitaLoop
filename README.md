@@ -44,6 +44,7 @@ npm run lint
 - Mocked reminder data covers hydration, eye strain, stretch, stand/walk, posture, breathing reset, sleep routine, and mood/energy check-in.
 - Settings use safe local defaults and a small localStorage-backed service for quiet hours, reminder intensity, workday window, timezone, and preferred reminder categories.
 - Pure scheduling helpers calculate quiet-hour blocks, workday eligibility, intensity-adjusted frequencies, and simulated next reminder times without timers or notification APIs.
+- Reminder actions are simulated in app state for now: done, snooze, and skip once do not persist history or trigger notifications.
 - Vitest with React Testing Library covers the app shell, navigation, reminders, backlog categories, and settings schema behavior.
 - Styling is minimal custom CSS with a mobile-first shell and bottom navigation.
 - Data is local and mocked. There are no backend services, analytics SDKs, payments, accounts, external API calls, or real notification permissions.

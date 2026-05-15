@@ -240,6 +240,43 @@ button {
   gap: 0 0.5rem;
 }
 
+.nudge-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.nudge-actions button {
+  min-height: 2.5rem;
+  border: 1px solid #2f6658;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #2f6658;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0.45rem 0.75rem;
+}
+
+.nudge-actions button:first-child {
+  background: #2f6658;
+  color: #ffffff;
+}
+
+.nudge-actions button:focus-visible {
+  outline: 3px solid #7c4f34;
+  outline-offset: 2px;
+}
+
+.action-status {
+  border-radius: 8px;
+  background: #e3f3ec;
+  color: #2f6658;
+  margin-top: 1rem;
+  padding: 0.75rem 0.9rem;
+  font-weight: 700;
+}
+
 .rhythm-summary,
 .empty-copy {
   max-width: 42rem;

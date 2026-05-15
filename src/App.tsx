@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { reminders } from "./data/reminders";
 import {
+  applyReminderAction,
+  createReminderActionState,
+  getActionAwareNextReminder,
+  type ReminderActionType,
+} from "./domain/reminderActions";
+import {
   formatReminderTime,
   getEnabledReminders as getScheduledEnabledReminders,
-  getNextScheduledReminder,
   getReminderSchedule,
 } from "./domain/scheduling";
 import { type AppSettings, type ReminderDefinition } from "./domain/schemas";
@@ -126,12 +131,32 @@ export function HomeScreen({
   settings = getDefaultAppSettings(),
   currentDate = defaultPreviewDate,
 }: ReminderScreenProps) {
+  const [actionState, setActionState] = useState(createReminderActionState);
+  const [actionStatus, setActionStatus] = useState("");
   const enabledReminders = getScheduledEnabledReminders(reminders, settings);
-  const nextSchedule = getNextScheduledReminder(
+  const nextSchedule = getActionAwareNextReminder(
     reminders,
     settings,
     currentDate,
+    actionState,
   );
+
+  function handleReminderAction(actionType: ReminderActionType) {
+    if (!nextSchedule) {
+      return;
+    }
+
+    const result = applyReminderAction(
+      actionType,
+      nextSchedule,
+      settings,
+      currentDate,
+      actionState,
+    );
+
+    setActionState(result.state);
+    setActionStatus(result.message);
+  }
 
   return (
     <section className="screen-panel">
@@ -166,10 +191,32 @@ export function HomeScreen({
             </span>
             <span>{nextSchedule.frequencyMinutes} min rhythm</span>
           </div>
+          <div className="nudge-actions" aria-label="Reminder actions">
+            <button type="button" onClick={() => handleReminderAction("done")}>
+              Done
+            </button>
+            <button
+              type="button"
+              onClick={() => handleReminderAction("snooze")}
+            >
+              Snooze
+            </button>
+            <button
+              type="button"
+              onClick={() => handleReminderAction("skip-once")}
+            >
+              Skip once
+            </button>
+          </div>
         </article>
       ) : (
         <p className="empty-copy">
           No active reminders are available in this mocked view yet.
+        </p>
+      )}
+      {actionStatus && (
+        <p className="action-status" role="status">
+          {actionStatus}
         </p>
       )}
       <p className="rhythm-summary">
