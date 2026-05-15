@@ -33,16 +33,28 @@ describe("VitaLoop app shell", () => {
   it("renders VitaLoop branding", () => {
     render(<App />);
 
-    expect(screen.getByRole("heading", { name: "VitaLoop" })).toBeTruthy();
+    expect(screen.getAllByText("VitaLoop").length).toBeGreaterThan(0);
     expect(
       screen.getByText("Recurring wellness reminders for busy days."),
     ).toBeTruthy();
   });
 
+  it("has a main content region and skip link", () => {
+    render(<App />);
+
+    expect(screen.getByRole("link", { name: "Skip to content" })).toHaveProperty(
+      "hash",
+      "#main-content",
+    );
+    expect(screen.getByRole("main", { name: "Today overview" })).toBeTruthy();
+  });
+
   it("renders primary navigation labels", () => {
     render(<App />);
 
-    const navigation = screen.getByRole("navigation", { name: "Primary" });
+    const navigation = screen.getByRole("navigation", {
+      name: "Primary navigation",
+    });
 
     for (const label of [
       "Home",
@@ -54,6 +66,20 @@ describe("VitaLoop app shell", () => {
     ]) {
       expect(within(navigation).getByRole("button", { name: label })).toBeTruthy();
     }
+  });
+
+  it("marks the active navigation item programmatically", () => {
+    render(<App />);
+
+    const remindersButton = screen.getByRole("button", { name: "Reminders" });
+
+    fireEvent.click(remindersButton);
+
+    expect(remindersButton.getAttribute("aria-current")).toBe("page");
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Reminders" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("main", { name: "Reminders" })).toBeTruthy();
   });
 
   it("renders reminder cards for all expected categories", () => {
@@ -75,6 +101,9 @@ describe("VitaLoop app shell", () => {
   it("shows the next wellness nudge on the home screen", () => {
     render(<HomeScreen reminders={reminders} />);
 
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Today overview" }),
+    ).toBeTruthy();
     expect(screen.getByLabelText("Next wellness nudge")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Eye strain" })).toBeTruthy();
     expect(
@@ -106,7 +135,7 @@ describe("VitaLoop app shell", () => {
     ).toBeTruthy();
   });
 
-  it("updates visible status after a reminder action", () => {
+  it("updates visible status after Done", () => {
     render(<HomeScreen reminders={reminders} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Done" }));
@@ -115,11 +144,30 @@ describe("VitaLoop app shell", () => {
     expect(screen.getByRole("heading", { name: "Stand/walk" })).toBeTruthy();
   });
 
+  it("updates visible status after Snooze", () => {
+    render(<HomeScreen reminders={reminders} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Snooze" }));
+
+    expect(screen.getByRole("status").textContent).toContain(
+      "snoozed until 11:00 AM",
+    );
+  });
+
+  it("updates visible status after Skip once", () => {
+    render(<HomeScreen reminders={reminders} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Skip once" }));
+
+    expect(screen.getByRole("status").textContent).toContain("skipped once");
+    expect(screen.getByRole("heading", { name: "Stand/walk" })).toBeTruthy();
+  });
+
   it("shows selected reminder details", () => {
     render(<RemindersScreen reminders={reminders} />);
 
     fireEvent.click(
-      screen.getByRole("button", { name: /Show Eye strain details/i }),
+      screen.getByRole("button", { name: /Eye strain/i }),
     );
 
     const details = screen.getByRole("region", {

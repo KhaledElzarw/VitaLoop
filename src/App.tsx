@@ -65,17 +65,22 @@ function App() {
 
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
       <header className="app-header">
         <div>
           <p className="eyebrow">VitaLoop</p>
-          <h1>VitaLoop</h1>
+          <p className="brand-title">VitaLoop</p>
           <p>{tagline}</p>
         </div>
       </header>
 
       <main
+        id="main-content"
         className="app-main"
         aria-labelledby={`${activeScreen}-heading`}
+        tabIndex={-1}
       >
         <p className="screen-label">{activeLabel}</p>
         {activeScreen === "home" && (
@@ -103,11 +108,12 @@ function App() {
         {activeScreen === "about" && <AboutScreen />}
       </main>
 
-      <nav className="bottom-nav" aria-label="Primary">
+      <nav className="bottom-nav" aria-label="Primary navigation">
         {screens.map((screen) => (
           <button
             key={screen.id}
             type="button"
+            aria-controls="main-content"
             aria-current={activeScreen === screen.id ? "page" : undefined}
             onClick={() => setActiveScreen(screen.id)}
           >
@@ -160,7 +166,7 @@ export function HomeScreen({
 
   return (
     <section className="screen-panel">
-      <h2 id="home-heading">Today overview</h2>
+      <h1 id="home-heading">Today overview</h1>
       <p>
         VitaLoop keeps recurring wellness nudges simple, optional, and easy to
         adjust around a full day.
@@ -215,7 +221,7 @@ export function HomeScreen({
         </p>
       )}
       {actionStatus && (
-        <p className="action-status" role="status">
+        <p className="action-status" role="status" aria-live="polite">
           {actionStatus}
         </p>
       )}
@@ -244,7 +250,7 @@ export function RemindersScreen({
   if (hasError) {
     return (
       <section className="screen-panel">
-        <h2 id="reminders-heading">Reminders</h2>
+        <h1 id="reminders-heading">Reminders</h1>
         <div className="state-message" role="alert">
           <h3>Reminders are unavailable</h3>
           <p>
@@ -259,7 +265,7 @@ export function RemindersScreen({
   if (orderedReminders.length === 0) {
     return (
       <section className="screen-panel">
-        <h2 id="reminders-heading">Reminders</h2>
+        <h1 id="reminders-heading">Reminders</h1>
         <div className="state-message">
           <h3>No reminders to show</h3>
           <p>
@@ -272,7 +278,7 @@ export function RemindersScreen({
 
   return (
     <section className="screen-panel">
-      <h2 id="reminders-heading">Reminders</h2>
+      <h1 id="reminders-heading">Reminders</h1>
       <p>
         Preview the recurring wellness categories VitaLoop can suggest during a
         busy day.
@@ -288,7 +294,6 @@ export function RemindersScreen({
               key={reminder.id}
               type="button"
               className="reminder-card"
-              aria-label={`Show ${reminder.title} details`}
               aria-pressed={selectedReminder?.id === reminder.id}
               onClick={() => setSelectedReminderId(reminder.id)}
             >
@@ -449,7 +454,7 @@ export function SettingsScreen({
 
   return (
     <section className="screen-panel">
-      <h2 id="settings-heading">Settings</h2>
+      <h1 id="settings-heading">Settings</h1>
       <p>
         Keep recurring nudges useful by choosing quiet hours, workday timing,
         and the reminder categories that fit your day.
@@ -587,12 +592,12 @@ export function SettingsScreen({
         </div>
 
         {status === "saved" && (
-          <p className="settings-status" role="status">
+          <p className="settings-status" role="status" aria-live="polite">
             Settings saved.
           </p>
         )}
         {status === "reset" && (
-          <p className="settings-status" role="status">
+          <p className="settings-status" role="status" aria-live="polite">
             Defaults restored.
           </p>
         )}
@@ -609,7 +614,7 @@ export function SettingsScreen({
 function BacklogScreen() {
   return (
     <section className="screen-panel">
-      <h2 id="backlog-heading">Backlog</h2>
+      <h1 id="backlog-heading">Backlog</h1>
       <p>Core delivery areas carried forward from the product backlog.</p>
       <ul className="backlog-list">
         {backlogCategories.map((category) => (
@@ -623,7 +628,7 @@ function BacklogScreen() {
 function WatchPreviewScreen() {
   return (
     <section className="screen-panel">
-      <h2 id="watch-preview-heading">Watch Preview</h2>
+      <h1 id="watch-preview-heading">Watch Preview</h1>
       <div className="watch-preview" aria-label="Apple Watch preview card">
         <span>Hydration</span>
         <strong>Time for a small sip?</strong>
@@ -636,7 +641,7 @@ function WatchPreviewScreen() {
 function AboutScreen() {
   return (
     <section className="screen-panel">
-      <h2 id="about-heading">About</h2>
+      <h1 id="about-heading">About</h1>
       <p>
         VitaLoop supports general wellness routines and everyday self-care
         reminders. It is not medical advice, diagnosis, treatment, or emergency
