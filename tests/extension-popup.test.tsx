@@ -13,9 +13,11 @@ import { type ExtensionSettingsStorage } from "../src/extension/extensionSetting
 
 const previewDate = new Date(2026, 4, 15, 10, 0);
 
-function createStorageMock(): ExtensionSettingsStorage {
+function createStorageMock(
+  settings = getDefaultAppSettings(),
+): ExtensionSettingsStorage {
   return {
-    loadSettings: vi.fn(async () => getDefaultAppSettings()),
+    loadSettings: vi.fn(async () => settings),
     saveSettings: vi.fn(async () => true),
   };
 }
@@ -24,15 +26,28 @@ afterEach(cleanup);
 
 describe("ExtensionPopup", () => {
   it("renders VitaLoop branding and the next nudge", async () => {
-    render(
+    const onOpenOptions = vi.fn();
+    const { container } = render(
       <ExtensionPopup
         storage={createStorageMock()}
         currentDate={previewDate}
-        onOpenOptions={vi.fn()}
+        onOpenOptions={onOpenOptions}
       />,
     );
 
-    expect(screen.getByRole("heading", { level: 1, name: "VitaLoop" })).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "VitaLoop" }),
+    ).toBeTruthy();
+    expect(
+      container.querySelector(".extension-brand-mark")?.getAttribute("src"),
+    ).toBe("/assets/vitaloop-logo-source.png");
+    expect(
+      container.querySelector(".extension-brand-mark")?.getAttribute("alt"),
+    ).toBe("");
+
+    fireEvent.click(screen.getByRole("button", { name: "Options" }));
+
+    expect(onOpenOptions).toHaveBeenCalledTimes(1);
 
     const nextNudge = screen.getByLabelText("Next wellness nudge");
 

@@ -1,10 +1,27 @@
 :root {
-  color: #1d2621;
-  background: #f6f8f4;
+  --extension-bg: #f7f8ff;
+  --extension-surface: rgba(255, 255, 255, 0.78);
+  --extension-surface-elevated: rgba(255, 255, 255, 0.9);
+  --extension-border: rgba(109, 61, 245, 0.18);
+  --extension-text: #181425;
+  --extension-muted: #5e5a6f;
+  --extension-accent: #6d3df5;
+  --extension-accent-strong: #5530c8;
+  --extension-accent-soft: #efe8ff;
+  --extension-teal: #179f9a;
+  --extension-focus-ring: #7d5cff;
+  --extension-status: #2f9569;
+  --extension-status-soft: #e8f7f1;
+  --extension-danger: #9d244c;
+  --extension-danger-soft: #fff0f4;
+  --extension-shadow: 0 22px 58px rgba(64, 46, 146, 0.18);
+  --extension-radius: 8px;
+  color: var(--extension-text);
+  background: var(--extension-bg);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 * {
@@ -15,8 +32,16 @@ body {
   margin: 0;
   min-width: 320px;
   background:
-    linear-gradient(180deg, rgba(224, 238, 229, 0.82), rgba(246, 248, 244, 0.92)),
-    #f6f8f4;
+    linear-gradient(145deg, #fbfcff 0%, #f3f5ff 48%, #f8f4ff 100%),
+    var(--extension-bg);
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.16));
 }
 
 button,
@@ -31,18 +56,20 @@ button {
 
 button:focus-visible,
 input:focus-visible {
-  outline: 3px solid #2767b1;
+  outline: 3px solid var(--extension-focus-ring);
   outline-offset: 2px;
 }
 
 .extension-shell {
+  position: relative;
+  z-index: 1;
   width: min(100%, 760px);
   margin: 0 auto;
-  padding: 20px;
+  padding: 18px;
 }
 
 .extension-popup {
-  width: min(100vw, 360px);
+  width: min(100vw, 356px);
 }
 
 .extension-options {
@@ -55,7 +82,7 @@ input:focus-visible {
 
 .extension-header h1 {
   margin: 0;
-  color: #17352c;
+  color: var(--extension-accent-strong);
   font-size: 1.75rem;
   letter-spacing: 0;
   line-height: 1.1;
@@ -63,62 +90,165 @@ input:focus-visible {
 
 .extension-header p {
   margin: 6px 0 0;
-  color: #46554e;
+  color: var(--extension-muted);
+}
+
+.extension-titlebar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.74);
+  padding: 8px 10px 8px 18px;
+  box-shadow: 0 10px 30px rgba(43, 33, 112, 0.08);
+}
+
+@supports ((-webkit-backdrop-filter: blur(18px)) or (backdrop-filter: blur(18px))) {
+  .extension-titlebar,
+  .extension-panel,
+  .extension-group {
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
+  }
+}
+
+.extension-titlebar h1 {
+  min-width: 0;
+  margin: 0;
+  color: var(--extension-accent-strong);
+  font-size: clamp(1.58rem, 8.4vw, 1.92rem);
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.extension-titlebar-action {
+  justify-self: end;
+  min-height: 34px;
+  border-radius: 999px;
+  background: var(--extension-accent-soft);
+  color: var(--extension-accent-strong);
+  font-size: 0.88rem;
+  font-weight: 850;
+  padding: 7px 12px;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .extension-eyebrow {
-  margin: 0 0 4px;
-  color: #2767b1;
-  font-size: 0.78rem;
-  font-weight: 700;
+  margin: 0;
+  color: var(--extension-accent);
+  font-size: 0.76rem;
+  font-weight: 850;
   letter-spacing: 0;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .extension-panel,
 .extension-group {
-  border: 1px solid #d7e2dc;
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 10px 26px rgba(31, 52, 45, 0.08);
+  border: 1px solid var(--extension-border);
+  border-radius: var(--extension-radius);
+  background: var(--extension-surface);
+  box-shadow: var(--extension-shadow);
 }
 
 .extension-panel {
   padding: 16px;
 }
 
+.extension-panel + .extension-panel {
+  margin-top: 12px;
+}
+
+.extension-reminder-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.extension-brand-mark {
+  position: absolute;
+  top: 18px;
+  right: 16px;
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 22px rgba(85, 48, 200, 0.2));
+  pointer-events: none;
+}
+
+.extension-card-topline,
 .extension-panel-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
 }
 
+.extension-card-topline {
+  padding-right: 64px;
+}
+
+.extension-card-topline span,
 .extension-panel-heading span {
+  flex: 0 0 auto;
   border-radius: 999px;
-  background: #f6ead2;
-  color: #76551a;
-  font-size: 0.78rem;
-  font-weight: 700;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--extension-muted);
+  font-size: 0.74rem;
+  font-weight: 850;
   padding: 4px 8px;
   white-space: nowrap;
 }
 
-.extension-panel h2 {
-  margin: 8px 0 6px;
-  color: #17352c;
-  font-size: 1.2rem;
+.extension-reminder-time {
+  margin: 8px 0 0;
+  color: var(--extension-text);
+  font-size: 2.42rem;
+  font-weight: 850;
   letter-spacing: 0;
+  line-height: 1;
 }
 
+.extension-reminder-meta {
+  margin-top: 12px;
+  border-top: 1px solid rgba(95, 78, 173, 0.16);
+  padding-top: 12px;
+}
+
+.extension-reminder-meta h2,
+.extension-panel h2 {
+  margin: 0;
+  color: var(--extension-text);
+  font-size: 1.18rem;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.extension-reminder-meta p,
 .extension-panel p {
-  margin: 8px 0 0;
-  color: #46554e;
+  margin: 5px 0 0;
+  color: var(--extension-muted);
+}
+
+.extension-helper {
+  margin: 10px 0 0;
+  color: var(--extension-muted);
 }
 
 .extension-status {
-  border-left: 3px solid #2f8f69;
-  padding-left: 10px;
+  margin: 12px 0 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.64);
+  color: var(--extension-muted);
+  padding: 9px 10px;
 }
 
 .extension-actions,
@@ -130,31 +260,36 @@ input:focus-visible {
 }
 
 .extension-actions button,
-.extension-save-row button,
-.extension-secondary-action {
-  min-height: 40px;
+.extension-save-row button {
+  min-height: 38px;
+  border: 1px solid rgba(109, 61, 245, 0.18);
   border-radius: 8px;
-  background: #17352c;
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--extension-accent-strong);
+  font-weight: 850;
+  padding: 8px 10px;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+  box-shadow: 0 8px 20px rgba(60, 45, 124, 0.08);
+}
+
+.extension-actions button {
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.extension-actions button:last-child {
+  flex-grow: 1.18;
+}
+
+.extension-actions button:first-child,
+.extension-save-row button:first-child {
+  background: linear-gradient(135deg, var(--extension-accent), #8b5cf6);
   color: #ffffff;
-  font-weight: 700;
-  padding: 9px 12px;
-}
-
-.extension-actions button:nth-child(2),
-.extension-save-row button:nth-child(2),
-.extension-secondary-action {
-  background: #eaf1ed;
-  color: #17352c;
-}
-
-.extension-actions button:nth-child(3) {
-  background: #eef2f8;
-  color: #244b7a;
-}
-
-.extension-secondary-action {
-  width: 100%;
-  margin-top: 12px;
+  box-shadow: 0 12px 28px rgba(109, 61, 245, 0.26);
 }
 
 .extension-live-status,
@@ -162,16 +297,30 @@ input:focus-visible {
   border-radius: 8px;
   margin: 12px 0 0;
   padding: 10px 12px;
+  font-size: 0.9rem;
 }
 
 .extension-live-status {
-  background: #e8f5ef;
-  color: #174334;
+  border: 1px solid rgba(47, 149, 105, 0.22);
+  background: var(--extension-status-soft);
+  color: #14543a;
+}
+
+.extension-live-status::before {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: var(--extension-status);
+  vertical-align: middle;
+  content: "";
 }
 
 .extension-error {
-  background: #fff1ee;
-  color: #8a2e1c;
+  border: 1px solid rgba(157, 36, 76, 0.18);
+  background: var(--extension-danger-soft);
+  color: var(--extension-danger);
 }
 
 .extension-form {
@@ -185,8 +334,8 @@ input:focus-visible {
 }
 
 .extension-group legend {
-  color: #17352c;
-  font-weight: 800;
+  color: var(--extension-accent-strong);
+  font-weight: 850;
   padding: 0 4px;
 }
 
@@ -214,7 +363,7 @@ input:focus-visible {
 .extension-check-row,
 .extension-radio-card {
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 
 .extension-check-row,
@@ -226,17 +375,17 @@ input:focus-visible {
 .extension-field span,
 .extension-check-row span,
 .extension-radio-card span {
-  color: #26352e;
-  font-weight: 700;
+  color: var(--extension-text);
+  font-weight: 750;
 }
 
 .extension-field input {
   min-height: 40px;
   width: 100%;
-  border: 1px solid #cbd8d2;
+  border: 1px solid rgba(92, 77, 165, 0.16);
   border-radius: 8px;
-  background: #fbfcfb;
-  color: #17352c;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--extension-text);
   padding: 8px 10px;
 }
 
@@ -244,9 +393,53 @@ input:focus-visible {
 .extension-radio-card input {
   width: 18px;
   height: 18px;
-  accent-color: #2f8f69;
+  accent-color: var(--extension-accent);
 }
 
 .extension-check-row input:disabled + span {
-  color: #7f8b86;
+  color: var(--extension-muted);
+}
+
+.extension-check-row,
+.extension-radio-card {
+  border: 1px solid rgba(92, 77, 165, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+  padding: 10px;
+}
+
+@media (hover: hover) {
+  .extension-actions button:hover,
+  .extension-save-row button:hover,
+  .extension-titlebar-action:hover {
+    transform: translateY(-1px);
+  }
+}
+
+@media (width <= 480px) {
+  .extension-options {
+    padding: 16px 12px;
+  }
+
+  .extension-field {
+    grid-template-columns: 1fr;
+  }
+
+  .extension-save-row button {
+    flex: 1 1 160px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .extension-actions button,
+  .extension-save-row button,
+  .extension-titlebar-action {
+    transition: none;
+  }
+
+  .extension-actions button:hover,
+  .extension-save-row button:hover,
+  .extension-titlebar-action:hover {
+    transform: none;
+  }
 }
