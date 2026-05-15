@@ -1,7 +1,14 @@
-import { appSettingsSchema, type AppSettings } from "../domain/schemas";
+import { z } from "zod";
+import { appSettingsSchema } from "../domain/schemas";
 import { getDefaultAppSettings } from "../domain/settings";
 
 export const EXTENSION_SETTINGS_STORAGE_KEY = "vitaloop.extension.settings";
+
+export const extensionSettingsSchema = appSettingsSchema.extend({
+  proactiveRemindersEnabled: z.boolean().default(false),
+});
+
+export type ExtensionSettings = z.infer<typeof extensionSettingsSchema>;
 
 type ChromeRuntime = {
   lastError?: {
@@ -36,7 +43,14 @@ function getRuntimeErrorMessage() {
   return getChromeApi()?.runtime?.lastError?.message;
 }
 
-function cloneSettings(settings: AppSettings): AppSettings {
+export function getDefaultExtensionSettings(): ExtensionSettings {
+  return {
+    ...getDefaultAppSettings(),
+    proactiveRemindersEnabled: false,
+  };
+}
+
+function cloneExtensionSettings(settings: ExtensionSettings): ExtensionSettings {
   return {
     ...settings,
     preferredReminderCategories: [...settings.preferredReminderCategories],
@@ -62,12 +76,15 @@ function getStoredItems(storage: ChromeStorageLocal) {
   });
 }
 
-function setStoredSettings(storage: ChromeStorageLocal, settings: AppSettings) {
+function setStoredSettings(
+  storage: ChromeStorageLocal,
+  settings: ExtensionSettings,
+) {
   return new Promise<void>((resolve, reject) => {
     try {
       storage.set(
         {
-          [EXTENSION_SETTINGS_STORAGE_KEY]: cloneSettings(settings),
+          [EXTENSION_SETTINGS_STORAGE_KEY]: cloneExtensionSettings(settings),
         },
         () => {
           const errorMessage = getRuntimeErrorMessage();
@@ -86,29 +103,31 @@ function setStoredSettings(storage: ChromeStorageLocal, settings: AppSettings) {
   });
 }
 
-export async function loadExtensionSettings(): Promise<AppSettings> {
+export async function loadExtensionSettings(): Promise<ExtensionSettings> {
   const storage = getChromeStorageLocal();
 
   if (!storage) {
-    return getDefaultAppSettings();
+    return getDefaultExtensionSettings();
   }
 
   try {
     const items = await getStoredItems(storage);
-    const result = appSettingsSchema.safeParse(
+    const result = extensionSettingsSchema.safeParse(
       items[EXTENSION_SETTINGS_STORAGE_KEY],
     );
 
-    return result.success ? cloneSettings(result.data) : getDefaultAppSettings();
+    return result.success
+      ? cloneExtensionSettings(result.data)
+      : getDefaultExtensionSettings();
   } catch {
-    return getDefaultAppSettings();
+    return getDefaultExtensionSettings();
   }
 }
 
 export async function saveExtensionSettings(
-  settings: AppSettings,
+  settings: ExtensionSettings,
 ): Promise<boolean> {
-  const result = appSettingsSchema.safeParse(settings);
+  const result = extensionSettingsSchema.safeParse(settings);
   const storage = getChromeStorageLocal();
 
   if (!result.success || !storage) {

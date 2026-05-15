@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { getDefaultAppSettings } from "../src/domain/settings";
 import {
   EXTENSION_SETTINGS_STORAGE_KEY,
+  getDefaultExtensionSettings,
   loadExtensionSettings,
   saveExtensionSettings,
 } from "../src/extension/extensionSettingsStorage";
@@ -41,7 +42,7 @@ describe("extension settings storage", () => {
     vi.stubGlobal("chrome", undefined);
 
     await expect(loadExtensionSettings()).resolves.toEqual(
-      getDefaultAppSettings(),
+      getDefaultExtensionSettings(),
     );
   });
 
@@ -55,22 +56,34 @@ describe("extension settings storage", () => {
     );
 
     await expect(loadExtensionSettings()).resolves.toEqual(
-      getDefaultAppSettings(),
+      getDefaultExtensionSettings(),
     );
   });
 
   it("saves and loads valid settings using chrome.storage.local", async () => {
     const chromeMock = createChromeStorageMock();
-    const settings = getDefaultAppSettings();
+    const settings = getDefaultExtensionSettings();
 
     settings.reminderIntensity = "active";
     settings.workdayStart = "09:00";
     settings.preferredReminderCategories = ["hydration", "stretch"];
+    settings.proactiveRemindersEnabled = true;
     vi.stubGlobal("chrome", chromeMock);
 
     await expect(saveExtensionSettings(settings)).resolves.toBe(true);
     await expect(loadExtensionSettings()).resolves.toEqual(settings);
     expect(chromeMock.storage.local.set).toHaveBeenCalledTimes(1);
     expect(chromeMock.getStoredValue()).toEqual(settings);
+  });
+
+  it("loads legacy extension settings with proactive reminders off", async () => {
+    const legacySettings = getDefaultAppSettings();
+
+    vi.stubGlobal("chrome", createChromeStorageMock(legacySettings));
+
+    await expect(loadExtensionSettings()).resolves.toEqual({
+      ...legacySettings,
+      proactiveRemindersEnabled: false,
+    });
   });
 });

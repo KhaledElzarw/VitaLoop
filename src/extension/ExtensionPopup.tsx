@@ -7,10 +7,11 @@ import {
   type ReminderActionType,
 } from "../domain/reminderActions";
 import { formatReminderTime } from "../domain/scheduling";
-import { type AppSettings, type ReminderDefinition } from "../domain/schemas";
-import { getDefaultAppSettings } from "../domain/settings";
+import { type ReminderDefinition } from "../domain/schemas";
 import {
   extensionSettingsStorage,
+  getDefaultExtensionSettings,
+  type ExtensionSettings,
   type ExtensionSettingsStorage,
 } from "./extensionSettingsStorage";
 
@@ -60,8 +61,8 @@ export function ExtensionPopup({
   currentDate,
   onOpenOptions = openExtensionOptionsPage,
 }: ExtensionPopupProps) {
-  const [settings, setSettings] = useState<AppSettings>(() =>
-    getDefaultAppSettings(),
+  const [settings, setSettings] = useState<ExtensionSettings>(() =>
+    getDefaultExtensionSettings(),
   );
   const [now] = useState(() => currentDate ?? new Date());
   const [actionState, setActionState] = useState(createReminderActionState);
@@ -111,6 +112,21 @@ export function ExtensionPopup({
         <h1 id="popup-title">VitaLoop</h1>
         <p>Gentle wellness nudges for long browser days.</p>
       </header>
+
+      <section
+        className="extension-panel extension-status-panel"
+        aria-label="Proactive reminder status"
+      >
+        <div className="extension-panel-heading">
+          <p className="extension-eyebrow">Proactive reminders</p>
+          <span>{settings.proactiveRemindersEnabled ? "Enabled" : "Disabled"}</span>
+        </div>
+        <p>
+          {settings.proactiveRemindersEnabled
+            ? "Local browser notifications are enabled for gentle wellness nudges."
+            : "Enable proactive reminders in Options to use local browser notifications."}
+        </p>
+      </section>
 
       {nextSchedule ? (
         <section className="extension-panel" aria-label="Next wellness nudge">

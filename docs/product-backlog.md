@@ -9,6 +9,7 @@
 - [x] Accessibility basics: named landmarks, one active screen heading, skip link, keyboard-reachable controls, and live status messages.
 - [x] Mobile visual polish: calmer palette, improved card hierarchy, selected reminder state, status treatments, and bottom navigation polish.
 - [x] Chrome extension MVP shell: Manifest V3 popup/options pages, local extension settings storage, and no content scripts, background worker, notifications, alarms, host permissions, backend, analytics, or external APIs.
+- [x] Unlocked Chrome background reminders: opt-in Manifest V3 service worker, `chrome.alarms` scheduling, local `chrome.notifications`, popup status, options controls, and no content scripts, host permissions, backend, analytics, accounts, payments, or cloud sync.
 
 ## P0 Foundation
 
@@ -82,6 +83,7 @@
 ## P2 Notifications
 
 - Browser notification planning
+- Opt-in Chrome browser notifications
 - Mobile local notification planning
 - Permission UX
 - Notification copy
@@ -92,7 +94,8 @@
 - Options page MVP
 - Local extension settings storage
 - Manual load-unpacked validation
-- Future reminder trigger planning without page reading
+- Opt-in background reminder worker without page reading
+- Alarm scheduling without host permissions
 
 ## P2 Mobile Packaging
 
@@ -127,11 +130,8 @@
 
 ## P3 Monetization
 
-- Free tier
-- Premium reminders
-- AI personalization
-- Workplace wellness subscriptions
-- Paid wellness packs
+- No monetization is planned for the current unlocked extension experience.
+- Any future monetization strategy requires explicit approval before design or implementation.
 
 ## P3 Analytics
 

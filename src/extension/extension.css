@@ -87,6 +87,10 @@ input:focus-visible {
   padding: 16px;
 }
 
+.extension-status-panel {
+  margin-bottom: 12px;
+}
+
 .extension-panel-heading {
   display: flex;
   align-items: center;
@@ -119,6 +123,11 @@ input:focus-visible {
 .extension-status {
   border-left: 3px solid #2f8f69;
   padding-left: 10px;
+}
+
+.extension-help-text {
+  margin: 12px 0 0;
+  color: #46554e;
 }
 
 .extension-actions,

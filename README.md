@@ -38,7 +38,7 @@ npm run lint
 
 ## Chrome Extension MVP
 
-Build the web app and extension pages:
+Build the web app and extension files:
 
 ```bash
 npm run build
@@ -50,11 +50,22 @@ Load the local extension in Chrome:
 2. Enable Developer mode.
 3. Select Load unpacked.
 4. Choose the `dist` folder.
-5. Test the VitaLoop popup and Options page manually.
+5. Confirm Chrome lists the `storage`, `alarms`, and `notifications` permissions.
+6. Open the VitaLoop Options page.
+7. Enable proactive reminders.
+8. Save the settings.
+9. Confirm the popup shows proactive reminders as enabled and still previews the next wellness nudge.
+10. If practical during manual testing, trigger or wait for the named alarm and confirm a VitaLoop notification appears.
+11. Disable proactive reminders in Options, save, and confirm proactive reminders show as disabled.
 
-The MVP stores settings with `chrome.storage.local` only. It does not include
-content scripts, browser notifications, alarms, a background service worker,
-host permissions, backend services, analytics, external APIs, or page reading.
+The MVP stores settings with `chrome.storage.local` only. Proactive reminders
+are opt-in, local browser notifications powered by a Manifest V3 background
+service worker and `chrome.alarms`. All current extension features are free and
+unlocked.
+
+The extension does not include content scripts, host permissions, backend
+services, analytics, external APIs, cloud sync, accounts, payments, or page
+reading.
 
 ## Current Architecture
 
@@ -65,10 +76,10 @@ host permissions, backend services, analytics, external APIs, or page reading.
 - Settings use safe local defaults and a small localStorage-backed service for quiet hours, reminder intensity, workday window, timezone, and preferred reminder categories.
 - Pure scheduling helpers calculate quiet-hour blocks, workday eligibility, intensity-adjusted frequencies, and simulated next reminder times without timers or notification APIs.
 - Reminder actions are simulated in app state for now: done, snooze, and skip once do not persist history or trigger notifications.
-- A minimal Manifest V3 Chrome extension MVP builds popup and options pages from the shared reminder settings, scheduling, and action logic.
+- A Manifest V3 Chrome extension MVP builds popup, options, and an opt-in background reminder worker from the shared reminder settings, scheduling, and action logic.
 - Vitest with React Testing Library covers the app shell, navigation, reminders, backlog categories, and settings schema behavior.
 - Styling is minimal custom CSS with a mobile-first shell and bottom navigation.
-- Data is local and mocked. There are no backend services, analytics SDKs, payments, accounts, external API calls, or real notification permissions.
+- Data is local and mocked. There are no backend services, analytics SDKs, payments, accounts, external API calls, cloud sync, content scripts, host permissions, or page reading.
 
 ## Future iOS and Android Path
 

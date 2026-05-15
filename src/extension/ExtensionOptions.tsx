@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { reminders as defaultReminders } from "../data/reminders";
-import { type AppSettings, type ReminderDefinition } from "../domain/schemas";
-import { getDefaultAppSettings } from "../domain/settings";
+import { type ReminderDefinition } from "../domain/schemas";
 import {
   extensionSettingsStorage,
+  getDefaultExtensionSettings,
+  type ExtensionSettings,
   type ExtensionSettingsStorage,
 } from "./extensionSettingsStorage";
 
@@ -13,7 +14,7 @@ const reminderIntensityOptions = [
   { value: "active", label: "Active" },
 ] as const;
 
-type ReminderId = AppSettings["preferredReminderCategories"][number];
+type ReminderId = ExtensionSettings["preferredReminderCategories"][number];
 type OptionsStatus = "idle" | "saved" | "reset" | "error" | "category-required";
 
 type ExtensionOptionsProps = {
@@ -25,8 +26,8 @@ export function ExtensionOptions({
   storage = extensionSettingsStorage,
   reminderList = defaultReminders,
 }: ExtensionOptionsProps) {
-  const [settings, setSettings] = useState<AppSettings>(() =>
-    getDefaultAppSettings(),
+  const [settings, setSettings] = useState<ExtensionSettings>(() =>
+    getDefaultExtensionSettings(),
   );
   const [status, setStatus] = useState<OptionsStatus>("idle");
 
@@ -44,9 +45,9 @@ export function ExtensionOptions({
     };
   }, [storage]);
 
-  function updateSetting<Key extends keyof AppSettings>(
+  function updateSetting<Key extends keyof ExtensionSettings>(
     key: Key,
-    value: AppSettings[Key],
+    value: ExtensionSettings[Key],
   ) {
     setSettings((currentSettings) => ({
       ...currentSettings,
@@ -86,7 +87,7 @@ export function ExtensionOptions({
   }
 
   async function resetSettings() {
-    const defaultSettings = getDefaultAppSettings();
+    const defaultSettings = getDefaultExtensionSettings();
     const didSave = await storage.saveSettings(defaultSettings);
 
     setSettings(defaultSettings);
@@ -111,6 +112,32 @@ export function ExtensionOptions({
           void saveCurrentSettings();
         }}
       >
+        <fieldset className="extension-group">
+          <legend>Proactive reminders</legend>
+          <label className="extension-check-row">
+            <input
+              type="checkbox"
+              checked={settings.proactiveRemindersEnabled}
+              onChange={(event) =>
+                updateSetting(
+                  "proactiveRemindersEnabled",
+                  event.currentTarget.checked,
+                )
+              }
+            />
+            <span>Enable proactive reminders</span>
+          </label>
+          <p className="extension-help-text">
+            VitaLoop uses Chrome alarms and local browser notifications for
+            proactive reminders. Notification permission is needed for this
+            local extension feature.
+          </p>
+          <p className="extension-status">
+            Proactive reminders are{" "}
+            {settings.proactiveRemindersEnabled ? "enabled" : "disabled"}.
+          </p>
+        </fieldset>
+
         <fieldset className="extension-group">
           <legend>Quiet hours</legend>
           <label className="extension-check-row">

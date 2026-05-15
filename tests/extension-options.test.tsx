@@ -6,22 +6,26 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { type AppSettings } from "../src/domain/schemas";
-import { getDefaultAppSettings } from "../src/domain/settings";
 import { ExtensionOptions } from "../src/extension/ExtensionOptions";
-import { type ExtensionSettingsStorage } from "../src/extension/extensionSettingsStorage";
+import {
+  getDefaultExtensionSettings,
+  type ExtensionSettings,
+  type ExtensionSettingsStorage,
+} from "../src/extension/extensionSettingsStorage";
 
 function createStorageMock(
-  initialSettings: AppSettings = getDefaultAppSettings(),
+  initialSettings: ExtensionSettings = getDefaultExtensionSettings(),
 ): ExtensionSettingsStorage & {
-  loadSettings: ReturnType<typeof vi.fn<() => Promise<AppSettings>>>;
-  saveSettings: ReturnType<typeof vi.fn<(settings: AppSettings) => Promise<boolean>>>;
+  loadSettings: ReturnType<typeof vi.fn<() => Promise<ExtensionSettings>>>;
+  saveSettings: ReturnType<
+    typeof vi.fn<(settings: ExtensionSettings) => Promise<boolean>>
+  >;
 } {
   let currentSettings = initialSettings;
 
   return {
     loadSettings: vi.fn(async () => currentSettings),
-    saveSettings: vi.fn(async (settings: AppSettings) => {
+    saveSettings: vi.fn(async (settings: ExtensionSettings) => {
       currentSettings = settings;
       return true;
     }),
@@ -34,6 +38,7 @@ describe("ExtensionOptions", () => {
   it("renders key settings controls by accessible label", () => {
     render(<ExtensionOptions storage={createStorageMock()} />);
 
+    expect(screen.getByLabelText("Enable proactive reminders")).toBeTruthy();
     expect(screen.getByLabelText("Quiet hours enabled")).toBeTruthy();
     expect(screen.getByLabelText("Quiet hours start")).toBeTruthy();
     expect(screen.getByLabelText("Quiet hours end")).toBeTruthy();
@@ -42,6 +47,7 @@ describe("ExtensionOptions", () => {
     expect(screen.getByLabelText("Workday end")).toBeTruthy();
     expect(screen.getByLabelText("Hydration")).toBeTruthy();
     expect(screen.getByLabelText("Eye strain")).toBeTruthy();
+    expect(screen.getByText("Proactive reminders are disabled.")).toBeTruthy();
   });
 
   it("saves settings through the storage adapter", async () => {
@@ -49,6 +55,7 @@ describe("ExtensionOptions", () => {
 
     render(<ExtensionOptions storage={storage} />);
 
+    fireEvent.click(screen.getByLabelText("Enable proactive reminders"));
     fireEvent.click(screen.getByRole("radio", { name: "Active" }));
     fireEvent.change(screen.getByLabelText("Workday start"), {
       target: { value: "09:00" },
@@ -59,6 +66,7 @@ describe("ExtensionOptions", () => {
       expect(storage.saveSettings).toHaveBeenCalledTimes(1);
     });
     expect(storage.saveSettings.mock.calls[0][0]).toMatchObject({
+      proactiveRemindersEnabled: true,
       reminderIntensity: "active",
       workdayStart: "09:00",
     });
@@ -67,7 +75,8 @@ describe("ExtensionOptions", () => {
 
   it("resets settings to defaults", async () => {
     const storage = createStorageMock({
-      ...getDefaultAppSettings(),
+      ...getDefaultExtensionSettings(),
+      proactiveRemindersEnabled: true,
       reminderIntensity: "active",
       workdayStart: "09:00",
     });
@@ -84,7 +93,9 @@ describe("ExtensionOptions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reset to defaults" }));
 
     await waitFor(() => {
-      expect(storage.saveSettings).toHaveBeenCalledWith(getDefaultAppSettings());
+      expect(storage.saveSettings).toHaveBeenCalledWith(
+        getDefaultExtensionSettings(),
+      );
     });
     expect(
       (screen.getByRole("radio", { name: "Balanced" }) as HTMLInputElement)

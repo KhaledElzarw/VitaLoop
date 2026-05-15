@@ -1,0 +1,196 @@
+import { describe, expect, it, vi } from "vitest";
+import { reminders } from "../src/data/reminders";
+import {
+  getBackgroundReminderAlarmPlan,
+  getNotificationReminderSchedule,
+  handleBackgroundReminderAlarm,
+  PROACTIVE_REMINDER_ALARM_NAME,
+  syncBackgroundReminderAlarm,
+  type ChromeAlarmsApi,
+  type ChromeNotificationsApi,
+} from "../src/extension/backgroundScheduler";
+import {
+  getDefaultExtensionSettings,
+  type ExtensionSettings,
+} from "../src/extension/extensionSettingsStorage";
+
+function createSettings(
+  overrides: Partial<ExtensionSettings> = {},
+): ExtensionSettings {
+  return {
+    ...getDefaultExtensionSettings(),
+    ...overrides,
+    preferredReminderCategories:
+      overrides.preferredReminderCategories ??
+      getDefaultExtensionSettings().preferredReminderCategories,
+  };
+}
+
+function createChromeMocks(): {
+  alarms: ChromeAlarmsApi;
+  notifications: ChromeNotificationsApi;
+} {
+  return {
+    alarms: {
+      create: vi.fn<ChromeAlarmsApi["create"]>(),
+      clear: vi.fn<ChromeAlarmsApi["clear"]>(),
+    },
+    notifications: {
+      create: vi.fn<ChromeNotificationsApi["create"]>(),
+    },
+  };
+}
+
+describe("background reminder scheduler", () => {
+  it("creates the named repeating alarm when proactive reminders are enabled", () => {
+    const { alarms } = createChromeMocks();
+
+    const plan = syncBackgroundReminderAlarm({
+      alarms,
+      settings: createSettings({ proactiveRemindersEnabled: true }),
+      reminderList: reminders,
+      currentDate: new Date(2026, 4, 15, 10, 0),
+    });
+
+    expect(plan.action).toBe("create");
+    expect(alarms.create).toHaveBeenCalledWith(PROACTIVE_REMINDER_ALARM_NAME, {
+      delayInMinutes: 45,
+      periodInMinutes: 45,
+    });
+    expect(alarms.clear).not.toHaveBeenCalled();
+  });
+
+  it("clears the named alarm when proactive reminders are disabled", () => {
+    const { alarms } = createChromeMocks();
+
+    const plan = syncBackgroundReminderAlarm({
+      alarms,
+      settings: createSettings({ proactiveRemindersEnabled: false }),
+      reminderList: reminders,
+      currentDate: new Date(2026, 4, 15, 10, 0),
+    });
+
+    expect(plan).toEqual({
+      action: "clear",
+      alarmName: PROACTIVE_REMINDER_ALARM_NAME,
+      reason: "disabled",
+    });
+    expect(alarms.clear).toHaveBeenCalledWith(PROACTIVE_REMINDER_ALARM_NAME);
+    expect(alarms.create).not.toHaveBeenCalled();
+  });
+
+  it("respects quiet hours before creating a notification", () => {
+    const settings = createSettings({
+      proactiveRemindersEnabled: true,
+      quietHoursEnabled: true,
+      quietHoursStart: "22:00",
+      quietHoursEnd: "07:00",
+      workdayStart: "00:00",
+      workdayEnd: "23:59",
+    });
+    const currentDate = new Date(2026, 4, 15, 23, 0);
+    const plan = getBackgroundReminderAlarmPlan({
+      settings,
+      reminderList: reminders,
+      currentDate,
+    });
+
+    expect(plan.action).toBe("create");
+    expect(plan.action === "create" ? plan.alarmInfo.delayInMinutes : 0).toBe(
+      480,
+    );
+    expect(
+      getNotificationReminderSchedule({
+        settings,
+        reminderList: reminders,
+        currentDate,
+      }),
+    ).toBeNull();
+  });
+
+  it("respects the workday window before creating a notification", () => {
+    const settings = createSettings({
+      proactiveRemindersEnabled: true,
+      quietHoursEnabled: false,
+      workdayStart: "09:00",
+      workdayEnd: "17:00",
+    });
+    const currentDate = new Date(2026, 4, 15, 8, 30);
+    const plan = getBackgroundReminderAlarmPlan({
+      settings,
+      reminderList: reminders,
+      currentDate,
+    });
+
+    expect(plan.action).toBe("create");
+    expect(plan.action === "create" ? plan.alarmInfo.delayInMinutes : 0).toBe(
+      30,
+    );
+    expect(
+      getNotificationReminderSchedule({
+        settings,
+        reminderList: reminders,
+        currentDate,
+      }),
+    ).toBeNull();
+  });
+
+  it("ignores unpreferred reminder categories", () => {
+    const settings = createSettings({
+      proactiveRemindersEnabled: true,
+      quietHoursEnabled: false,
+      workdayStart: "09:00",
+      workdayEnd: "18:00",
+      preferredReminderCategories: ["stretch"],
+    });
+    const currentDate = new Date(2026, 4, 15, 10, 0);
+    const plan = getBackgroundReminderAlarmPlan({
+      settings,
+      reminderList: reminders,
+      currentDate,
+    });
+    const notificationSchedule = getNotificationReminderSchedule({
+      settings,
+      reminderList: reminders,
+      currentDate,
+    });
+
+    expect(plan.action === "create" ? plan.schedule.reminder.id : null).toBe(
+      "stretch",
+    );
+    expect(plan.action === "create" ? plan.alarmInfo.periodInMinutes : 0).toBe(
+      120,
+    );
+    expect(notificationSchedule?.reminder.id).toBe("stretch");
+  });
+
+  it("creates notification copy for eligible reminders on the named alarm", () => {
+    const { alarms, notifications } = createChromeMocks();
+
+    const result = handleBackgroundReminderAlarm({
+      alarm: { name: PROACTIVE_REMINDER_ALARM_NAME },
+      alarms,
+      notifications,
+      settings: createSettings({
+        proactiveRemindersEnabled: true,
+        quietHoursEnabled: false,
+      }),
+      reminderList: reminders,
+      currentDate: new Date(2026, 4, 15, 10, 0),
+    });
+
+    expect(result.notification?.schedule.reminder.id).toBe("eye-strain");
+    expect(notifications.create).toHaveBeenCalledWith(
+      expect.stringContaining("vitaloop-reminder-eye-strain"),
+      expect.objectContaining({
+        type: "basic",
+        title: "VitaLoop: Eye strain",
+        message: "Look away from the screen and soften your focus.",
+      }),
+    );
+    expect(alarms.create).toHaveBeenCalledWith(
+      PROACTIVE_REMINDER_ALARM_NAME,
+      expect.objectContaining({ periodInMinutes: 45 }),
+    );
+  });
+});

@@ -7,15 +7,17 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getDefaultAppSettings } from "../src/domain/settings";
 import { ExtensionPopup } from "../src/extension/ExtensionPopup";
-import { type ExtensionSettingsStorage } from "../src/extension/extensionSettingsStorage";
+import {
+  getDefaultExtensionSettings,
+  type ExtensionSettingsStorage,
+} from "../src/extension/extensionSettingsStorage";
 
 const previewDate = new Date(2026, 4, 15, 10, 0);
 
 function createStorageMock(): ExtensionSettingsStorage {
   return {
-    loadSettings: vi.fn(async () => getDefaultAppSettings()),
+    loadSettings: vi.fn(async () => getDefaultExtensionSettings()),
     saveSettings: vi.fn(async () => true),
   };
 }
@@ -64,6 +66,27 @@ describe("ExtensionPopup", () => {
     expect(within(actions).getByRole("button", { name: "Snooze" })).toBeTruthy();
     expect(
       within(actions).getByRole("button", { name: "Skip once" }),
+    ).toBeTruthy();
+  });
+
+  it("shows proactive reminder status", async () => {
+    render(
+      <ExtensionPopup
+        storage={createStorageMock()}
+        currentDate={previewDate}
+        onOpenOptions={vi.fn()}
+      />,
+    );
+
+    const statusPanel = screen.getByLabelText("Proactive reminder status");
+
+    await waitFor(() => {
+      expect(within(statusPanel).getByText("Disabled")).toBeTruthy();
+    });
+    expect(
+      within(statusPanel).getByText(
+        "Enable proactive reminders in Options to use local browser notifications.",
+      ),
     ).toBeTruthy();
   });
 
