@@ -76,8 +76,20 @@ describe("VitaLoop app shell", () => {
     render(<HomeScreen reminders={reminders} />);
 
     expect(screen.getByLabelText("Next wellness nudge")).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Hydration" })).toBeTruthy();
-    expect(screen.getByText("Every 90 minutes")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Eye strain" })).toBeTruthy();
+    expect(
+      screen.getByText("Calculated next reminder: 10:45 AM"),
+    ).toBeTruthy();
+  });
+
+  it("shows calculated next reminder timing on the reminders screen", () => {
+    render(<RemindersScreen reminders={reminders} />);
+
+    const reminderCategories = screen.getByLabelText("Reminder categories");
+
+    expect(
+      within(reminderCategories).getByText("Next reminder preview: 10:45 AM"),
+    ).toBeTruthy();
   });
 
   it("shows selected reminder details", () => {
@@ -97,7 +109,7 @@ describe("VitaLoop app shell", () => {
     expect(within(details).getByText("Screen breaks")).toBeTruthy();
     expect(
       within(details).getByText(
-        "Next reminder preview: Eye strain follows the every 45 minutes rhythm.",
+        "Next reminder preview: Eye strain at 10:45 AM.",
       ),
     ).toBeTruthy();
   });

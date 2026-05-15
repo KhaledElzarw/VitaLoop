@@ -234,6 +234,12 @@ button {
   padding: 0.25rem 0.65rem;
 }
 
+.schedule-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.5rem;
+}
+
 .rhythm-summary,
 .empty-copy {
   max-width: 42rem;

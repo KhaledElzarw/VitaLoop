@@ -1,5 +1,11 @@
 import { useState } from "react";
 import { reminders } from "./data/reminders";
+import {
+  formatReminderTime,
+  getEnabledReminders as getScheduledEnabledReminders,
+  getNextScheduledReminder,
+  getReminderSchedule,
+} from "./domain/scheduling";
 import { type AppSettings, type ReminderDefinition } from "./domain/schemas";
 import { getDefaultAppSettings } from "./domain/settings";
 import {
@@ -27,6 +33,8 @@ const reminderIntensityOptions = [
 type ScreenId = (typeof screens)[number]["id"];
 type ReminderId = AppSettings["preferredReminderCategories"][number];
 
+const defaultPreviewDate = new Date(2026, 4, 15, 10, 0);
+
 const backlogCategories = [
   "P0 Foundation",
   "P0 Core Screens",
@@ -42,14 +50,12 @@ function getOrderedReminders(reminderList: ReminderDefinition[]) {
   );
 }
 
-function getEnabledReminders(reminderList: ReminderDefinition[]) {
-  return getOrderedReminders(reminderList).filter(
-    (reminder) => reminder.enabledByDefault,
-  );
-}
-
 function App() {
   const [activeScreen, setActiveScreen] = useState<ScreenId>("home");
+  const [appSettings, setAppSettings] = useState<AppSettings>(() =>
+    settingsService.loadSettings(),
+  );
+  const [currentDate] = useState(() => new Date(defaultPreviewDate));
   const activeLabel = screens.find((screen) => screen.id === activeScreen)?.label;
 
   return (
@@ -67,9 +73,26 @@ function App() {
         aria-labelledby={`${activeScreen}-heading`}
       >
         <p className="screen-label">{activeLabel}</p>
-        {activeScreen === "home" && <HomeScreen reminders={reminders} />}
-        {activeScreen === "reminders" && <RemindersScreen reminders={reminders} />}
-        {activeScreen === "settings" && <SettingsScreen />}
+        {activeScreen === "home" && (
+          <HomeScreen
+            reminders={reminders}
+            settings={appSettings}
+            currentDate={currentDate}
+          />
+        )}
+        {activeScreen === "reminders" && (
+          <RemindersScreen
+            reminders={reminders}
+            settings={appSettings}
+            currentDate={currentDate}
+          />
+        )}
+        {activeScreen === "settings" && (
+          <SettingsScreen
+            initialSettings={appSettings}
+            onSettingsChange={setAppSettings}
+          />
+        )}
         {activeScreen === "backlog" && <BacklogScreen />}
         {activeScreen === "watch-preview" && <WatchPreviewScreen />}
         {activeScreen === "about" && <AboutScreen />}
@@ -93,12 +116,22 @@ function App() {
 
 type ReminderScreenProps = {
   reminders: ReminderDefinition[];
+  settings?: AppSettings;
+  currentDate?: Date;
   hasError?: boolean;
 };
 
-export function HomeScreen({ reminders }: ReminderScreenProps) {
-  const enabledReminders = getEnabledReminders(reminders);
-  const nextReminder = enabledReminders[0];
+export function HomeScreen({
+  reminders,
+  settings = getDefaultAppSettings(),
+  currentDate = defaultPreviewDate,
+}: ReminderScreenProps) {
+  const enabledReminders = getScheduledEnabledReminders(reminders, settings);
+  const nextSchedule = getNextScheduledReminder(
+    reminders,
+    settings,
+    currentDate,
+  );
 
   return (
     <section className="screen-panel">
@@ -113,7 +146,7 @@ export function HomeScreen({ reminders }: ReminderScreenProps) {
           <span>Active reminders</span>
         </div>
         <div>
-          <strong>{nextReminder?.title ?? "None"}</strong>
+          <strong>{nextSchedule?.reminder.title ?? "None"}</strong>
           <span>Next wellness nudge</span>
         </div>
         <div>
@@ -121,12 +154,18 @@ export function HomeScreen({ reminders }: ReminderScreenProps) {
           <span>Wellness rhythm</span>
         </div>
       </div>
-      {nextReminder ? (
+      {nextSchedule ? (
         <article className="next-nudge" aria-label="Next wellness nudge">
           <p className="eyebrow">Next wellness nudge</p>
-          <h3>{nextReminder.title}</h3>
-          <p>{nextReminder.description}</p>
-          <span>{nextReminder.suggestedFrequency}</span>
+          <h3>{nextSchedule.reminder.title}</h3>
+          <p>{nextSchedule.reminder.description}</p>
+          <div className="schedule-tags">
+            <span>
+              Calculated next reminder:{" "}
+              {formatReminderTime(nextSchedule.nextAt)}
+            </span>
+            <span>{nextSchedule.frequencyMinutes} min rhythm</span>
+          </div>
         </article>
       ) : (
         <p className="empty-copy">
@@ -134,8 +173,8 @@ export function HomeScreen({ reminders }: ReminderScreenProps) {
         </p>
       )}
       <p className="rhythm-summary">
-        Current rhythm: hydration and screen breaks lead the day, with movement
-        reminders spaced in as light resets.
+        Current rhythm: {settings.reminderIntensity} reminders stay inside your
+        workday window and pause during quiet hours.
       </p>
     </section>
   );
@@ -143,6 +182,8 @@ export function HomeScreen({ reminders }: ReminderScreenProps) {
 
 export function RemindersScreen({
   reminders,
+  settings = getDefaultAppSettings(),
+  currentDate = defaultPreviewDate,
   hasError = false,
 }: ReminderScreenProps) {
   const orderedReminders = getOrderedReminders(reminders);
@@ -190,72 +231,104 @@ export function RemindersScreen({
         busy day.
       </p>
       <div className="reminder-list" aria-label="Reminder categories">
-        {orderedReminders.map((reminder) => (
-          <button
-            key={reminder.id}
-            type="button"
-            className="reminder-card"
-            aria-label={`Show ${reminder.title} details`}
-            aria-pressed={selectedReminder?.id === reminder.id}
-            onClick={() => setSelectedReminderId(reminder.id)}
-          >
-            <div>
-              <span className="category-label">{reminder.category}</span>
-              <h3>{reminder.title}</h3>
-              <p>{reminder.wellnessIntent}</p>
-              <p className="next-preview">
-                Next reminder preview: follows the{" "}
-                {reminder.suggestedFrequency.toLowerCase()} rhythm.
-              </p>
-            </div>
-            <div className="card-meta">
-              <span>{reminder.suggestedFrequency}</span>
-              <span
-                className={
-                  reminder.enabledByDefault ? "status-enabled" : "status-muted"
-                }
-              >
-                {reminder.enabledByDefault ? "Enabled" : "Preview"}
-              </span>
-            </div>
-          </button>
-        ))}
+        {orderedReminders.map((reminder) => {
+          const schedule = getReminderSchedule(reminder, settings, currentDate);
+          const isEnabled =
+            settings.preferredReminderCategories.includes(reminder.id);
+
+          return (
+            <button
+              key={reminder.id}
+              type="button"
+              className="reminder-card"
+              aria-label={`Show ${reminder.title} details`}
+              aria-pressed={selectedReminder?.id === reminder.id}
+              onClick={() => setSelectedReminderId(reminder.id)}
+            >
+              <div>
+                <span className="category-label">{reminder.category}</span>
+                <h3>{reminder.title}</h3>
+                <p>{reminder.wellnessIntent}</p>
+                <p className="next-preview">
+                  {schedule.nextAt
+                    ? `Next reminder preview: ${formatReminderTime(
+                        schedule.nextAt,
+                      )}`
+                    : "Not scheduled while this category is paused."}
+                </p>
+              </div>
+              <div className="card-meta">
+                <span>{schedule.frequencyMinutes} min</span>
+                <span
+                  className={isEnabled ? "status-enabled" : "status-muted"}
+                >
+                  {isEnabled ? "Enabled" : "Paused"}
+                </span>
+              </div>
+            </button>
+          );
+        })}
       </div>
       {selectedReminder && (
-        <aside
-          className="details-panel"
-          role="region"
-          aria-label="Selected reminder details"
-        >
-          <p className="eyebrow">Selected reminder</p>
-          <h3 id="selected-reminder-heading">{selectedReminder.title}</h3>
-          <p>{selectedReminder.description}</p>
-          <dl>
-            <div>
-              <dt>Category</dt>
-              <dd>{selectedReminder.category}</dd>
-            </div>
-            <div>
-              <dt>Frequency</dt>
-              <dd>{selectedReminder.suggestedFrequency}</dd>
-            </div>
-            <div>
-              <dt>Next reminder</dt>
-              <dd>
-                Next reminder preview: {selectedReminder.title} follows the{" "}
-                {selectedReminder.suggestedFrequency.toLowerCase()} rhythm.
-              </dd>
-            </div>
-          </dl>
-        </aside>
+        <ReminderDetails
+          reminder={selectedReminder}
+          settings={settings}
+          currentDate={currentDate}
+        />
       )}
     </section>
+  );
+}
+
+function ReminderDetails({
+  reminder,
+  settings,
+  currentDate,
+}: {
+  reminder: ReminderDefinition;
+  settings: AppSettings;
+  currentDate: Date;
+}) {
+  const schedule = getReminderSchedule(reminder, settings, currentDate);
+
+  return (
+    <aside
+      className="details-panel"
+      role="region"
+      aria-label="Selected reminder details"
+    >
+      <p className="eyebrow">Selected reminder</p>
+      <h3 id="selected-reminder-heading">{reminder.title}</h3>
+      <p>{reminder.description}</p>
+      <dl>
+        <div>
+          <dt>Category</dt>
+          <dd>{reminder.category}</dd>
+        </div>
+        <div>
+          <dt>Frequency</dt>
+          <dd>{schedule.frequencyMinutes} minutes</dd>
+        </div>
+        <div>
+          <dt>Next reminder</dt>
+          <dd>
+            {schedule.nextAt
+              ? `Next reminder preview: ${reminder.title} at ${formatReminderTime(
+                  schedule.nextAt,
+                )}.`
+              : `${reminder.title} is paused in preferences.`}
+          </dd>
+        </div>
+      </dl>
+    </aside>
   );
 }
 
 type SettingsScreenProps = {
   service?: SettingsService;
   reminderList?: ReminderDefinition[];
+  initialSettings?: AppSettings;
+  onSettingsChange?: (settings: AppSettings) => void;
 };
 
 type SettingsStatus = "idle" | "saved" | "reset" | "error";
@@ -263,9 +336,11 @@ type SettingsStatus = "idle" | "saved" | "reset" | "error";
 export function SettingsScreen({
   service = settingsService,
   reminderList = reminders,
+  initialSettings,
+  onSettingsChange,
 }: SettingsScreenProps) {
   const [settings, setSettings] = useState<AppSettings>(() =>
-    service.loadSettings(),
+    initialSettings ?? service.loadSettings(),
   );
   const [status, setStatus] = useState<SettingsStatus>("idle");
 
@@ -303,13 +378,26 @@ export function SettingsScreen({
   }
 
   function saveCurrentSettings() {
-    setStatus(service.saveSettings(settings) ? "saved" : "error");
+    const didSave = service.saveSettings(settings);
+
+    if (didSave) {
+      onSettingsChange?.(settings);
+    }
+
+    setStatus(didSave ? "saved" : "error");
   }
 
   function resetSettings() {
     const defaultSettings = getDefaultAppSettings();
+    const didSave = service.saveSettings(defaultSettings);
+
     setSettings(defaultSettings);
-    setStatus(service.saveSettings(defaultSettings) ? "reset" : "error");
+
+    if (didSave) {
+      onSettingsChange?.(defaultSettings);
+    }
+
+    setStatus(didSave ? "reset" : "error");
   }
 
   return (
