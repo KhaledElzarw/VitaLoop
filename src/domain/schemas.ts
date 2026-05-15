@@ -18,9 +18,12 @@ export const reminderIdSchema = z.enum([
 export const reminderDefinitionSchema = z.object({
   id: reminderIdSchema,
   title: z.string().min(1),
-  cadenceMinutes: z.number().int().positive(),
-  prompt: z.string().min(1),
+  category: z.string().min(1),
+  description: z.string().min(1),
+  suggestedFrequency: z.string().min(1),
   enabledByDefault: z.boolean(),
+  wellnessIntent: z.string().min(1),
+  displayPriority: z.number().int().positive(),
 });
 
 export const appSettingsSchema = z.object({

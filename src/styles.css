@@ -45,6 +45,7 @@ button {
 
 .app-header h1,
 .screen-panel h2,
+.next-nudge h3,
 .reminder-card h3 {
   margin: 0;
   letter-spacing: 0;
@@ -122,8 +123,7 @@ button {
   font-size: 1.3rem;
 }
 
-.summary-grid span,
-.reminder-card span {
+.summary-grid span {
   color: #526056;
   font-size: 0.9rem;
 }
@@ -140,10 +140,17 @@ button {
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
+  width: 100%;
+  border: 1px solid #e6e0d2;
+  background: #ffffff;
   padding: 0.9rem;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
 }
 
 .reminder-card h3 {
+  margin-top: 0.25rem;
   font-size: 1rem;
 }
 
@@ -151,11 +158,102 @@ button {
   margin-top: 0.35rem;
 }
 
-.reminder-card span {
+.reminder-card[aria-pressed="true"] {
+  border-color: #2f6658;
+  box-shadow: 0 0 0 3px rgba(47, 102, 88, 0.14);
+}
+
+.reminder-card:focus-visible {
+  outline: 3px solid #7c4f34;
+  outline-offset: 2px;
+}
+
+.card-meta {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.card-meta span {
   flex: 0 0 auto;
   border-radius: 999px;
   background: #eef5f1;
+  color: #526056;
+  font-size: 0.82rem;
   padding: 0.2rem 0.55rem;
+  white-space: nowrap;
+}
+
+.card-meta .status-enabled {
+  background: #e3f3ec;
+  color: #2f6658;
+}
+
+.card-meta .status-muted {
+  background: #f2efe7;
+  color: #7c4f34;
+}
+
+.category-label {
+  color: #7c4f34;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.next-preview {
+  color: #526056;
+  font-size: 0.88rem;
+}
+
+.next-nudge,
+.details-panel,
+.state-message {
+  margin-top: 1rem;
+  border: 1px solid #ded8c8;
+  border-radius: 8px;
+  background: #fffaf0;
+  padding: 1rem;
+}
+
+.next-nudge h3,
+.details-panel h3,
+.state-message h3 {
+  margin: 0.35rem 0 0;
+  font-size: 1.2rem;
+}
+
+.next-nudge span {
+  display: inline-block;
+  margin-top: 0.75rem;
+  border-radius: 999px;
+  background: #e3f3ec;
+  color: #2f6658;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+}
+
+.rhythm-summary,
+.empty-copy {
+  max-width: 42rem;
+}
+
+.details-panel dl {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+}
+
+.details-panel dt {
+  color: #526056;
+  font-size: 0.86rem;
+}
+
+.details-panel dd {
+  margin: 0.15rem 0 0;
+  font-weight: 700;
 }
 
 .settings-list {

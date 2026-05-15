@@ -1,5 +1,9 @@
 # VitaLoop Product Backlog
 
+## Completed Increments
+
+- [x] MVP reminder experience: Today overview, next wellness nudge, reminder category cards, selected reminder details, and Reminders empty/error states.
+
 ## P0 Foundation
 
 - Repository bootstrap

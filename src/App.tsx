@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { reminders } from "./data/reminders";
-import { type AppSettings } from "./domain/schemas";
+import { type AppSettings, type ReminderDefinition } from "./domain/schemas";
 
 const tagline = "Recurring wellness reminders for busy days.";
 
@@ -40,6 +40,18 @@ const backlogCategories = [
   "P2 Apple Watch",
 ];
 
+function getOrderedReminders(reminderList: ReminderDefinition[]) {
+  return [...reminderList].sort(
+    (first, second) => first.displayPriority - second.displayPriority,
+  );
+}
+
+function getEnabledReminders(reminderList: ReminderDefinition[]) {
+  return getOrderedReminders(reminderList).filter(
+    (reminder) => reminder.enabledByDefault,
+  );
+}
+
 function App() {
   const [activeScreen, setActiveScreen] = useState<ScreenId>("home");
   const activeLabel = screens.find((screen) => screen.id === activeScreen)?.label;
@@ -59,8 +71,8 @@ function App() {
         aria-labelledby={`${activeScreen}-heading`}
       >
         <p className="screen-label">{activeLabel}</p>
-        {activeScreen === "home" && <HomeScreen />}
-        {activeScreen === "reminders" && <RemindersScreen />}
+        {activeScreen === "home" && <HomeScreen reminders={reminders} />}
+        {activeScreen === "reminders" && <RemindersScreen reminders={reminders} />}
         {activeScreen === "settings" && <SettingsScreen />}
         {activeScreen === "backlog" && <BacklogScreen />}
         {activeScreen === "watch-preview" && <WatchPreviewScreen />}
@@ -83,52 +95,164 @@ function App() {
   );
 }
 
-function HomeScreen() {
-  const enabledCount = reminders.filter(
-    (reminder) => reminder.enabledByDefault,
-  ).length;
+type ReminderScreenProps = {
+  reminders: ReminderDefinition[];
+  hasError?: boolean;
+};
+
+export function HomeScreen({ reminders }: ReminderScreenProps) {
+  const enabledReminders = getEnabledReminders(reminders);
+  const nextReminder = enabledReminders[0];
 
   return (
     <section className="screen-panel">
-      <h2 id="home-heading">A calmer way to remember small breaks</h2>
+      <h2 id="home-heading">Today overview</h2>
       <p>
         VitaLoop keeps recurring wellness nudges simple, optional, and easy to
         adjust around a full day.
       </p>
       <div className="summary-grid" aria-label="Foundation summary">
         <div>
-          <strong>{reminders.length}</strong>
-          <span>Reminder types planned</span>
+          <strong>{enabledReminders.length}</strong>
+          <span>Active reminders</span>
         </div>
         <div>
-          <strong>{enabledCount}</strong>
-          <span>Enabled by default</span>
+          <strong>{nextReminder?.title ?? "None"}</strong>
+          <span>Next wellness nudge</span>
         </div>
         <div>
-          <strong>Local</strong>
-          <span>Current data direction</span>
+          <strong>Gentle</strong>
+          <span>Wellness rhythm</span>
         </div>
       </div>
+      {nextReminder ? (
+        <article className="next-nudge" aria-label="Next wellness nudge">
+          <p className="eyebrow">Next wellness nudge</p>
+          <h3>{nextReminder.title}</h3>
+          <p>{nextReminder.description}</p>
+          <span>{nextReminder.suggestedFrequency}</span>
+        </article>
+      ) : (
+        <p className="empty-copy">
+          No active reminders are available in this mocked view yet.
+        </p>
+      )}
+      <p className="rhythm-summary">
+        Current rhythm: hydration and screen breaks lead the day, with movement
+        reminders spaced in as light resets.
+      </p>
     </section>
   );
 }
 
-function RemindersScreen() {
+export function RemindersScreen({
+  reminders,
+  hasError = false,
+}: ReminderScreenProps) {
+  const orderedReminders = getOrderedReminders(reminders);
+  const [selectedReminderId, setSelectedReminderId] = useState(
+    orderedReminders[0]?.id,
+  );
+  const selectedReminder =
+    orderedReminders.find((reminder) => reminder.id === selectedReminderId) ??
+    orderedReminders[0];
+
+  if (hasError) {
+    return (
+      <section className="screen-panel">
+        <h2 id="reminders-heading">Reminders</h2>
+        <div className="state-message" role="alert">
+          <h3>Reminders are unavailable</h3>
+          <p>
+            VitaLoop could not prepare the reminder preview. Try again when the
+            app state is ready.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  if (orderedReminders.length === 0) {
+    return (
+      <section className="screen-panel">
+        <h2 id="reminders-heading">Reminders</h2>
+        <div className="state-message">
+          <h3>No reminders to show</h3>
+          <p>
+            Add mocked reminder categories to preview a gentle wellness rhythm.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="screen-panel">
       <h2 id="reminders-heading">Reminders</h2>
-      <p>Mocked reminders for the first web foundation.</p>
-      <div className="reminder-list">
-        {reminders.map((reminder) => (
-          <article key={reminder.id} className="reminder-card">
+      <p>
+        Preview the recurring wellness categories VitaLoop can suggest during a
+        busy day.
+      </p>
+      <div className="reminder-list" aria-label="Reminder categories">
+        {orderedReminders.map((reminder) => (
+          <button
+            key={reminder.id}
+            type="button"
+            className="reminder-card"
+            aria-label={`Show ${reminder.title} details`}
+            aria-pressed={selectedReminder?.id === reminder.id}
+            onClick={() => setSelectedReminderId(reminder.id)}
+          >
             <div>
+              <span className="category-label">{reminder.category}</span>
               <h3>{reminder.title}</h3>
-              <p>{reminder.prompt}</p>
+              <p>{reminder.wellnessIntent}</p>
+              <p className="next-preview">
+                Next reminder preview: follows the{" "}
+                {reminder.suggestedFrequency.toLowerCase()} rhythm.
+              </p>
             </div>
-            <span>{reminder.cadenceMinutes} min</span>
-          </article>
+            <div className="card-meta">
+              <span>{reminder.suggestedFrequency}</span>
+              <span
+                className={
+                  reminder.enabledByDefault ? "status-enabled" : "status-muted"
+                }
+              >
+                {reminder.enabledByDefault ? "Enabled" : "Preview"}
+              </span>
+            </div>
+          </button>
         ))}
       </div>
+      {selectedReminder && (
+        <aside
+          className="details-panel"
+          role="region"
+          aria-label="Selected reminder details"
+        >
+          <p className="eyebrow">Selected reminder</p>
+          <h3 id="selected-reminder-heading">{selectedReminder.title}</h3>
+          <p>{selectedReminder.description}</p>
+          <dl>
+            <div>
+              <dt>Category</dt>
+              <dd>{selectedReminder.category}</dd>
+            </div>
+            <div>
+              <dt>Frequency</dt>
+              <dd>{selectedReminder.suggestedFrequency}</dd>
+            </div>
+            <div>
+              <dt>Next reminder</dt>
+              <dd>
+                Next reminder preview: {selectedReminder.title} follows the{" "}
+                {selectedReminder.suggestedFrequency.toLowerCase()} rhythm.
+              </dd>
+            </div>
+          </dl>
+        </aside>
+      )}
     </section>
   );
 }

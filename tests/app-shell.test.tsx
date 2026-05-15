@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import App from "../src/App";
+import App, { HomeScreen, RemindersScreen } from "../src/App";
 import { reminders } from "../src/data/reminders";
 
 afterEach(cleanup);
@@ -32,16 +32,63 @@ describe("VitaLoop app shell", () => {
     }
   });
 
-  it("renders mocked reminders on the reminder screen", () => {
+  it("renders reminder cards for all expected categories", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
 
+    const reminderCategories = screen.getByLabelText("Reminder categories");
+
     for (const reminder of reminders) {
       expect(
-        screen.getByRole("heading", { name: reminder.title }),
+        within(reminderCategories).getByRole("heading", {
+          name: reminder.title,
+        }),
       ).toBeTruthy();
     }
+  });
+
+  it("shows the next wellness nudge on the home screen", () => {
+    render(<HomeScreen reminders={reminders} />);
+
+    expect(screen.getByLabelText("Next wellness nudge")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Hydration" })).toBeTruthy();
+    expect(screen.getByText("Every 90 minutes")).toBeTruthy();
+  });
+
+  it("shows selected reminder details", () => {
+    render(<RemindersScreen reminders={reminders} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Show Eye strain details/i }),
+    );
+
+    const details = screen.getByRole("region", {
+      name: "Selected reminder details",
+    });
+
+    expect(
+      within(details).getByRole("heading", { name: "Eye strain" }),
+    ).toBeTruthy();
+    expect(within(details).getByText("Screen breaks")).toBeTruthy();
+    expect(
+      within(details).getByText(
+        "Next reminder preview: Eye strain follows the every 45 minutes rhythm.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("renders an empty reminders state", () => {
+    render(<RemindersScreen reminders={[]} />);
+
+    expect(screen.getByText("No reminders to show")).toBeTruthy();
+  });
+
+  it("renders a reminders error state", () => {
+    render(<RemindersScreen reminders={reminders} hasError />);
+
+    expect(screen.getByRole("alert")).toBeTruthy();
+    expect(screen.getByText("Reminders are unavailable")).toBeTruthy();
   });
 
   it("renders core backlog categories", () => {
