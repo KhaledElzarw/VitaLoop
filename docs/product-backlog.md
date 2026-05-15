@@ -3,6 +3,7 @@
 ## Completed Increments
 
 - [x] MVP reminder experience: Today overview, next wellness nudge, reminder category cards, selected reminder details, and Reminders empty/error states.
+- [x] Settings and storage foundation: Zod settings schema, safe defaults, localStorage service, Settings save/reset UI, and invalid stored data fallback.
 
 ## P0 Foundation
 

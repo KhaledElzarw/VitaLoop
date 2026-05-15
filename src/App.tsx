@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { reminders } from "./data/reminders";
 import { type AppSettings, type ReminderDefinition } from "./domain/schemas";
+import { getDefaultAppSettings } from "./domain/settings";
+import {
+  settingsService,
+  type SettingsService,
+} from "./services/settingsService";
 
 const tagline = "Recurring wellness reminders for busy days.";
 
@@ -13,23 +18,14 @@ const screens = [
   { id: "about", label: "About" },
 ] as const;
 
-type ScreenId = (typeof screens)[number]["id"];
+const reminderIntensityOptions = [
+  { value: "gentle", label: "Gentle" },
+  { value: "balanced", label: "Balanced" },
+  { value: "active", label: "Active" },
+] as const;
 
-const defaultSettings: AppSettings = {
-  quietHours: {
-    enabled: true,
-    start: "21:30",
-    end: "07:00",
-  },
-  workdayWindow: {
-    start: "08:30",
-    end: "18:00",
-  },
-  reminderIntensity: "balanced",
-  enabledReminderIds: reminders
-    .filter((reminder) => reminder.enabledByDefault)
-    .map((reminder) => reminder.id),
-};
+type ScreenId = (typeof screens)[number]["id"];
+type ReminderId = AppSettings["preferredReminderCategories"][number];
 
 const backlogCategories = [
   "P0 Foundation",
@@ -257,30 +253,220 @@ export function RemindersScreen({
   );
 }
 
-function SettingsScreen() {
+type SettingsScreenProps = {
+  service?: SettingsService;
+  reminderList?: ReminderDefinition[];
+};
+
+type SettingsStatus = "idle" | "saved" | "reset" | "error";
+
+export function SettingsScreen({
+  service = settingsService,
+  reminderList = reminders,
+}: SettingsScreenProps) {
+  const [settings, setSettings] = useState<AppSettings>(() =>
+    service.loadSettings(),
+  );
+  const [status, setStatus] = useState<SettingsStatus>("idle");
+
+  function updateSetting<Key extends keyof AppSettings>(
+    key: Key,
+    value: AppSettings[Key],
+  ) {
+    setSettings((currentSettings) => ({
+      ...currentSettings,
+      [key]: value,
+    }));
+    setStatus("idle");
+  }
+
+  function toggleReminderCategory(reminderId: ReminderId) {
+    setSettings((currentSettings) => {
+      const isPreferred =
+        currentSettings.preferredReminderCategories.includes(reminderId);
+      const nextCategories = isPreferred
+        ? currentSettings.preferredReminderCategories.filter(
+            (category) => category !== reminderId,
+          )
+        : [...currentSettings.preferredReminderCategories, reminderId];
+
+      if (nextCategories.length === 0) {
+        return currentSettings;
+      }
+
+      return {
+        ...currentSettings,
+        preferredReminderCategories: nextCategories,
+      };
+    });
+    setStatus("idle");
+  }
+
+  function saveCurrentSettings() {
+    setStatus(service.saveSettings(settings) ? "saved" : "error");
+  }
+
+  function resetSettings() {
+    const defaultSettings = getDefaultAppSettings();
+    setSettings(defaultSettings);
+    setStatus(service.saveSettings(defaultSettings) ? "reset" : "error");
+  }
+
   return (
     <section className="screen-panel">
       <h2 id="settings-heading">Settings</h2>
-      <dl className="settings-list">
-        <div>
-          <dt>Quiet hours</dt>
-          <dd>
-            {defaultSettings.quietHours.start} to{" "}
-            {defaultSettings.quietHours.end}
-          </dd>
+      <p>
+        Keep recurring nudges useful by choosing quiet hours, workday timing,
+        and the reminder categories that fit your day.
+      </p>
+      <form
+        className="settings-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          saveCurrentSettings();
+        }}
+      >
+        <label className="field">
+          <span>Timezone</span>
+          <input
+            type="text"
+            value={settings.timezone}
+            onChange={(event) =>
+              updateSetting("timezone", event.currentTarget.value)
+            }
+          />
+        </label>
+
+        <fieldset className="settings-group">
+          <legend>Quiet hours</legend>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={settings.quietHoursEnabled}
+              onChange={(event) =>
+                updateSetting("quietHoursEnabled", event.currentTarget.checked)
+              }
+            />
+            <span>Quiet hours enabled</span>
+          </label>
+          <div className="settings-columns">
+            <label className="field">
+              <span>Quiet hours start</span>
+              <input
+                type="time"
+                value={settings.quietHoursStart}
+                onChange={(event) =>
+                  updateSetting("quietHoursStart", event.currentTarget.value)
+                }
+              />
+            </label>
+            <label className="field">
+              <span>Quiet hours end</span>
+              <input
+                type="time"
+                value={settings.quietHoursEnd}
+                onChange={(event) =>
+                  updateSetting("quietHoursEnd", event.currentTarget.value)
+                }
+              />
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset className="settings-group">
+          <legend>Reminder intensity</legend>
+          <div className="radio-grid">
+            {reminderIntensityOptions.map((option) => (
+              <label key={option.value} className="choice-card">
+                <input
+                  type="radio"
+                  name="reminderIntensity"
+                  value={option.value}
+                  checked={settings.reminderIntensity === option.value}
+                  onChange={() =>
+                    updateSetting("reminderIntensity", option.value)
+                  }
+                />
+                <span>{option.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className="settings-group">
+          <legend>Workday window</legend>
+          <div className="settings-columns">
+            <label className="field">
+              <span>Workday start</span>
+              <input
+                type="time"
+                value={settings.workdayStart}
+                onChange={(event) =>
+                  updateSetting("workdayStart", event.currentTarget.value)
+                }
+              />
+            </label>
+            <label className="field">
+              <span>Workday end</span>
+              <input
+                type="time"
+                value={settings.workdayEnd}
+                onChange={(event) =>
+                  updateSetting("workdayEnd", event.currentTarget.value)
+                }
+              />
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset className="settings-group">
+          <legend>Preferred reminder categories</legend>
+          <div className="category-grid">
+            {reminderList.map((reminder) => {
+              const isPreferred =
+                settings.preferredReminderCategories.includes(reminder.id);
+              const isOnlyPreferred =
+                isPreferred &&
+                settings.preferredReminderCategories.length === 1;
+
+              return (
+                <label key={reminder.id} className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={isPreferred}
+                    disabled={isOnlyPreferred}
+                    onChange={() => toggleReminderCategory(reminder.id)}
+                  />
+                  <span>{reminder.title}</span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <div className="settings-actions">
+          <button type="submit">Save settings</button>
+          <button type="button" onClick={resetSettings}>
+            Reset to defaults
+          </button>
         </div>
-        <div>
-          <dt>Workday window</dt>
-          <dd>
-            {defaultSettings.workdayWindow.start} to{" "}
-            {defaultSettings.workdayWindow.end}
-          </dd>
-        </div>
-        <div>
-          <dt>Reminder intensity</dt>
-          <dd>{defaultSettings.reminderIntensity}</dd>
-        </div>
-      </dl>
+
+        {status === "saved" && (
+          <p className="settings-status" role="status">
+            Settings saved.
+          </p>
+        )}
+        {status === "reset" && (
+          <p className="settings-status" role="status">
+            Defaults restored.
+          </p>
+        )}
+        {status === "error" && (
+          <p className="settings-error" role="alert">
+            Settings could not be saved. Check the values and try again.
+          </p>
+        )}
+      </form>
     </section>
   );
 }

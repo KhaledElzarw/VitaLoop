@@ -27,17 +27,14 @@ export const reminderDefinitionSchema = z.object({
 });
 
 export const appSettingsSchema = z.object({
-  quietHours: z.object({
-    enabled: z.boolean(),
-    start: timeOfDaySchema,
-    end: timeOfDaySchema,
-  }),
-  workdayWindow: z.object({
-    start: timeOfDaySchema,
-    end: timeOfDaySchema,
-  }),
-  reminderIntensity: z.enum(["light", "balanced", "steady"]),
-  enabledReminderIds: z.array(reminderIdSchema).min(1),
+  timezone: z.string().min(1),
+  quietHoursEnabled: z.boolean(),
+  quietHoursStart: timeOfDaySchema,
+  quietHoursEnd: timeOfDaySchema,
+  reminderIntensity: z.enum(["gentle", "balanced", "active"]),
+  workdayStart: timeOfDaySchema,
+  workdayEnd: timeOfDaySchema,
+  preferredReminderCategories: z.array(reminderIdSchema).min(1),
 });
 
 export type ReminderDefinition = z.infer<typeof reminderDefinitionSchema>;

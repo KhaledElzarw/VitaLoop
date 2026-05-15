@@ -1,33 +1,26 @@
 import { describe, expect, it } from "vitest";
 import { appSettingsSchema } from "../src/domain/schemas";
-
-const validSettings = {
-  quietHours: {
-    enabled: true,
-    start: "21:30",
-    end: "07:00",
-  },
-  workdayWindow: {
-    start: "08:30",
-    end: "18:00",
-  },
-  reminderIntensity: "balanced",
-  enabledReminderIds: ["hydration", "eye-strain", "stretch"],
-};
+import { getDefaultAppSettings } from "../src/domain/settings";
 
 describe("app settings schema", () => {
   it("accepts valid settings", () => {
+    const validSettings = getDefaultAppSettings();
+
     expect(appSettingsSchema.safeParse(validSettings).success).toBe(true);
   });
 
-  it("rejects invalid settings", () => {
+  it("rejects invalid quiet hours values", () => {
     const result = appSettingsSchema.safeParse({
-      ...validSettings,
-      quietHours: {
-        enabled: true,
-        start: "25:00",
-        end: "07:00",
-      },
+      ...getDefaultAppSettings(),
+      quietHoursStart: "25:00",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects invalid reminder intensity values", () => {
+    const result = appSettingsSchema.safeParse({
+      ...getDefaultAppSettings(),
       reminderIntensity: "clinical",
     });
 

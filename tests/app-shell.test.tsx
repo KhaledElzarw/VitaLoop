@@ -1,9 +1,33 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
-import App, { HomeScreen, RemindersScreen } from "../src/App";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import App, { HomeScreen, RemindersScreen, SettingsScreen } from "../src/App";
 import { reminders } from "../src/data/reminders";
+import { type AppSettings } from "../src/domain/schemas";
+import { getDefaultAppSettings } from "../src/domain/settings";
+import { type SettingsService } from "../src/services/settingsService";
 
 afterEach(cleanup);
+
+function createTestSettingsService(
+  initialSettings: AppSettings = getDefaultAppSettings(),
+  saveResult = true,
+): SettingsService & {
+  saveSettings: ReturnType<typeof vi.fn<(settings: AppSettings) => boolean>>;
+} {
+  let currentSettings = initialSettings;
+  const saveSettings = vi.fn((settings: AppSettings) => {
+    if (saveResult) {
+      currentSettings = settings;
+    }
+
+    return saveResult;
+  });
+
+  return {
+    loadSettings: () => currentSettings,
+    saveSettings,
+  };
+}
 
 describe("VitaLoop app shell", () => {
   it("renders VitaLoop branding", () => {
@@ -89,6 +113,65 @@ describe("VitaLoop app shell", () => {
 
     expect(screen.getByRole("alert")).toBeTruthy();
     expect(screen.getByText("Reminders are unavailable")).toBeTruthy();
+  });
+
+  it("renders settings controls", () => {
+    render(
+      <SettingsScreen
+        service={createTestSettingsService()}
+        reminderList={reminders}
+      />,
+    );
+
+    expect(screen.getByLabelText("Timezone")).toBeTruthy();
+    expect(screen.getByLabelText("Quiet hours enabled")).toBeTruthy();
+    expect(screen.getByLabelText("Quiet hours start")).toBeTruthy();
+    expect(screen.getByLabelText("Quiet hours end")).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Balanced" })).toBeTruthy();
+    expect(screen.getByLabelText("Workday start")).toBeTruthy();
+    expect(screen.getByLabelText("Workday end")).toBeTruthy();
+    expect(screen.getByLabelText("Hydration")).toBeTruthy();
+  });
+
+  it("saves updated settings", () => {
+    const service = createTestSettingsService();
+
+    render(<SettingsScreen service={service} reminderList={reminders} />);
+
+    fireEvent.click(screen.getByRole("radio", { name: "Active" }));
+    fireEvent.change(screen.getByLabelText("Workday start"), {
+      target: { value: "09:00" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save settings" }));
+
+    expect(service.saveSettings).toHaveBeenCalledTimes(1);
+    expect(service.saveSettings.mock.calls[0][0]).toMatchObject({
+      reminderIntensity: "active",
+      workdayStart: "09:00",
+    });
+    expect(screen.getByRole("status").textContent).toContain("Settings saved.");
+  });
+
+  it("resets settings to defaults", () => {
+    const service = createTestSettingsService({
+      ...getDefaultAppSettings(),
+      reminderIntensity: "active",
+      timezone: "America/New_York",
+    });
+
+    render(<SettingsScreen service={service} reminderList={reminders} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset to defaults" }));
+
+    const balancedOption = screen.getByRole("radio", {
+      name: "Balanced",
+    }) as HTMLInputElement;
+
+    expect(service.saveSettings).toHaveBeenCalledWith(getDefaultAppSettings());
+    expect(balancedOption.checked).toBe(true);
+    expect(screen.getByRole("status").textContent).toContain(
+      "Defaults restored.",
+    );
   });
 
   it("renders core backlog categories", () => {

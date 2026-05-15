@@ -42,6 +42,7 @@ npm run lint
 - The app uses simple React tab state for Home, Reminders, Settings, Backlog, Watch Preview, and About.
 - Zod schemas define reminder definitions and app settings.
 - Mocked reminder data covers hydration, eye strain, stretch, stand/walk, posture, breathing reset, sleep routine, and mood/energy check-in.
+- Settings use safe local defaults and a small localStorage-backed service for quiet hours, reminder intensity, workday window, timezone, and preferred reminder categories.
 - Vitest with React Testing Library covers the app shell, navigation, reminders, backlog categories, and settings schema behavior.
 - Styling is minimal custom CSS with a mobile-first shell and bottom navigation.
 - Data is local and mocked. There are no backend services, analytics SDKs, payments, accounts, external API calls, or real notification permissions.
@@ -51,6 +52,8 @@ npm run lint
 Capacitor is configured with `appName: "VitaLoop"`, `appId: "com.vitaloop.app"`, and `webDir: "dist"` so the web app can later be packaged for iOS and Android.
 
 The current foundation intentionally does not generate `ios/` or `android/` folders. Native shells should be added only when mobile validation is explicitly requested.
+
+During future native packaging, Capacitor Preferences can replace browser localStorage for app settings without changing the user-facing settings model.
 
 ## Future Apple Watch Strategy
 
