@@ -164,6 +164,67 @@ describe("background reminder scheduler", () => {
     expect(notificationSchedule?.reminder.id).toBe("stretch");
   });
 
+  it("does not notify for snoozed reminders before snoozedUntil", () => {
+    const { alarms, notifications } = createChromeMocks();
+    const settings = createSettings({
+      proactiveRemindersEnabled: true,
+      quietHoursEnabled: false,
+      workdayStart: "09:00",
+      workdayEnd: "18:00",
+      preferredReminderCategories: ["eye-strain"],
+      snoozedUntilByReminderId: {
+        "eye-strain": new Date(2026, 4, 15, 11, 0),
+      },
+    });
+
+    const result = handleBackgroundReminderAlarm({
+      alarm: { name: PROACTIVE_REMINDER_ALARM_NAME },
+      alarms,
+      notifications,
+      settings,
+      reminderList: reminders,
+      currentDate: new Date(2026, 4, 15, 10, 0),
+    });
+
+    expect(result.notification).toBeNull();
+    expect(notifications.create).not.toHaveBeenCalled();
+    expect(alarms.create).toHaveBeenCalledWith(PROACTIVE_REMINDER_ALARM_NAME, {
+      delayInMinutes: 60,
+      periodInMinutes: 45,
+    });
+  });
+
+  it("can notify for a snoozed reminder after snoozedUntil", () => {
+    const { alarms, notifications } = createChromeMocks();
+    const settings = createSettings({
+      proactiveRemindersEnabled: true,
+      quietHoursEnabled: false,
+      workdayStart: "09:00",
+      workdayEnd: "18:00",
+      preferredReminderCategories: ["eye-strain"],
+      snoozedUntilByReminderId: {
+        "eye-strain": new Date(2026, 4, 15, 11, 0),
+      },
+    });
+
+    const result = handleBackgroundReminderAlarm({
+      alarm: { name: PROACTIVE_REMINDER_ALARM_NAME },
+      alarms,
+      notifications,
+      settings,
+      reminderList: reminders,
+      currentDate: new Date(2026, 4, 15, 11, 0),
+    });
+
+    expect(result.notification?.schedule.reminder.id).toBe("eye-strain");
+    expect(notifications.create).toHaveBeenCalledWith(
+      expect.stringContaining("vitaloop-reminder-eye-strain"),
+      expect.objectContaining({
+        title: "VitaLoop: Eye strain",
+      }),
+    );
+  });
+
   it("creates notification copy for eligible reminders on the named alarm", () => {
     const { alarms, notifications } = createChromeMocks();
 

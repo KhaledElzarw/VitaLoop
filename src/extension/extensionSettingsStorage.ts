@@ -1,11 +1,18 @@
 import { z } from "zod";
-import { appSettingsSchema } from "../domain/schemas";
+import { type ReminderActionState } from "../domain/reminderActions";
+import { appSettingsSchema, reminderIdSchema } from "../domain/schemas";
 import { getDefaultAppSettings } from "../domain/settings";
 
 export const EXTENSION_SETTINGS_STORAGE_KEY = "vitaloop.extension.settings";
 
+const snoozedUntilByReminderIdSchema = z.partialRecord(
+  reminderIdSchema,
+  z.coerce.date(),
+);
+
 export const extensionSettingsSchema = appSettingsSchema.extend({
   proactiveRemindersEnabled: z.boolean().default(false),
+  snoozedUntilByReminderId: snoozedUntilByReminderIdSchema.default({}),
 });
 
 export type ExtensionSettings = z.infer<typeof extensionSettingsSchema>;
@@ -47,6 +54,7 @@ export function getDefaultExtensionSettings(): ExtensionSettings {
   return {
     ...getDefaultAppSettings(),
     proactiveRemindersEnabled: false,
+    snoozedUntilByReminderId: {},
   };
 }
 
@@ -54,7 +62,76 @@ function cloneExtensionSettings(settings: ExtensionSettings): ExtensionSettings 
   return {
     ...settings,
     preferredReminderCategories: [...settings.preferredReminderCategories],
+    snoozedUntilByReminderId: cloneSnoozedReminders(
+      settings.snoozedUntilByReminderId,
+    ),
   };
+}
+
+function cloneSnoozedReminders(
+  snoozedUntilByReminderId: ExtensionSettings["snoozedUntilByReminderId"],
+) {
+  const clonedSnoozes: ExtensionSettings["snoozedUntilByReminderId"] = {};
+
+  for (const [reminderId, snoozedUntil] of Object.entries(
+    snoozedUntilByReminderId,
+  )) {
+    if (snoozedUntil) {
+      const typedReminderId =
+        reminderId as keyof ExtensionSettings["snoozedUntilByReminderId"];
+
+      clonedSnoozes[typedReminderId] = new Date(snoozedUntil);
+    }
+  }
+
+  return clonedSnoozes;
+}
+
+function serializeSnoozedReminders(
+  snoozedUntilByReminderId: ExtensionSettings["snoozedUntilByReminderId"],
+) {
+  const serializedSnoozes: Record<string, string> = {};
+
+  for (const [reminderId, snoozedUntil] of Object.entries(
+    snoozedUntilByReminderId,
+  )) {
+    if (snoozedUntil) {
+      serializedSnoozes[reminderId] = snoozedUntil.toISOString();
+    }
+  }
+
+  return serializedSnoozes;
+}
+
+function serializeExtensionSettings(settings: ExtensionSettings) {
+  return {
+    ...cloneExtensionSettings(settings),
+    snoozedUntilByReminderId: serializeSnoozedReminders(
+      settings.snoozedUntilByReminderId,
+    ),
+  };
+}
+
+export function getExtensionReminderActionState(
+  settings: ExtensionSettings,
+): ReminderActionState {
+  return {
+    doneReminderIds: [],
+    skippedReminderIds: [],
+    snoozedUntilByReminderId: cloneSnoozedReminders(
+      settings.snoozedUntilByReminderId,
+    ),
+  };
+}
+
+export function withExtensionReminderActionState(
+  settings: ExtensionSettings,
+  actionState: ReminderActionState,
+): ExtensionSettings {
+  return cloneExtensionSettings({
+    ...settings,
+    snoozedUntilByReminderId: actionState.snoozedUntilByReminderId,
+  });
 }
 
 function getStoredItems(storage: ChromeStorageLocal) {
@@ -84,7 +161,7 @@ function setStoredSettings(
     try {
       storage.set(
         {
-          [EXTENSION_SETTINGS_STORAGE_KEY]: cloneExtensionSettings(settings),
+          [EXTENSION_SETTINGS_STORAGE_KEY]: serializeExtensionSettings(settings),
         },
         () => {
           const errorMessage = getRuntimeErrorMessage();

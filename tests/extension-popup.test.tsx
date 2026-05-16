@@ -7,17 +7,21 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { reminders } from "../src/data/reminders";
 import { ExtensionPopup } from "../src/extension/ExtensionPopup";
 import {
   getDefaultExtensionSettings,
+  type ExtensionSettings,
   type ExtensionSettingsStorage,
 } from "../src/extension/extensionSettingsStorage";
 
 const previewDate = new Date(2026, 4, 15, 10, 0);
 
-function createStorageMock(): ExtensionSettingsStorage {
+function createStorageMock(
+  settings: ExtensionSettings = getDefaultExtensionSettings(),
+): ExtensionSettingsStorage {
   return {
-    loadSettings: vi.fn(async () => getDefaultExtensionSettings()),
+    loadSettings: vi.fn(async () => settings),
     saveSettings: vi.fn(async () => true),
   };
 }
@@ -107,5 +111,56 @@ describe("ExtensionPopup", () => {
     fireEvent.click(screen.getByRole("button", { name: "Skip once" }));
 
     expect(screen.getByRole("status").textContent).toContain("skipped once");
+  });
+
+  it("does not immediately reselect a snoozed reminder", async () => {
+    render(
+      <ExtensionPopup
+        storage={createStorageMock()}
+        currentDate={previewDate}
+        onOpenOptions={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Eye strain" })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Snooze" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("status").textContent).toContain(
+        "snoozed until 11:00 AM",
+      );
+      expect(screen.getByRole("heading", { name: "Stand/walk" })).toBeTruthy();
+    });
+  });
+
+  it("shows an upcoming state when every current reminder is snoozed", async () => {
+    const eyeStrainReminder = reminders.filter(
+      (reminder) => reminder.id === "eye-strain",
+    );
+
+    render(
+      <ExtensionPopup
+        storage={createStorageMock()}
+        reminderList={eyeStrainReminder}
+        currentDate={previewDate}
+        onOpenOptions={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Eye strain" })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Snooze" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: "No reminders due right now." }),
+      ).toBeTruthy();
+    });
+    expect(screen.getByText("Next reminder: Eye strain at 11:00 AM.")).toBeTruthy();
   });
 });

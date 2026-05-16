@@ -4,6 +4,7 @@ import {
   applyReminderAction,
   createReminderActionState,
   getActionAwareNextReminder,
+  getNextSnoozedReminderAvailability,
   type ReminderActionType,
 } from "../domain/reminderActions";
 import { formatReminderTime } from "../domain/scheduling";
@@ -11,8 +12,10 @@ import { type ReminderDefinition } from "../domain/schemas";
 import {
   extensionSettingsStorage,
   getDefaultExtensionSettings,
+  getExtensionReminderActionState,
   type ExtensionSettings,
   type ExtensionSettingsStorage,
+  withExtensionReminderActionState,
 } from "./extensionSettingsStorage";
 
 type ChromeOptionsApi = {
@@ -73,6 +76,12 @@ export function ExtensionPopup({
     now,
     actionState,
   );
+  const nextSnoozedReminder = getNextSnoozedReminderAvailability(
+    reminderList,
+    settings,
+    now,
+    actionState,
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -80,6 +89,7 @@ export function ExtensionPopup({
     storage.loadSettings().then((loadedSettings) => {
       if (isMounted) {
         setSettings(loadedSettings);
+        setActionState(getExtensionReminderActionState(loadedSettings));
       }
     });
 
@@ -103,6 +113,16 @@ export function ExtensionPopup({
 
     setActionState(result.state);
     setActionStatus(result.message);
+
+    if (actionType === "snooze") {
+      const updatedSettings = withExtensionReminderActionState(
+        settings,
+        result.state,
+      );
+
+      setSettings(updatedSettings);
+      void storage.saveSettings(updatedSettings);
+    }
   }
 
   return (
@@ -163,11 +183,17 @@ export function ExtensionPopup({
         </section>
       ) : (
         <section className="extension-panel" aria-label="Next wellness nudge">
-          <h2>No nudge scheduled</h2>
-          <p>
-            Choose at least one reminder category to keep VitaLoop ready for a
-            gentle prompt.
-          </p>
+          <h2>No reminders due right now.</h2>
+          {nextSnoozedReminder ? (
+            <p>
+              Next reminder: {nextSnoozedReminder.reminder.title} at{" "}
+              {formatReminderTime(nextSnoozedReminder.nextAt)}.
+            </p>
+          ) : (
+            <p>
+              VitaLoop will show another gentle nudge when one is available.
+            </p>
+          )}
         </section>
       )}
 

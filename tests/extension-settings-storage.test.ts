@@ -84,6 +84,30 @@ describe("extension settings storage", () => {
     await expect(loadExtensionSettings()).resolves.toEqual({
       ...legacySettings,
       proactiveRemindersEnabled: false,
+      snoozedUntilByReminderId: {},
+    });
+  });
+
+  it("saves and loads transient snoozed reminder timestamps", async () => {
+    const chromeMock = createChromeStorageMock();
+    const settings = getDefaultExtensionSettings();
+    const snoozedUntil = new Date(2026, 4, 15, 11, 0);
+
+    settings.snoozedUntilByReminderId = {
+      "eye-strain": snoozedUntil,
+    };
+    vi.stubGlobal("chrome", chromeMock);
+
+    await expect(saveExtensionSettings(settings)).resolves.toBe(true);
+    expect(chromeMock.getStoredValue()).toMatchObject({
+      snoozedUntilByReminderId: {
+        "eye-strain": snoozedUntil.toISOString(),
+      },
+    });
+    await expect(loadExtensionSettings()).resolves.toMatchObject({
+      snoozedUntilByReminderId: {
+        "eye-strain": snoozedUntil,
+      },
     });
   });
 });

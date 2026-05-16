@@ -29,6 +29,11 @@ type ActionAwareSchedule = ReminderSchedule & {
   nextAt: Date;
 };
 
+export type SnoozedReminderAvailability = {
+  reminder: ReminderDefinition;
+  nextAt: Date;
+};
+
 export const SNOOZE_MINUTES = 15;
 
 export function createReminderActionState(): ReminderActionState {
@@ -55,26 +60,68 @@ function isScheduleAvailable(
   return schedule.nextAt !== null;
 }
 
-function getAdjustedSchedule(
-  reminder: ReminderDefinition,
+function getIgnoredReminderIds(actionState: ReminderActionState) {
+  return [
+    ...actionState.doneReminderIds,
+    ...actionState.skippedReminderIds,
+  ];
+}
+
+export function isReminderSnoozed(
+  reminderId: ReminderId,
+  actionState: ReminderActionState,
+  currentDate: Date,
+) {
+  const snoozedUntil = actionState.snoozedUntilByReminderId[reminderId];
+
+  return Boolean(snoozedUntil && Number(snoozedUntil) > Number(currentDate));
+}
+
+export function getActionAvailableReminders(
+  reminderList: ReminderDefinition[],
   settings: AppSettings,
   currentDate: Date,
   actionState: ReminderActionState,
 ) {
-  const schedule = getReminderSchedule(reminder, settings, currentDate);
-  const snoozedUntil = actionState.snoozedUntilByReminderId[reminder.id];
+  const ignoredReminderIds = getIgnoredReminderIds(actionState);
 
-  if (!schedule.nextAt || !snoozedUntil) {
-    return schedule;
-  }
+  return getEnabledReminders(reminderList, settings).filter(
+    (reminder) =>
+      !ignoredReminderIds.includes(reminder.id) &&
+      !isReminderSnoozed(reminder.id, actionState, currentDate),
+  );
+}
 
-  return {
-    ...schedule,
-    nextAt:
-      Number(snoozedUntil) > Number(schedule.nextAt)
-        ? snoozedUntil
-        : schedule.nextAt,
-  };
+export function getNextSnoozedReminderAvailability(
+  reminderList: ReminderDefinition[],
+  settings: AppSettings,
+  currentDate: Date,
+  actionState: ReminderActionState,
+): SnoozedReminderAvailability | undefined {
+  const ignoredReminderIds = getIgnoredReminderIds(actionState);
+
+  return getEnabledReminders(reminderList, settings)
+    .filter((reminder) => !ignoredReminderIds.includes(reminder.id))
+    .map((reminder) => ({
+      reminder,
+      nextAt: actionState.snoozedUntilByReminderId[reminder.id],
+    }))
+    .filter(
+      (
+        availability,
+      ): availability is SnoozedReminderAvailability =>
+        availability.nextAt !== undefined &&
+        Number(availability.nextAt) > Number(currentDate),
+    )
+    .sort((first, second) => {
+      const timeDifference = Number(first.nextAt) - Number(second.nextAt);
+
+      if (timeDifference !== 0) {
+        return timeDifference;
+      }
+
+      return first.reminder.displayPriority - second.reminder.displayPriority;
+    })[0];
 }
 
 export function getActionAwareNextReminder(
@@ -83,16 +130,13 @@ export function getActionAwareNextReminder(
   currentDate: Date,
   actionState: ReminderActionState,
 ) {
-  const ignoredReminderIds = [
-    ...actionState.doneReminderIds,
-    ...actionState.skippedReminderIds,
-  ];
-
-  return getEnabledReminders(reminderList, settings)
-    .filter((reminder) => !ignoredReminderIds.includes(reminder.id))
-    .map((reminder) =>
-      getAdjustedSchedule(reminder, settings, currentDate, actionState),
-    )
+  return getActionAvailableReminders(
+    reminderList,
+    settings,
+    currentDate,
+    actionState,
+  )
+    .map((reminder) => getReminderSchedule(reminder, settings, currentDate))
     .filter(isScheduleAvailable)
     .sort((first, second) => {
       const timeDifference = Number(first.nextAt) - Number(second.nextAt);

@@ -1,6 +1,11 @@
 import { reminders as defaultReminders } from "../data/reminders";
 import {
-  getEnabledReminders,
+  getActionAvailableReminders,
+  getNextSnoozedReminderAvailability,
+  type ReminderActionState,
+} from "../domain/reminderActions";
+import {
+  getNextAllowedTime,
   getNextScheduledReminder,
   getReminderFrequencyMinutes,
   isReminderAllowed,
@@ -11,7 +16,10 @@ import {
   createReminderNotificationCopy,
   VITALOOP_NOTIFICATION_ICON_URL,
 } from "./notificationCopy";
-import { type ExtensionSettings } from "./extensionSettingsStorage";
+import {
+  getExtensionReminderActionState,
+  type ExtensionSettings,
+} from "./extensionSettingsStorage";
 
 export const PROACTIVE_REMINDER_ALARM_NAME = "vitaloop.proactiveReminder";
 export const PROACTIVE_REMINDER_NOTIFICATION_PREFIX = "vitaloop-reminder";
@@ -65,6 +73,7 @@ type SchedulerOptions = {
   settings: ExtensionSettings;
   reminderList?: ReminderDefinition[];
   currentDate: Date;
+  actionState?: ReminderActionState;
 };
 
 type AlarmSyncOptions = SchedulerOptions & {
@@ -88,7 +97,7 @@ function getSortedEligibleReminders(
   reminderList: ReminderDefinition[],
   settings: ExtensionSettings,
 ) {
-  return getEnabledReminders(reminderList, settings).sort((first, second) => {
+  return reminderList.sort((first, second) => {
     const frequencyDifference =
       getReminderFrequencyMinutes(first.id, settings.reminderIntensity) -
       getReminderFrequencyMinutes(second.id, settings.reminderIntensity);
@@ -101,10 +110,18 @@ function getSortedEligibleReminders(
   });
 }
 
+function getSchedulerActionState(
+  settings: ExtensionSettings,
+  actionState?: ReminderActionState,
+) {
+  return actionState ?? getExtensionReminderActionState(settings);
+}
+
 export function getBackgroundReminderAlarmPlan({
   settings,
   reminderList = defaultReminders,
   currentDate,
+  actionState,
 }: SchedulerOptions): BackgroundReminderAlarmPlan {
   if (!settings.proactiveRemindersEnabled) {
     return {
@@ -114,9 +131,52 @@ export function getBackgroundReminderAlarmPlan({
     };
   }
 
-  const schedule = getNextScheduledReminder(reminderList, settings, currentDate);
+  const resolvedActionState = getSchedulerActionState(settings, actionState);
+  const availableReminders = getActionAvailableReminders(
+    reminderList,
+    settings,
+    currentDate,
+    resolvedActionState,
+  );
+  const schedule = getNextScheduledReminder(
+    availableReminders,
+    settings,
+    currentDate,
+  );
 
   if (!schedule) {
+    const snoozedReminder = getNextSnoozedReminderAvailability(
+      reminderList,
+      settings,
+      currentDate,
+      resolvedActionState,
+    );
+
+    if (snoozedReminder) {
+      const nextAt =
+        getNextAllowedTime(settings, snoozedReminder.nextAt) ??
+        snoozedReminder.nextAt;
+      const frequencyMinutes = getReminderFrequencyMinutes(
+        snoozedReminder.reminder.id,
+        settings.reminderIntensity,
+      );
+
+      return {
+        action: "create",
+        alarmName: PROACTIVE_REMINDER_ALARM_NAME,
+        alarmInfo: {
+          delayInMinutes: getDelayInMinutes(nextAt, currentDate),
+          periodInMinutes: frequencyMinutes,
+        },
+        schedule: {
+          reminder: snoozedReminder.reminder,
+          frequencyMinutes,
+          isAllowedNow: false,
+          nextAt,
+        },
+      };
+    }
+
     return {
       action: "clear",
       alarmName: PROACTIVE_REMINDER_ALARM_NAME,
@@ -140,11 +200,13 @@ export function syncBackgroundReminderAlarm({
   settings,
   reminderList = defaultReminders,
   currentDate,
+  actionState,
 }: AlarmSyncOptions) {
   const plan = getBackgroundReminderAlarmPlan({
     settings,
     reminderList,
     currentDate,
+    actionState,
   });
 
   if (plan.action === "clear") {
@@ -160,6 +222,7 @@ export function getNotificationReminderSchedule({
   settings,
   reminderList = defaultReminders,
   currentDate,
+  actionState,
 }: SchedulerOptions) {
   if (
     !settings.proactiveRemindersEnabled ||
@@ -168,7 +231,15 @@ export function getNotificationReminderSchedule({
     return null;
   }
 
-  const reminder = getSortedEligibleReminders(reminderList, settings)[0];
+  const reminder = getSortedEligibleReminders(
+    getActionAvailableReminders(
+      reminderList,
+      settings,
+      currentDate,
+      getSchedulerActionState(settings, actionState),
+    ),
+    settings,
+  )[0];
 
   if (!reminder) {
     return null;
@@ -231,6 +302,7 @@ export function handleBackgroundReminderAlarm({
   settings,
   reminderList = defaultReminders,
   currentDate,
+  actionState,
 }: AlarmHandlerOptions) {
   if (alarm.name !== PROACTIVE_REMINDER_ALARM_NAME) {
     return {
@@ -244,11 +316,13 @@ export function handleBackgroundReminderAlarm({
     settings,
     reminderList,
     currentDate,
+    actionState,
   });
   const schedule = getNotificationReminderSchedule({
     settings,
     reminderList,
     currentDate,
+    actionState,
   });
 
   if (!schedule) {
