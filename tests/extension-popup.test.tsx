@@ -48,6 +48,7 @@ describe("ExtensionPopup", () => {
         name: "VitaLoop",
       }),
     ).toBeTruthy();
+    expect(titlebar?.querySelector(".extension-window-dot")).toBeNull();
     expect(screen.queryByRole("img")).toBeNull();
 
     const brandMark = container.querySelector(".extension-brand-mark");
@@ -84,6 +85,39 @@ describe("ExtensionPopup", () => {
       ),
     ).toBeTruthy();
   });
+
+  it.each(reminders)(
+    "renders a decorative activity icon for $title",
+    async (reminder) => {
+      render(
+        <ExtensionPopup
+          storage={createStorageMock({
+            ...getDefaultExtensionSettings(),
+            preferredReminderCategories: [reminder.id],
+          })}
+          reminderList={[reminder]}
+          currentDate={previewDate}
+          onOpenOptions={vi.fn()}
+        />,
+      );
+
+      const nextNudge = screen.getByLabelText("Next wellness nudge");
+
+      await waitFor(() => {
+        expect(
+          within(nextNudge).getByRole("heading", { name: reminder.title }),
+        ).toBeTruthy();
+      });
+
+      const activityIcon = nextNudge.querySelector(
+        `[data-activity-icon='${reminder.id}']`,
+      );
+
+      expect(activityIcon).toBeTruthy();
+      expect(activityIcon?.getAttribute("aria-hidden")).toBe("true");
+      expect(activityIcon?.getAttribute("focusable")).toBe("false");
+    },
+  );
 
   it("renders Done, Snooze, and Skip once actions", () => {
     render(
