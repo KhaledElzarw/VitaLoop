@@ -39,7 +39,15 @@ describe("ExtensionPopup", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { level: 1, name: "VitaLoop" })).toBeTruthy();
+    const titlebar = container.querySelector(".extension-titlebar");
+
+    expect(titlebar).toBeTruthy();
+    expect(
+      within(titlebar as HTMLElement).getByRole("heading", {
+        level: 1,
+        name: "VitaLoop",
+      }),
+    ).toBeTruthy();
     expect(screen.queryByRole("img")).toBeNull();
 
     const brandMark = container.querySelector(".extension-brand-mark");
@@ -61,7 +69,7 @@ describe("ExtensionPopup", () => {
         within(nextNudge).getByRole("heading", { name: "Eye strain" }),
       ).toBeTruthy();
     });
-    expect(within(nextNudge).getByText("Screen breaks")).toBeTruthy();
+    expect(within(nextNudge).queryByText("Screen breaks")).toBeNull();
     expect(
       within(nextNudge).getByText(
         "Suggested around 10:45 AM on a 45 minute rhythm.",

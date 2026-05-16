@@ -89,6 +89,10 @@ input:focus-visible {
   padding: 8px 10px;
 }
 
+.extension-popup .extension-titlebar {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .extension-options-titlebar {
   margin-bottom: 18px;
 }
@@ -151,6 +155,22 @@ input:focus-visible {
   line-height: 1.2;
 }
 
+.extension-titlebar-brand {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.extension-titlebar-brand h1 {
+  margin: 0;
+  color: var(--extension-accent-strong);
+  font-size: 0.98rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
 .extension-titlebar-action,
 .extension-titlebar-spacer {
   justify-self: end;
@@ -207,24 +227,16 @@ input:focus-visible {
   gap: 10px;
 }
 
-.extension-card-badges {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-  gap: 8px;
-}
-
 .extension-brand-mark {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   flex: 0 0 auto;
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 8px 14px rgba(54, 44, 127, 0.14));
 }
 
-.extension-status-pill,
-.extension-category-pill {
+.extension-status-pill {
   display: inline-flex;
   align-items: center;
   min-height: 24px;
@@ -246,11 +258,6 @@ input:focus-visible {
   border-color: rgba(128, 96, 26, 0.18);
   background: var(--extension-warning-soft);
   color: var(--extension-warning);
-}
-
-.extension-category-pill {
-  background: rgba(255, 255, 255, 0.66);
-  color: var(--extension-muted);
 }
 
 .extension-reminder-card {

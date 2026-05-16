@@ -139,13 +139,8 @@ export function ExtensionPopup({
   return (
     <main className="extension-shell extension-popup" aria-labelledby="popup-title">
       <header className="extension-titlebar">
-        <div className="extension-window-controls" aria-hidden="true">
-          <span className="extension-window-dot extension-window-dot-close" />
-          <span className="extension-window-dot extension-window-dot-minimize" />
-          <span className="extension-window-dot extension-window-dot-zoom" />
-        </div>
-        <div className="extension-titlebar-title">
-          <p>VitaLoop</p>
+        <div className="extension-titlebar-brand">
+          <ExtensionBrandMark />
           <h1 id="popup-title">VitaLoop</h1>
         </div>
         <button
@@ -187,12 +182,6 @@ export function ExtensionPopup({
         >
           <div className="extension-panel-heading">
             <p className="extension-eyebrow">Next reminder</p>
-            <div className="extension-card-badges">
-              <ExtensionBrandMark />
-              <span className="extension-category-pill">
-                {nextSchedule.reminder.category}
-              </span>
-            </div>
           </div>
           <p className="extension-reminder-time">
             {formatReminderTime(nextSchedule.nextAt)}
