@@ -69,6 +69,14 @@ describe("ExtensionPopup", () => {
         within(nextNudge).getByRole("heading", { name: "Eye strain" }),
       ).toBeTruthy();
     });
+
+    const activityIcon = nextNudge.querySelector(
+      "[data-activity-icon='eye-strain']",
+    );
+
+    expect(activityIcon).toBeTruthy();
+    expect(activityIcon?.getAttribute("aria-hidden")).toBe("true");
+    expect(activityIcon?.getAttribute("focusable")).toBe("false");
     expect(within(nextNudge).queryByText("Screen breaks")).toBeNull();
     expect(
       within(nextNudge).getByText(

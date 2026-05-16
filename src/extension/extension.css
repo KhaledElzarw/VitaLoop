@@ -282,6 +282,206 @@ input:focus-visible {
   padding-top: 10px;
 }
 
+.extension-reminder-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.extension-reminder-title-copy {
+  min-width: 0;
+}
+
+.extension-activity-icon {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.52);
+  overflow: visible;
+  filter: drop-shadow(0 10px 18px rgba(54, 44, 127, 0.12));
+}
+
+.extension-activity-icon * {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.activity-water-fill {
+  animation: activity-water-fill 4.8s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+.activity-water-wave {
+  animation: activity-wave 3.8s ease-in-out infinite;
+}
+
+.activity-relief-ring,
+.activity-breath-ring,
+.activity-mood-aura,
+.activity-fallback-pulse {
+  animation: activity-soft-pulse 4.6s ease-in-out infinite;
+}
+
+.activity-eye-lid {
+  animation: activity-blink 5.2s ease-in-out infinite;
+}
+
+.activity-stretch-arms {
+  animation: activity-stretch 4.8s ease-in-out infinite;
+}
+
+.activity-walk-chair {
+  animation: activity-chair-slide 4.6s ease-in-out infinite;
+}
+
+.activity-walk-person {
+  animation: activity-step 4.6s ease-in-out infinite;
+}
+
+.activity-posture-person {
+  animation: activity-straighten 5s ease-in-out infinite;
+}
+
+.activity-sleep-glow {
+  animation: activity-light-fade 5.4s ease-in-out infinite;
+}
+
+.activity-sleep-moon {
+  animation: activity-night-drift 5.4s ease-in-out infinite;
+}
+
+.activity-mood-spark {
+  animation: activity-spark 4.4s ease-in-out infinite;
+}
+
+@keyframes activity-water-fill {
+  0%,
+  100% {
+    transform: translateY(2px) scaleY(0.86);
+  }
+
+  50% {
+    transform: translateY(-1px) scaleY(1.04);
+  }
+}
+
+@keyframes activity-wave {
+  0%,
+  100% {
+    transform: translateX(-1px);
+  }
+
+  50% {
+    transform: translateX(1px);
+  }
+}
+
+@keyframes activity-soft-pulse {
+  0%,
+  100% {
+    opacity: 0.68;
+    transform: scale(0.96);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes activity-blink {
+  0%,
+  74%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+
+  80%,
+  86% {
+    transform: translateY(4px) scaleY(0.22);
+  }
+}
+
+@keyframes activity-stretch {
+  0%,
+  100% {
+    transform: rotate(-4deg) translateY(1px);
+  }
+
+  50% {
+    transform: rotate(4deg) translateY(-1px);
+  }
+}
+
+@keyframes activity-chair-slide {
+  0%,
+  100% {
+    transform: translateX(1px);
+  }
+
+  50% {
+    transform: translateX(-2px);
+  }
+}
+
+@keyframes activity-step {
+  0%,
+  100% {
+    transform: translateX(-1px);
+  }
+
+  50% {
+    transform: translateX(2px) translateY(-1px);
+  }
+}
+
+@keyframes activity-straighten {
+  0%,
+  100% {
+    transform: rotate(-5deg) translateY(1px);
+  }
+
+  50% {
+    transform: rotate(2deg) translateY(-1px);
+  }
+}
+
+@keyframes activity-light-fade {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  55% {
+    opacity: 0.12;
+  }
+}
+
+@keyframes activity-night-drift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(1.5px);
+  }
+}
+
+@keyframes activity-spark {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(0.92);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
 .extension-reminder-meta h2,
 .extension-empty-card h2 {
   margin: 0;
@@ -520,6 +720,11 @@ input:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .extension-activity-icon * {
+    animation: none !important;
+    transform: none !important;
+  }
+
   .extension-actions button,
   .extension-save-row button,
   .extension-titlebar-action {
