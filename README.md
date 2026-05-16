@@ -63,6 +63,9 @@ are opt-in, local browser notifications powered by a Manifest V3 background
 service worker and `chrome.alarms`. All current extension features are free and
 unlocked.
 
+The popup and options page use lightweight CSS-only macOS-inspired styling. No
+external assets, Apple assets, external fonts, or UI libraries are used.
+
 The extension does not include content scripts, host permissions, backend
 services, analytics, external APIs, cloud sync, accounts, payments, or page
 reading.

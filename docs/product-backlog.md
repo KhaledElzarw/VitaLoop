@@ -10,6 +10,7 @@
 - [x] Mobile visual polish: calmer palette, improved card hierarchy, selected reminder state, status treatments, and bottom navigation polish.
 - [x] Chrome extension MVP shell: Manifest V3 popup/options pages, local extension settings storage, and no content scripts, background worker, notifications, alarms, host permissions, backend, analytics, or external APIs.
 - [x] Unlocked Chrome background reminders: opt-in Manifest V3 service worker, `chrome.alarms` scheduling, local `chrome.notifications`, popup status, options controls, and no content scripts, host permissions, backend, analytics, accounts, payments, or cloud sync.
+- [x] macOS-inspired extension UI polish: compact frosted popup, grouped settings pane, clear proactive reminder status, and CSS-only visual treatment without external or Apple assets.
 
 ## P0 Foundation
 

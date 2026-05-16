@@ -99,10 +99,17 @@ export function ExtensionOptions({
       className="extension-shell extension-options"
       aria-labelledby="options-title"
     >
-      <header className="extension-header">
-        <p className="extension-eyebrow">VitaLoop</p>
-        <h1 id="options-title">Options</h1>
-        <p>Keep your browser-day nudges calm, optional, and local.</p>
+      <header className="extension-titlebar extension-options-titlebar">
+        <div className="extension-window-controls" aria-hidden="true">
+          <span className="extension-window-dot extension-window-dot-close" />
+          <span className="extension-window-dot extension-window-dot-minimize" />
+          <span className="extension-window-dot extension-window-dot-zoom" />
+        </div>
+        <div className="extension-titlebar-title">
+          <p>VitaLoop</p>
+          <h1 id="options-title">VitaLoop Settings</h1>
+        </div>
+        <span className="extension-titlebar-spacer" aria-hidden="true" />
       </header>
 
       <form
@@ -114,19 +121,29 @@ export function ExtensionOptions({
       >
         <fieldset className="extension-group">
           <legend>Proactive reminders</legend>
-          <label className="extension-check-row">
-            <input
-              type="checkbox"
-              checked={settings.proactiveRemindersEnabled}
-              onChange={(event) =>
-                updateSetting(
-                  "proactiveRemindersEnabled",
-                  event.currentTarget.checked,
-                )
+          <div className="extension-setting-row extension-setting-row-split">
+            <label className="extension-check-row">
+              <input
+                type="checkbox"
+                checked={settings.proactiveRemindersEnabled}
+                onChange={(event) =>
+                  updateSetting(
+                    "proactiveRemindersEnabled",
+                    event.currentTarget.checked,
+                  )
+                }
+              />
+              <span>Enable proactive reminders</span>
+            </label>
+            <span
+              className="extension-status-pill"
+              data-state={
+                settings.proactiveRemindersEnabled ? "enabled" : "disabled"
               }
-            />
-            <span>Enable proactive reminders</span>
-          </label>
+            >
+              {settings.proactiveRemindersEnabled ? "Enabled" : "Disabled"}
+            </span>
+          </div>
           <p className="extension-help-text">
             VitaLoop uses Chrome alarms and local browser notifications for
             proactive reminders. Notification permission is needed for this
@@ -139,8 +156,8 @@ export function ExtensionOptions({
         </fieldset>
 
         <fieldset className="extension-group">
-          <legend>Quiet hours</legend>
-          <label className="extension-check-row">
+          <legend>Quiet Hours</legend>
+          <label className="extension-setting-row extension-check-row">
             <input
               type="checkbox"
               checked={settings.quietHoursEnabled}
@@ -151,7 +168,7 @@ export function ExtensionOptions({
             <span>Quiet hours enabled</span>
           </label>
           <div className="extension-field-grid">
-            <label className="extension-field">
+            <label className="extension-setting-row extension-field">
               <span>Quiet hours start</span>
               <input
                 type="time"
@@ -161,7 +178,7 @@ export function ExtensionOptions({
                 }
               />
             </label>
-            <label className="extension-field">
+            <label className="extension-setting-row extension-field">
               <span>Quiet hours end</span>
               <input
                 type="time"
@@ -175,7 +192,33 @@ export function ExtensionOptions({
         </fieldset>
 
         <fieldset className="extension-group">
-          <legend>Reminder intensity</legend>
+          <legend>Workday</legend>
+          <div className="extension-field-grid">
+            <label className="extension-setting-row extension-field">
+              <span>Workday start</span>
+              <input
+                type="time"
+                value={settings.workdayStart}
+                onChange={(event) =>
+                  updateSetting("workdayStart", event.currentTarget.value)
+                }
+              />
+            </label>
+            <label className="extension-setting-row extension-field">
+              <span>Workday end</span>
+              <input
+                type="time"
+                value={settings.workdayEnd}
+                onChange={(event) =>
+                  updateSetting("workdayEnd", event.currentTarget.value)
+                }
+              />
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset className="extension-group">
+          <legend>Intensity</legend>
           <div className="extension-choice-grid">
             {reminderIntensityOptions.map((option) => (
               <label key={option.value} className="extension-radio-card">
@@ -195,33 +238,7 @@ export function ExtensionOptions({
         </fieldset>
 
         <fieldset className="extension-group">
-          <legend>Workday window</legend>
-          <div className="extension-field-grid">
-            <label className="extension-field">
-              <span>Workday start</span>
-              <input
-                type="time"
-                value={settings.workdayStart}
-                onChange={(event) =>
-                  updateSetting("workdayStart", event.currentTarget.value)
-                }
-              />
-            </label>
-            <label className="extension-field">
-              <span>Workday end</span>
-              <input
-                type="time"
-                value={settings.workdayEnd}
-                onChange={(event) =>
-                  updateSetting("workdayEnd", event.currentTarget.value)
-                }
-              />
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset className="extension-group">
-          <legend>Preferred reminder categories</legend>
+          <legend>Categories</legend>
           <div className="extension-category-grid">
             {reminderList.map((reminder) => {
               const isPreferred =
@@ -231,7 +248,10 @@ export function ExtensionOptions({
                 settings.preferredReminderCategories.length === 1;
 
               return (
-                <label key={reminder.id} className="extension-check-row">
+                <label
+                  key={reminder.id}
+                  className="extension-setting-row extension-check-row"
+                >
                   <input
                     type="checkbox"
                     checked={isPreferred}
@@ -272,6 +292,10 @@ export function ExtensionOptions({
             Settings could not be saved.
           </p>
         )}
+
+        <p className="extension-options-footnote">
+          Settings stay local to this browser.
+        </p>
       </form>
     </main>
   );

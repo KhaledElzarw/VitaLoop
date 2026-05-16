@@ -127,19 +127,40 @@ export function ExtensionPopup({
 
   return (
     <main className="extension-shell extension-popup" aria-labelledby="popup-title">
-      <header className="extension-header">
-        <p className="extension-eyebrow">VitaLoop</p>
-        <h1 id="popup-title">VitaLoop</h1>
-        <p>Gentle wellness nudges for long browser days.</p>
+      <header className="extension-titlebar">
+        <div className="extension-window-controls" aria-hidden="true">
+          <span className="extension-window-dot extension-window-dot-close" />
+          <span className="extension-window-dot extension-window-dot-minimize" />
+          <span className="extension-window-dot extension-window-dot-zoom" />
+        </div>
+        <div className="extension-titlebar-title">
+          <p>VitaLoop</p>
+          <h1 id="popup-title">VitaLoop</h1>
+        </div>
+        <button
+          className="extension-titlebar-action"
+          type="button"
+          onClick={onOpenOptions}
+          aria-label="Open options"
+        >
+          Options
+        </button>
       </header>
 
       <section
-        className="extension-panel extension-status-panel"
+        className="extension-panel extension-status-panel extension-proactive-panel"
         aria-label="Proactive reminder status"
       >
         <div className="extension-panel-heading">
           <p className="extension-eyebrow">Proactive reminders</p>
-          <span>{settings.proactiveRemindersEnabled ? "Enabled" : "Disabled"}</span>
+          <span
+            className="extension-status-pill"
+            data-state={
+              settings.proactiveRemindersEnabled ? "enabled" : "disabled"
+            }
+          >
+            {settings.proactiveRemindersEnabled ? "Enabled" : "Disabled"}
+          </span>
         </div>
         <p>
           {settings.proactiveRemindersEnabled
@@ -149,13 +170,23 @@ export function ExtensionPopup({
       </section>
 
       {nextSchedule ? (
-        <section className="extension-panel" aria-label="Next wellness nudge">
+        <section
+          className="extension-panel extension-reminder-card"
+          aria-label="Next wellness nudge"
+        >
           <div className="extension-panel-heading">
-            <p className="extension-eyebrow">Next wellness nudge</p>
-            <span>{nextSchedule.reminder.category}</span>
+            <p className="extension-eyebrow">Next reminder</p>
+            <span className="extension-category-pill">
+              {nextSchedule.reminder.category}
+            </span>
           </div>
-          <h2>{nextSchedule.reminder.title}</h2>
-          <p>{nextSchedule.reminder.description}</p>
+          <p className="extension-reminder-time">
+            {formatReminderTime(nextSchedule.nextAt)}
+          </p>
+          <div className="extension-reminder-meta">
+            <h2>{nextSchedule.reminder.title}</h2>
+            <p>{nextSchedule.reminder.description}</p>
+          </div>
           <p className="extension-status">
             {getTimingStatus(
               nextSchedule.nextAt,
@@ -182,7 +213,11 @@ export function ExtensionPopup({
           </div>
         </section>
       ) : (
-        <section className="extension-panel" aria-label="Next wellness nudge">
+        <section
+          className="extension-panel extension-reminder-card extension-empty-card"
+          aria-label="Next wellness nudge"
+        >
+          <p className="extension-eyebrow">Next reminder</p>
           <h2>No reminders due right now.</h2>
           {nextSnoozedReminder ? (
             <p>
@@ -202,14 +237,6 @@ export function ExtensionPopup({
           {actionStatus}
         </p>
       )}
-
-      <button
-        className="extension-secondary-action"
-        type="button"
-        onClick={onOpenOptions}
-      >
-        Open options
-      </button>
     </main>
   );
 }
