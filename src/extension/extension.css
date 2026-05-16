@@ -316,11 +316,24 @@ input:focus-visible {
   animation: activity-wave 3.8s ease-in-out infinite;
 }
 
+.activity-water-drop {
+  animation: activity-water-drop 4.8s ease-in-out infinite;
+}
+
+.activity-water-bubbles {
+  animation: activity-bubbles 4.8s ease-in-out infinite;
+}
+
 .activity-relief-ring,
 .activity-breath-ring,
 .activity-mood-aura,
 .activity-fallback-pulse {
   animation: activity-soft-pulse 4.6s ease-in-out infinite;
+}
+
+.activity-eye-spark,
+.activity-posture-spine {
+  animation: activity-soft-pulse 4.4s ease-in-out infinite;
 }
 
 .activity-eye-lid {
@@ -343,6 +356,10 @@ input:focus-visible {
   animation: activity-straighten 5s ease-in-out infinite;
 }
 
+.activity-breath-petals {
+  animation: activity-breath-petals 4.8s ease-in-out infinite;
+}
+
 .activity-sleep-glow {
   animation: activity-light-fade 5.4s ease-in-out infinite;
 }
@@ -355,6 +372,10 @@ input:focus-visible {
   animation: activity-spark 4.4s ease-in-out infinite;
 }
 
+.activity-mood-hands {
+  animation: activity-massage 4.8s ease-in-out infinite;
+}
+
 @keyframes activity-water-fill {
   0%,
   100% {
@@ -363,6 +384,33 @@ input:focus-visible {
 
   50% {
     transform: translateY(-1px) scaleY(1.04);
+  }
+}
+
+@keyframes activity-water-drop {
+  0%,
+  42%,
+  100% {
+    opacity: 0.2;
+    transform: translateY(-3px) scale(0.86);
+  }
+
+  58% {
+    opacity: 0.95;
+    transform: translateY(2px) scale(1);
+  }
+}
+
+@keyframes activity-bubbles {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: translateY(1px);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
   }
 }
 
@@ -439,11 +487,24 @@ input:focus-visible {
 @keyframes activity-straighten {
   0%,
   100% {
-    transform: rotate(-5deg) translateY(1px);
+    transform: rotate(-6deg) translateY(1px);
   }
 
   50% {
     transform: rotate(2deg) translateY(-1px);
+  }
+}
+
+@keyframes activity-breath-petals {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.92);
+  }
+
+  50% {
+    opacity: 0.82;
+    transform: scale(1.06);
   }
 }
 
@@ -466,6 +527,17 @@ input:focus-visible {
 
   50% {
     transform: translateY(1.5px);
+  }
+}
+
+@keyframes activity-massage {
+  0%,
+  100% {
+    transform: translateY(0) scale(0.98);
+  }
+
+  50% {
+    transform: translateY(-1px) scale(1.04);
   }
 }
 

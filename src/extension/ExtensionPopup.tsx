@@ -117,27 +117,37 @@ function renderActivityIconShape(variant: ActivityIconVariant) {
       return (
         <>
           <path
-            d="M15 10h18l-2 28H17L15 10Z"
-            fill="rgba(255, 255, 255, 0.68)"
-            stroke="rgba(77, 39, 199, 0.52)"
+            d="M14 9.5h20l-2.4 29H16.4L14 9.5Z"
+            fill="rgba(255, 255, 255, 0.7)"
+            stroke="rgba(77, 39, 199, 0.48)"
             strokeWidth="2"
             strokeLinejoin="round"
           />
           <path
             className="activity-water-fill"
-            d="M18.3 29.5c3.9-2.7 7.4 2.7 11.4 0l-.7 6.2H19l-.7-6.2Z"
+            d="M17.4 28.7c4.3-2.8 8.8 2.8 13.2 0l-.7 7H18.1l-.7-7Z"
             fill="#33c5d6"
           />
           <path
             className="activity-water-wave"
-            d="M18.3 27.5c3.9-2.8 7.4 2.8 11.4 0"
+            d="M17.5 26.5c4.2-3 8.8 3 13 0"
             fill="none"
             stroke="#0f9fab"
             strokeLinecap="round"
             strokeWidth="2"
           />
+          <g className="activity-water-bubbles" fill="rgba(255, 255, 255, 0.78)">
+            <circle cx="22" cy="31" r="1.3" />
+            <circle cx="27" cy="34" r="1" />
+            <circle cx="24.5" cy="28.7" r="0.9" />
+          </g>
           <path
-            d="M19 15h10"
+            className="activity-water-drop"
+            d="M24 14c1.8 2 2.7 3.5 2.7 4.6a2.7 2.7 0 1 1-5.4 0c0-1.1.9-2.6 2.7-4.6Z"
+            fill="rgba(51, 197, 214, 0.74)"
+          />
+          <path
+            d="M19 14h10"
             fill="none"
             stroke="rgba(255, 255, 255, 0.9)"
             strokeLinecap="round"
@@ -158,48 +168,71 @@ function renderActivityIconShape(variant: ActivityIconVariant) {
             strokeWidth="3"
           />
           <path
-            d="M10 24c3.8-6.2 9-9.3 14-9.3S34.2 17.8 38 24c-3.8 6.2-9 9.3-14 9.3S13.8 30.2 10 24Z"
-            fill="rgba(255, 255, 255, 0.74)"
+            d="M10.5 23.8c4.4-5.6 9-8.4 13.5-8.4s9.1 2.8 13.5 8.4"
+            fill="none"
             stroke="rgba(77, 39, 199, 0.54)"
-            strokeWidth="2"
+            strokeLinecap="round"
+            strokeWidth="3"
           />
-          <circle cx="24" cy="24" r="4.4" fill="#33c5d6" />
           <path
             className="activity-eye-lid"
-            d="M13 21c4.2 3.5 17.8 3.5 22 0"
+            d="M14 27.5c4.8 4.7 15.2 4.7 20 0"
             fill="none"
             stroke="#4d27c7"
             strokeLinecap="round"
-            strokeWidth="2.5"
+            strokeWidth="3"
+          />
+          <path
+            d="M16 29.5l-2.2 2.2M21 31.5l-.7 3M27 31.5l.7 3M32 29.5l2.2 2.2"
+            fill="none"
+            stroke="rgba(29, 24, 48, 0.58)"
+            strokeLinecap="round"
+            strokeWidth="1.7"
+          />
+          <path
+            className="activity-eye-spark"
+            d="M13 15l1 2.4 2.4 1-2.4 1-1 2.4-1-2.4-2.4-1 2.4-1L13 15ZM35 14l.8 1.8 1.8.8-1.8.8-.8 1.8-.8-1.8-1.8-.8 1.8-.8.8-1.8Z"
+            fill="#33c5d6"
           />
         </>
       );
     case "stretch":
       return (
         <>
-          <circle cx="24" cy="13" r="5" fill="#f7c78b" />
           <path
-            d="M24 18v12"
+            d="M12 39h24"
             fill="none"
-            stroke="#6d3df5"
+            stroke="rgba(51, 197, 214, 0.42)"
             strokeLinecap="round"
-            strokeWidth="4"
+            strokeWidth="3"
+          />
+          <circle cx="24" cy="12" r="4.8" fill="#f7c78b" />
+          <path
+            d="M20 18h8l1.6 12h-11.2L20 18Z"
+            fill="rgba(109, 61, 245, 0.78)"
+          />
+          <path
+            d="M24 18v13"
+            fill="none"
+            stroke="rgba(255, 255, 255, 0.36)"
+            strokeLinecap="round"
+            strokeWidth="2"
           />
           <g className="activity-stretch-arms">
             <path
-              d="M14 24c3.4-4.6 6.7-6.9 10-6.9s6.6 2.3 10 6.9"
+              d="M20 21c-4 1.2-7.1.4-9.4-2.2M28 21c3.1-3.5 5.6-6.9 7.4-10.3"
               fill="none"
               stroke="#33c5d6"
               strokeLinecap="round"
-              strokeWidth="3.3"
+              strokeWidth="3.2"
             />
           </g>
           <path
-            d="M24 30l-7 8M24 30l7 8"
+            d="M21 30l-5.5 8M27 30l5.5 8"
             fill="none"
-            stroke="#4d27c7"
+            stroke="#1d1830"
             strokeLinecap="round"
-            strokeWidth="3.5"
+            strokeWidth="3.2"
           />
         </>
       );
@@ -208,21 +241,29 @@ function renderActivityIconShape(variant: ActivityIconVariant) {
         <>
           <path
             className="activity-walk-chair"
-            d="M12 18h11v10h-8v9M22 28l3 9"
+            d="M8 19h12v10h-8v9M19 29l3 9M10 38h13"
             fill="none"
             stroke="rgba(95, 90, 114, 0.72)"
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth="3"
           />
+          <path
+            d="M23 24h7M27.5 20.5L31 24l-3.5 3.5"
+            fill="none"
+            stroke="#33c5d6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2.4"
+          />
           <g className="activity-walk-person">
-            <circle cx="31" cy="13" r="4.6" fill="#f7c78b" />
+            <circle cx="35" cy="13" r="4.4" fill="#f7c78b" />
             <path
-              d="M31 18v11M31 21l-6 5M31 21l6 4M31 29l-6 8M31 29l7 7"
+              d="M34 18l-1 11M33 22l-5 4M33 22l5 3M33 29l-6 8M33 29l7 6"
               fill="none"
               stroke="#6d3df5"
               strokeLinecap="round"
-              strokeWidth="3.4"
+              strokeWidth="3.3"
             />
           </g>
         </>
@@ -247,16 +288,32 @@ function renderActivityIconShape(variant: ActivityIconVariant) {
             strokeLinecap="round"
             strokeWidth="2"
           />
+          <path
+            d="M11 10v27"
+            fill="none"
+            stroke="rgba(51, 197, 214, 0.5)"
+            strokeDasharray="2.4 3.5"
+            strokeLinecap="round"
+            strokeWidth="2"
+          />
           <g className="activity-posture-person">
             <circle cx="18" cy="15" r="4.4" fill="#f7c78b" />
             <path
-              d="M19 20c2.6 3 3.8 6.5 3.5 11M22.5 31l-5 6M22.5 31l7 5M20 24l8 1.5"
+              d="M18.5 20c2.4 3.2 3.3 7 2.7 11.2M21.2 31.2l-5.2 6M21.2 31.2l8 5M20 24l7.8 1.8"
               fill="none"
               stroke="#6d3df5"
               strokeLinecap="round"
               strokeWidth="3.2"
             />
           </g>
+          <path
+            className="activity-posture-spine"
+            d="M16.2 20.5c2.7 3.8 3.7 8.8 2.8 15"
+            fill="none"
+            stroke="#33c5d6"
+            strokeLinecap="round"
+            strokeWidth="2"
+          />
           <path
             d="M10 38h29"
             stroke="rgba(95, 90, 114, 0.36)"
@@ -277,9 +334,16 @@ function renderActivityIconShape(variant: ActivityIconVariant) {
             stroke="rgba(51, 197, 214, 0.46)"
             strokeWidth="3"
           />
-          <circle cx="24" cy="15" r="4.4" fill="#f7c78b" />
+          <g className="activity-breath-petals" fill="rgba(51, 197, 214, 0.2)">
+            <circle cx="24" cy="11" r="6.5" />
+            <circle cx="35" cy="20" r="6.5" />
+            <circle cx="31" cy="33" r="6.5" />
+            <circle cx="17" cy="33" r="6.5" />
+            <circle cx="13" cy="20" r="6.5" />
+          </g>
+          <circle cx="24" cy="17" r="4.3" fill="#f7c78b" />
           <path
-            d="M24 20v9M17 27c3.1 2.8 10.9 2.8 14 0M19 35c2.2-2.5 7.8-2.5 10 0"
+            d="M24 22v9M16 30c3.2 3 12.8 3 16 0M18 36c3.5-2.6 8.5-2.6 12 0"
             fill="none"
             stroke="#6d3df5"
             strokeLinecap="round"
@@ -297,21 +361,28 @@ function renderActivityIconShape(variant: ActivityIconVariant) {
             opacity="0.84"
           />
           <path
-            d="M10 25h25a5 5 0 0 1 5 5v7H10V25Z"
+            d="M9 28h28a4 4 0 0 1 4 4v6H9V28Z"
             fill="rgba(109, 61, 245, 0.18)"
             stroke="rgba(77, 39, 199, 0.5)"
             strokeLinejoin="round"
             strokeWidth="2"
           />
           <path
-            d="M10 20h14a5 5 0 0 1 5 5H10v-5Z"
+            d="M11 22h13a5 5 0 0 1 5 5H11v-5Z"
             fill="rgba(255, 255, 255, 0.72)"
           />
-          <circle cx="18" cy="22" r="4" fill="#f7c78b" />
+          <circle cx="18" cy="24" r="4" fill="#f7c78b" />
+          <path
+            d="M35 26h7M38.5 18v8"
+            fill="none"
+            stroke="#80601a"
+            strokeLinecap="round"
+            strokeWidth="2"
+          />
           <circle
             className="activity-sleep-glow"
-            cx="36"
-            cy="22"
+            cx="38.5"
+            cy="18"
             r="5"
             fill="#ffbd3e"
             opacity="0.52"
@@ -328,13 +399,21 @@ function renderActivityIconShape(variant: ActivityIconVariant) {
             r="15"
             fill="rgba(51, 197, 214, 0.14)"
           />
-          <circle cx="24" cy="20" r="7" fill="#f7c78b" />
+          <circle cx="24" cy="20" r="6.8" fill="#f7c78b" />
           <path
-            d="M16 31c3.8 4 12.2 4 16 0M16 22c-3 1-4.7 3-5 6M32 22c3 1 4.7 3 5 6"
+            className="activity-mood-hands"
+            d="M15 24c-2.8 1.1-4.2 3.3-4 6.4M33 24c2.8 1.1 4.2 3.3 4 6.4M14 30l-3 3M34 30l3 3"
             fill="none"
             stroke="#6d3df5"
             strokeLinecap="round"
             strokeWidth="3"
+          />
+          <path
+            d="M18 30c3.5 3.4 8.5 3.4 12 0"
+            fill="none"
+            stroke="#1d1830"
+            strokeLinecap="round"
+            strokeWidth="2.4"
           />
           <path
             className="activity-mood-spark"
@@ -356,8 +435,15 @@ function renderActivityIconShape(variant: ActivityIconVariant) {
             strokeWidth="3"
           />
           <path
-            d="M24 13l2.5 7.5H34l-6.1 4.4 2.4 7.1-6.3-4.5-6.3 4.5 2.4-7.1L14 20.5h7.5L24 13Z"
-            fill="#33c5d6"
+            d="M16 25c4-6 12-6 16 0M18 31c3-3.8 9-3.8 12 0"
+            fill="none"
+            stroke="#33c5d6"
+            strokeLinecap="round"
+            strokeWidth="3"
+          />
+          <path
+            d="M24 12l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5L24 12Z"
+            fill="#6d3df5"
           />
         </>
       );
