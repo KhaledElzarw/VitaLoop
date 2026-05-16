@@ -46,6 +46,23 @@ describe("reminder scheduling", () => {
     expect(isReminderAllowed(settings, currentDate)).toBe(false);
   });
 
+  it("treats quiet-hours start as blocked and end as available", () => {
+    const settings = createSettings({
+      quietHoursEnabled: true,
+      quietHoursStart: "22:00",
+      quietHoursEnd: "07:00",
+      workdayStart: "00:00",
+      workdayEnd: "23:59",
+    });
+    const quietHoursStart = new Date(2026, 0, 1, 22, 0);
+    const quietHoursEnd = new Date(2026, 0, 2, 7, 0);
+
+    expect(isQuietHoursActive(settings, quietHoursStart)).toBe(true);
+    expect(isReminderAllowed(settings, quietHoursStart)).toBe(false);
+    expect(isQuietHoursActive(settings, quietHoursEnd)).toBe(false);
+    expect(isReminderAllowed(settings, quietHoursEnd)).toBe(true);
+  });
+
   it("blocks reminders outside the workday window", () => {
     const settings = createSettings({
       quietHoursEnabled: false,
@@ -56,6 +73,21 @@ describe("reminder scheduling", () => {
 
     expect(isInsideWorkdayWindow(settings, currentDate)).toBe(false);
     expect(isReminderAllowed(settings, currentDate)).toBe(false);
+  });
+
+  it("treats workday start as available and end as outside the window", () => {
+    const settings = createSettings({
+      quietHoursEnabled: false,
+      workdayStart: "09:00",
+      workdayEnd: "18:00",
+    });
+    const workdayStart = new Date(2026, 0, 1, 9, 0);
+    const workdayEnd = new Date(2026, 0, 1, 18, 0);
+
+    expect(isInsideWorkdayWindow(settings, workdayStart)).toBe(true);
+    expect(isReminderAllowed(settings, workdayStart)).toBe(true);
+    expect(isInsideWorkdayWindow(settings, workdayEnd)).toBe(false);
+    expect(isReminderAllowed(settings, workdayEnd)).toBe(false);
   });
 
   it("changes frequency by reminder intensity", () => {
@@ -141,6 +173,27 @@ describe("reminder scheduling", () => {
 
     expect(nextSchedule?.reminder.id).toBe("hydration");
     expect(nextSchedule?.nextAt).toEqual(new Date(2026, 0, 1, 11, 30));
+  });
+
+  it("does not select unpreferred categories even when they are due sooner", () => {
+    const settings = createSettings({
+      quietHoursEnabled: false,
+      workdayStart: "09:00",
+      workdayEnd: "18:00",
+      preferredReminderCategories: ["mood-energy"],
+    });
+    const currentDate = new Date(2026, 0, 1, 10, 0);
+    const nextSchedule = getNextScheduledReminder(
+      reminders,
+      settings,
+      currentDate,
+    );
+
+    expect(
+      getNextReminderTime(findReminder("hydration"), settings, currentDate),
+    ).toBeNull();
+    expect(nextSchedule?.reminder.id).toBe("mood-energy");
+    expect(nextSchedule?.nextAt).toEqual(new Date(2026, 0, 1, 14, 0));
   });
 
   it("does not depend on live timers", () => {

@@ -6,6 +6,7 @@ import {
   getActionAwareNextReminder,
   getNextSnoozedReminderAvailability,
   SNOOZE_MINUTES,
+  type ReminderActionState,
 } from "../src/domain/reminderActions";
 import { type AppSettings } from "../src/domain/schemas";
 import { getDefaultAppSettings } from "../src/domain/settings";
@@ -160,6 +161,31 @@ describe("simulated reminder actions", () => {
     });
   });
 
+  it("snoozes from the provided schedule time without reading live time", () => {
+    const settings = createSettings({
+      quietHoursEnabled: false,
+      workdayStart: "09:00",
+      workdayEnd: "18:00",
+    });
+    const currentNudge = getCurrentNudge(settings);
+    const nowSpy = vi.spyOn(Date, "now");
+    const result = applyReminderAction(
+      "snooze",
+      currentNudge,
+      settings,
+      new Date(2026, 4, 15, 2, 0),
+      createReminderActionState(),
+    );
+    const snoozedUntil =
+      result.state.snoozedUntilByReminderId[currentNudge.reminder.id];
+
+    expect(nowSpy).not.toHaveBeenCalled();
+    expect(snoozedUntil).toEqual(
+      new Date(currentNudge.nextAt.getTime() + SNOOZE_MINUTES * 60_000),
+    );
+    nowSpy.mockRestore();
+  });
+
   it("skip once prevents the current reminder from being selected again", () => {
     const settings = createSettings();
     const currentNudge = getCurrentNudge(settings);
@@ -176,6 +202,54 @@ describe("simulated reminder actions", () => {
       getActionAwareNextReminder(reminders, settings, currentDate, result.state)
         ?.reminder.id,
     ).toBe("stand-walk");
+  });
+
+  it("does not mutate the reminder list or original action state", () => {
+    const settings = createSettings();
+    const reminderList = reminders.map((reminder) => ({ ...reminder }));
+    const originalReminderList = reminderList.map((reminder) => ({
+      ...reminder,
+    }));
+    const actionState: ReminderActionState = {
+      doneReminderIds: ["eye-strain"],
+      skippedReminderIds: ["stretch"],
+      snoozedUntilByReminderId: {
+        "stand-walk": new Date(2026, 4, 15, 10, 30),
+      },
+    };
+    const originalActionState: ReminderActionState = {
+      doneReminderIds: [...actionState.doneReminderIds],
+      skippedReminderIds: [...actionState.skippedReminderIds],
+      snoozedUntilByReminderId: {
+        ...actionState.snoozedUntilByReminderId,
+      },
+    };
+    const currentNudge = getActionAwareNextReminder(
+      reminderList,
+      settings,
+      currentDate,
+      actionState,
+    );
+
+    if (!currentNudge) {
+      throw new Error("Expected a current reminder nudge.");
+    }
+
+    const result = applyReminderAction(
+      "done",
+      currentNudge,
+      settings,
+      currentDate,
+      actionState,
+    );
+
+    expect(reminderList).toEqual(originalReminderList);
+    expect(actionState).toEqual(originalActionState);
+    expect(result.state).not.toBe(actionState);
+    expect(result.state.doneReminderIds).toEqual([
+      ...originalActionState.doneReminderIds,
+      currentNudge.reminder.id,
+    ]);
   });
 
   it("keeps unpreferred reminders ignored", () => {
