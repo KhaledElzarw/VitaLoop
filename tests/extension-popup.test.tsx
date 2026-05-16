@@ -30,15 +30,29 @@ afterEach(cleanup);
 
 describe("ExtensionPopup", () => {
   it("renders VitaLoop branding and the next nudge", async () => {
-    render(
+    const onOpenOptions = vi.fn();
+    const { container } = render(
       <ExtensionPopup
         storage={createStorageMock()}
         currentDate={previewDate}
-        onOpenOptions={vi.fn()}
+        onOpenOptions={onOpenOptions}
       />,
     );
 
     expect(screen.getByRole("heading", { level: 1, name: "VitaLoop" })).toBeTruthy();
+    expect(screen.queryByRole("img")).toBeNull();
+
+    const brandMark = container.querySelector(".extension-brand-mark");
+
+    expect(brandMark?.getAttribute("src")).toBe(
+      "/assets/vitaloop-logo-source.png",
+    );
+    expect(brandMark?.getAttribute("alt")).toBe("");
+    expect(brandMark?.getAttribute("aria-hidden")).toBe("true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Open options" }));
+
+    expect(onOpenOptions).toHaveBeenCalledTimes(1);
 
     const nextNudge = screen.getByLabelText("Next wellness nudge");
 

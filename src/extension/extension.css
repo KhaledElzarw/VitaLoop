@@ -207,6 +207,22 @@ input:focus-visible {
   gap: 10px;
 }
 
+.extension-card-badges {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.extension-brand-mark {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 14px rgba(54, 44, 127, 0.14));
+}
+
 .extension-status-pill,
 .extension-category-pill {
   display: inline-flex;
@@ -276,6 +292,10 @@ input:focus-visible {
 }
 
 .extension-empty-card .extension-eyebrow {
+  margin: 0;
+}
+
+.extension-empty-card .extension-panel-heading {
   margin-bottom: 8px;
 }
 

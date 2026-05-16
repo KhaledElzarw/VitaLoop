@@ -58,6 +58,17 @@ function getTimingStatus(
   )} on a ${frequencyMinutes} minute rhythm.`;
 }
 
+function ExtensionBrandMark() {
+  return (
+    <img
+      className="extension-brand-mark"
+      src="/assets/vitaloop-logo-source.png"
+      alt=""
+      aria-hidden="true"
+    />
+  );
+}
+
 export function ExtensionPopup({
   storage = extensionSettingsStorage,
   reminderList = defaultReminders,
@@ -176,9 +187,12 @@ export function ExtensionPopup({
         >
           <div className="extension-panel-heading">
             <p className="extension-eyebrow">Next reminder</p>
-            <span className="extension-category-pill">
-              {nextSchedule.reminder.category}
-            </span>
+            <div className="extension-card-badges">
+              <ExtensionBrandMark />
+              <span className="extension-category-pill">
+                {nextSchedule.reminder.category}
+              </span>
+            </div>
           </div>
           <p className="extension-reminder-time">
             {formatReminderTime(nextSchedule.nextAt)}
@@ -217,7 +231,10 @@ export function ExtensionPopup({
           className="extension-panel extension-reminder-card extension-empty-card"
           aria-label="Next wellness nudge"
         >
-          <p className="extension-eyebrow">Next reminder</p>
+          <div className="extension-panel-heading">
+            <p className="extension-eyebrow">Next reminder</p>
+            <ExtensionBrandMark />
+          </div>
           <h2>No reminders due right now.</h2>
           {nextSnoozedReminder ? (
             <p>
