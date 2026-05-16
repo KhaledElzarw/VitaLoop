@@ -17,6 +17,17 @@ import {
 
 const previewDate = new Date(2026, 4, 15, 10, 0);
 
+const activityIconAssetById = {
+  hydration: "/assets/activity-icons/hydration.png",
+  "eye-strain": "/assets/activity-icons/eye-strain.png",
+  stretch: "/assets/activity-icons/stretch.png",
+  "stand-walk": "/assets/activity-icons/stand-walk.png",
+  posture: "/assets/activity-icons/posture.png",
+  "breathing-reset": "/assets/activity-icons/breathing-reset.png",
+  "sleep-routine": "/assets/activity-icons/sleep-routine.png",
+  "mood-energy": "/assets/activity-icons/mood-energy.png",
+};
+
 function createStorageMock(
   settings: ExtensionSettings = getDefaultExtensionSettings(),
 ): ExtensionSettingsStorage {
@@ -77,7 +88,14 @@ describe("ExtensionPopup", () => {
 
     expect(activityIcon).toBeTruthy();
     expect(activityIcon?.getAttribute("aria-hidden")).toBe("true");
-    expect(activityIcon?.getAttribute("focusable")).toBe("false");
+
+    const activityImage = activityIcon?.querySelector("img");
+
+    expect(activityImage?.getAttribute("src")).toBe(
+      activityIconAssetById["eye-strain"],
+    );
+    expect(activityImage?.getAttribute("alt")).toBe("");
+    expect(activityImage?.getAttribute("aria-hidden")).toBe("true");
     expect(within(nextNudge).queryByText("Screen breaks")).toBeNull();
     expect(
       within(nextNudge).getByText(
@@ -115,7 +133,14 @@ describe("ExtensionPopup", () => {
 
       expect(activityIcon).toBeTruthy();
       expect(activityIcon?.getAttribute("aria-hidden")).toBe("true");
-      expect(activityIcon?.getAttribute("focusable")).toBe("false");
+
+      const activityImage = activityIcon?.querySelector("img");
+
+      expect(activityImage?.getAttribute("src")).toBe(
+        activityIconAssetById[reminder.id],
+      );
+      expect(activityImage?.getAttribute("alt")).toBe("");
+      expect(activityImage?.getAttribute("aria-hidden")).toBe("true");
     },
   );
 

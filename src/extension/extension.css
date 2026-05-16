@@ -293,187 +293,135 @@ input:focus-visible {
 }
 
 .extension-activity-icon {
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.52);
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 52px;
+  flex: 0 0 66px;
+  border: 1px solid rgba(103, 83, 190, 0.12);
+  border-radius: 16px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(250, 247, 255, 0.54)),
+    var(--extension-surface-elevated);
   overflow: visible;
-  filter: drop-shadow(0 10px 18px rgba(54, 44, 127, 0.12));
-}
-
-.extension-activity-icon * {
-  transform-box: fill-box;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 12px 22px rgba(54, 44, 127, 0.12);
   transform-origin: center;
 }
 
-.activity-water-fill {
-  animation: activity-water-fill 4.8s ease-in-out infinite;
-  transform-origin: center bottom;
+.extension-activity-icon::after {
+  position: absolute;
+  inset: 7px 8px;
+  border-radius: 12px;
+  background: linear-gradient(120deg, transparent 10%, rgba(255, 255, 255, 0.62), transparent 90%);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
 }
 
-.activity-water-wave {
-  animation: activity-wave 3.8s ease-in-out infinite;
+.extension-activity-icon img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
-.activity-water-drop {
-  animation: activity-water-drop 4.8s ease-in-out infinite;
+.extension-activity-icon-hydration {
+  animation: activity-icon-bob 4.8s ease-in-out infinite;
 }
 
-.activity-water-bubbles {
-  animation: activity-bubbles 4.8s ease-in-out infinite;
+.extension-activity-icon-hydration::after {
+  animation: activity-icon-shimmer 4.8s ease-in-out infinite;
 }
 
-.activity-relief-ring,
-.activity-breath-ring,
-.activity-mood-aura,
-.activity-fallback-pulse {
-  animation: activity-soft-pulse 4.6s ease-in-out infinite;
+.extension-activity-icon-eye-strain {
+  animation: activity-icon-blink-rest 5.2s ease-in-out infinite;
 }
 
-.activity-eye-spark,
-.activity-posture-spine {
-  animation: activity-soft-pulse 4.4s ease-in-out infinite;
+.extension-activity-icon-stretch {
+  animation: activity-icon-stretch 4.8s ease-in-out infinite;
 }
 
-.activity-eye-lid {
-  animation: activity-blink 5.2s ease-in-out infinite;
+.extension-activity-icon-stand-walk {
+  animation: activity-icon-step 4.6s ease-in-out infinite;
 }
 
-.activity-stretch-arms {
-  animation: activity-stretch 4.8s ease-in-out infinite;
+.extension-activity-icon-posture {
+  animation: activity-icon-straighten 5s ease-in-out infinite;
 }
 
-.activity-walk-chair {
-  animation: activity-chair-slide 4.6s ease-in-out infinite;
+.extension-activity-icon-breathing-reset {
+  animation: activity-icon-breathe 4.8s ease-in-out infinite;
 }
 
-.activity-walk-person {
-  animation: activity-step 4.6s ease-in-out infinite;
+.extension-activity-icon-sleep-routine {
+  animation: activity-icon-sleep-dim 5.4s ease-in-out infinite;
 }
 
-.activity-posture-person {
-  animation: activity-straighten 5s ease-in-out infinite;
+.extension-activity-icon-mood-energy,
+.extension-activity-icon-fallback {
+  animation: activity-icon-glow 4.6s ease-in-out infinite;
 }
 
-.activity-breath-petals {
-  animation: activity-breath-petals 4.8s ease-in-out infinite;
-}
-
-.activity-sleep-glow {
-  animation: activity-light-fade 5.4s ease-in-out infinite;
-}
-
-.activity-sleep-moon {
-  animation: activity-night-drift 5.4s ease-in-out infinite;
-}
-
-.activity-mood-spark {
-  animation: activity-spark 4.4s ease-in-out infinite;
-}
-
-.activity-mood-hands {
-  animation: activity-massage 4.8s ease-in-out infinite;
-}
-
-@keyframes activity-water-fill {
+@keyframes activity-icon-bob {
   0%,
   100% {
-    transform: translateY(2px) scaleY(0.86);
+    transform: translateY(0);
   }
 
   50% {
-    transform: translateY(-1px) scaleY(1.04);
-  }
-}
-
-@keyframes activity-water-drop {
-  0%,
-  42%,
-  100% {
-    opacity: 0.2;
-    transform: translateY(-3px) scale(0.86);
-  }
-
-  58% {
-    opacity: 0.95;
-    transform: translateY(2px) scale(1);
-  }
-}
-
-@keyframes activity-bubbles {
-  0%,
-  100% {
-    opacity: 0.62;
-    transform: translateY(1px);
-  }
-
-  50% {
-    opacity: 1;
     transform: translateY(-2px);
   }
 }
 
-@keyframes activity-wave {
+@keyframes activity-icon-shimmer {
   0%,
   100% {
-    transform: translateX(-1px);
+    opacity: 0;
+    transform: translateX(-14px);
   }
 
-  50% {
-    transform: translateX(1px);
+  48% {
+    opacity: 0.44;
+  }
+
+  64% {
+    opacity: 0;
+    transform: translateX(14px);
   }
 }
 
-@keyframes activity-soft-pulse {
+@keyframes activity-icon-blink-rest {
   0%,
+  72%,
   100% {
-    opacity: 0.68;
-    transform: scale(0.96);
-  }
-
-  50% {
     opacity: 1;
-    transform: scale(1.05);
-  }
-}
-
-@keyframes activity-blink {
-  0%,
-  74%,
-  100% {
-    transform: translateY(0) scaleY(1);
+    transform: scaleY(1);
   }
 
   80%,
   86% {
-    transform: translateY(4px) scaleY(0.22);
+    opacity: 0.84;
+    transform: scaleY(0.94);
   }
 }
 
-@keyframes activity-stretch {
+@keyframes activity-icon-stretch {
   0%,
   100% {
-    transform: rotate(-4deg) translateY(1px);
+    transform: rotate(-1.4deg) translateY(0);
   }
 
   50% {
-    transform: rotate(4deg) translateY(-1px);
+    transform: rotate(1.6deg) translateY(-1.5px);
   }
 }
 
-@keyframes activity-chair-slide {
-  0%,
-  100% {
-    transform: translateX(1px);
-  }
-
-  50% {
-    transform: translateX(-2px);
-  }
-}
-
-@keyframes activity-step {
+@keyframes activity-icon-step {
   0%,
   100% {
     transform: translateX(-1px);
@@ -484,73 +432,51 @@ input:focus-visible {
   }
 }
 
-@keyframes activity-straighten {
+@keyframes activity-icon-straighten {
   0%,
   100% {
-    transform: rotate(-6deg) translateY(1px);
+    transform: rotate(-1.6deg);
   }
 
   50% {
-    transform: rotate(2deg) translateY(-1px);
+    transform: rotate(0.8deg) translateY(-1px);
   }
 }
 
-@keyframes activity-breath-petals {
+@keyframes activity-icon-breathe {
   0%,
   100% {
-    opacity: 0.5;
-    transform: scale(0.92);
+    transform: scale(0.98);
   }
 
   50% {
-    opacity: 0.82;
-    transform: scale(1.06);
+    transform: scale(1.04);
   }
 }
 
-@keyframes activity-light-fade {
+@keyframes activity-icon-sleep-dim {
   0%,
   100% {
-    opacity: 0.5;
+    opacity: 1;
+    filter: saturate(1);
   }
 
   55% {
-    opacity: 0.12;
+    opacity: 0.82;
+    filter: saturate(0.88);
   }
 }
 
-@keyframes activity-night-drift {
+@keyframes activity-icon-glow {
   0%,
   100% {
-    transform: translateY(0);
+    filter: drop-shadow(0 0 0 rgba(109, 61, 245, 0));
+    transform: scale(1);
   }
 
   50% {
-    transform: translateY(1.5px);
-  }
-}
-
-@keyframes activity-massage {
-  0%,
-  100% {
-    transform: translateY(0) scale(0.98);
-  }
-
-  50% {
-    transform: translateY(-1px) scale(1.04);
-  }
-}
-
-@keyframes activity-spark {
-  0%,
-  100% {
-    opacity: 0.72;
-    transform: scale(0.92);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1.08);
+    filter: drop-shadow(0 0 10px rgba(109, 61, 245, 0.24));
+    transform: scale(1.03);
   }
 }
 
@@ -792,8 +718,11 @@ input:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .extension-activity-icon * {
+  .extension-activity-icon,
+  .extension-activity-icon::after,
+  .extension-activity-icon img {
     animation: none !important;
+    filter: none !important;
     transform: none !important;
   }
 
