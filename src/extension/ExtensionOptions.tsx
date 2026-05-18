@@ -145,9 +145,9 @@ export function ExtensionOptions({
             </span>
           </div>
           <p className="extension-help-text">
-            VitaLoop uses Chrome alarms and local browser notifications for
-            proactive reminders. Notification permission is needed for this
-            local extension feature.
+            VitaLoop uses local browser alarms and notifications for proactive
+            reminders in Chromium-based browsers. Notification permission is
+            needed for this local extension feature.
           </p>
           <p className="extension-status">
             Proactive reminders are{" "}

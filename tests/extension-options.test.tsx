@@ -47,6 +47,11 @@ describe("ExtensionOptions", () => {
     expect(screen.getByLabelText("Workday end")).toBeTruthy();
     expect(screen.getByLabelText("Hydration")).toBeTruthy();
     expect(screen.getByLabelText("Eye strain")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "VitaLoop uses local browser alarms and notifications for proactive reminders in Chromium-based browsers. Notification permission is needed for this local extension feature.",
+      ),
+    ).toBeTruthy();
     expect(screen.getByText("Proactive reminders are disabled.")).toBeTruthy();
   });
 
