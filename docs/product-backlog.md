@@ -8,8 +8,8 @@
 - [x] Simulated reminder actions: in-app done, snooze, and skip once actions with deterministic local state and no persistence or notification APIs.
 - [x] Accessibility basics: named landmarks, one active screen heading, skip link, keyboard-reachable controls, and live status messages.
 - [x] Mobile visual polish: calmer palette, improved card hierarchy, selected reminder state, status treatments, and bottom navigation polish.
-- [x] Chrome extension MVP shell: Manifest V3 popup/options pages, local extension settings storage, and no content scripts, background worker, notifications, alarms, host permissions, backend, analytics, or external APIs.
-- [x] Unlocked Chrome background reminders: opt-in Manifest V3 service worker, `chrome.alarms` scheduling, local `chrome.notifications`, popup status, options controls, and no content scripts, host permissions, backend, analytics, accounts, payments, or cloud sync.
+- [x] Chromium extension MVP shell: Manifest V3 popup/options pages, local extension settings storage, and no content scripts, background worker, notifications, alarms, host permissions, backend, analytics, or external APIs.
+- [x] Unlocked Chromium background reminders: opt-in Manifest V3 service worker, `chrome.alarms` scheduling, local `chrome.notifications`, popup status, options controls, and no content scripts, host permissions, backend, analytics, accounts, payments, or cloud sync.
 - [x] macOS-inspired extension UI polish: compact frosted popup, grouped settings pane, clear proactive reminder status, and CSS-only visual treatment without external or Apple assets.
 
 ## P0 Foundation
@@ -84,12 +84,12 @@
 ## P2 Notifications
 
 - Browser notification planning
-- Opt-in Chrome browser notifications
+- Opt-in Chromium browser notifications
 - Mobile local notification planning
 - Permission UX
 - Notification copy
 
-## P2 Chrome Extension
+## P2 Chromium Extension
 
 - Popup MVP
 - Options page MVP
