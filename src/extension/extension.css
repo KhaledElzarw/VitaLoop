@@ -76,6 +76,11 @@ input:focus-visible {
   padding-block: 28px;
 }
 
+.extension-reminder-window {
+  width: min(100vw, 360px);
+  padding: 14px;
+}
+
 .extension-titlebar {
   display: grid;
   grid-template-columns: 70px minmax(0, 1fr) auto;
@@ -95,6 +100,11 @@ input:focus-visible {
 
 .extension-options-titlebar {
   margin-bottom: 18px;
+}
+
+.extension-reminder-titlebar {
+  grid-template-columns: minmax(0, 1fr);
+  margin-bottom: 10px;
 }
 
 @supports (backdrop-filter: blur(18px)) {
@@ -504,6 +514,34 @@ input:focus-visible {
   margin-bottom: 8px;
 }
 
+.extension-reminder-window-panel {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(250, 247, 255, 0.74)),
+    var(--extension-surface-elevated);
+}
+
+.extension-reminder-window-panel h2 {
+  margin: 5px 0 0;
+  color: var(--extension-text);
+  font-size: 1.18rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.extension-reminder-window-panel p:not(.extension-eyebrow) {
+  margin: 8px 0 0;
+  color: var(--extension-muted);
+}
+
+.extension-reminder-window-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.extension-reminder-window-actions button {
+  width: 100%;
+}
+
 .extension-status {
   margin: 12px 0 0;
   border: 1px solid rgba(109, 61, 245, 0.12);
@@ -524,6 +562,11 @@ input:focus-visible {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 14px;
+}
+
+.extension-reminder-window-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .extension-actions button,

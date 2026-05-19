@@ -25,6 +25,10 @@ import {
   type ExtensionSettings,
   withExtensionReminderActionState,
 } from "./extensionSettingsStorage";
+import {
+  REMINDER_ACTION_WINDOW_HEIGHT,
+  REMINDER_ACTION_WINDOW_WIDTH,
+} from "./reminderWindow";
 
 export const PROACTIVE_REMINDER_ALARM_NAME = "vitaloop.proactiveReminder";
 export const PROACTIVE_REMINDER_NOTIFICATION_PREFIX = "vitaloop-reminder";
@@ -68,6 +72,18 @@ export type ChromeNotificationsApi = {
   create: (notificationId: string, options: ChromeNotificationOptions) => void;
 };
 
+export type ChromeReminderWindowCreateData = {
+  url: string;
+  type: "popup";
+  width: number;
+  height: number;
+  focused: boolean;
+};
+
+export type ChromeWindowsApi = {
+  create: (createData: ChromeReminderWindowCreateData) => void;
+};
+
 export type BackgroundReminderAlarmPlan =
   | {
       action: "create";
@@ -84,6 +100,11 @@ export type BackgroundReminderAlarmPlan =
 export type BackgroundReminderNotification = {
   id: string;
   options: ChromeNotificationOptions;
+  schedule: ReminderSchedule & { nextAt: Date };
+};
+
+export type BackgroundReminderActionWindow = {
+  createData: ChromeReminderWindowCreateData;
   schedule: ReminderSchedule & { nextAt: Date };
 };
 
@@ -118,6 +139,14 @@ type AlarmHandlerOptions = AlarmSyncOptions & {
   alarm: ChromeAlarm;
   notifications: ChromeNotificationsApi;
   notificationIconUrl?: string;
+};
+
+type ActionWindowAlarmHandlerOptions = AlarmSyncOptions & {
+  alarm: ChromeAlarm;
+  windows: ChromeWindowsApi;
+  createActionWindowUrl: (
+    schedule: ReminderSchedule & { nextAt: Date },
+  ) => string;
 };
 
 function getDelayInMinutes(nextAt: Date, currentDate: Date) {
@@ -364,6 +393,41 @@ export function showBackgroundReminderNotification({
   return notification;
 }
 
+export function createBackgroundReminderActionWindow(
+  schedule: ReminderSchedule & { nextAt: Date },
+  actionWindowUrl: string,
+): BackgroundReminderActionWindow {
+  return {
+    createData: {
+      url: actionWindowUrl,
+      type: "popup",
+      width: REMINDER_ACTION_WINDOW_WIDTH,
+      height: REMINDER_ACTION_WINDOW_HEIGHT,
+      focused: true,
+    },
+    schedule,
+  };
+}
+
+export function showBackgroundReminderActionWindow({
+  windows,
+  schedule,
+  actionWindowUrl,
+}: {
+  windows: ChromeWindowsApi;
+  schedule: ReminderSchedule & { nextAt: Date };
+  actionWindowUrl: string;
+}) {
+  const actionWindow = createBackgroundReminderActionWindow(
+    schedule,
+    actionWindowUrl,
+  );
+
+  windows.create(actionWindow.createData);
+
+  return actionWindow;
+}
+
 export function handleBackgroundReminderAlarm({
   alarm,
   alarms,
@@ -409,6 +473,54 @@ export function handleBackgroundReminderAlarm({
       schedule,
       currentDate,
       notificationIconUrl,
+    }),
+  };
+}
+
+export function handleBackgroundReminderActionWindowAlarm({
+  alarm,
+  alarms,
+  windows,
+  settings,
+  reminderList = defaultReminders,
+  currentDate,
+  actionState,
+  createActionWindowUrl,
+}: ActionWindowAlarmHandlerOptions) {
+  if (alarm.name !== PROACTIVE_REMINDER_ALARM_NAME) {
+    return {
+      alarmPlan: null,
+      actionWindow: null,
+    };
+  }
+
+  const alarmPlan = syncBackgroundReminderAlarm({
+    alarms,
+    settings,
+    reminderList,
+    currentDate,
+    actionState,
+  });
+  const schedule = getNotificationReminderSchedule({
+    settings,
+    reminderList,
+    currentDate,
+    actionState,
+  });
+
+  if (!schedule) {
+    return {
+      alarmPlan,
+      actionWindow: null,
+    };
+  }
+
+  return {
+    alarmPlan,
+    actionWindow: showBackgroundReminderActionWindow({
+      windows,
+      schedule,
+      actionWindowUrl: createActionWindowUrl(schedule),
     }),
   };
 }
