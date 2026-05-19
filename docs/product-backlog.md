@@ -5,13 +5,22 @@
 - [x] MVP reminder experience: Today overview, next wellness nudge, reminder category cards, selected reminder details, and Reminders empty/error states.
 - [x] Settings and storage foundation: Zod settings schema, safe defaults, localStorage service, Settings save/reset UI, and invalid stored data fallback.
 - [x] Reminder scheduling core: pure quiet-hours/workday checks, intensity-adjusted frequencies, next reminder calculation, and simulated next timing in Home and Reminders.
-- [x] Simulated reminder actions: in-app done, snooze, and skip once actions with deterministic local state and no persistence or notification APIs.
+- [x] Initial reminder actions: in-app done, snooze, and skip once actions with deterministic local state.
 - [x] Accessibility basics: named landmarks, one active screen heading, skip link, keyboard-reachable controls, and live status messages.
 - [x] Mobile visual polish: calmer palette, improved card hierarchy, selected reminder state, status treatments, and bottom navigation polish.
 - [x] Chromium extension MVP shell: Manifest V3 popup/options pages, local extension settings storage, and no content scripts, background worker, notifications, alarms, host permissions, backend, analytics, or external APIs.
 - [x] Unlocked Chromium background reminders: opt-in Manifest V3 service worker, `chrome.alarms` scheduling, local `chrome.notifications`, popup status, options controls, and no content scripts, host permissions, backend, analytics, accounts, payments, or cloud sync.
 - [x] macOS-inspired extension UI polish: compact frosted popup, grouped settings pane, clear proactive reminder status, and CSS-only visual treatment without external or Apple assets.
 - [x] Native Chromium reminder notification polish: local browser notification copy, Done and Snooze notification buttons, persistent interaction hint, VitaLoop notification logo asset, and Chrome-compatible API namespace guidance for Chromium-based browsers.
+- [x] Local reminder history: Done, Snooze, and Skip once activity is recorded locally, capped to recent entries, and shown in the web Home screen and extension popup.
+- [x] Local custom reminders: user-created reminder definitions are editable in web Settings and Extension Options, included in Home, Reminders, popup, background scheduling, and notification copy, and remain local-only.
+
+## Current Remaining Focus
+
+- Native mobile notification planning and permission UX, separate from Chromium extension notifications.
+- Native mobile packaging readiness for iOS and Android when explicitly requested.
+- Apple Watch companion planning after the core mobile path is defined.
+- Smart behavior exploration only after local controls, privacy boundaries, and baseline reminder workflows remain stable.
 
 ## P0 Foundation
 
@@ -43,28 +52,29 @@
 
 ## P1 Reminder Categories
 
-- Posture
-- Breathing/stress reset
-- Sleep routine
-- Mood/energy check-in
-- Custom reminder
+- [x] Posture
+- [x] Breathing/stress reset
+- [x] Sleep routine
+- [x] Mood/energy check-in
+- [x] Custom reminder
 
 ## P1 Settings
 
-- Quiet hours
-- Workday window
-- Reminder intensity
-- Preferred categories
-- Reset to defaults
+- [x] Quiet hours
+- [x] Workday window
+- [x] Reminder intensity
+- [x] Preferred categories
+- [x] Custom reminder management
+- [x] Reset to defaults
 
 ## P1 Reminder Engine
 
-- Pure scheduling helpers
-- Next reminder calculation
-- Snooze
-- Skip once
-- Enable/disable reminder
-- Reminder history
+- [x] Pure scheduling helpers
+- [x] Next reminder calculation
+- [x] Snooze
+- [x] Skip once
+- [x] Enable/disable reminders through preferences and custom reminder state
+- [x] Reminder history
 
 ## P1 UX
 
@@ -77,10 +87,12 @@
 
 ## P1 Local Storage
 
-- Settings persistence
-- Reminder preferences persistence
-- Safe defaults
-- Invalid data fallback
+- [x] Settings persistence
+- [x] Reminder preferences persistence
+- [x] Reminder history persistence
+- [x] Custom reminder persistence
+- [x] Safe defaults
+- [x] Invalid data fallback
 
 ## P2 Notifications
 
@@ -89,9 +101,10 @@
 - [x] Chromium notification action buttons
 - [x] Chromium notification branding and copy
 - [x] Chromium notification persistence hint
+- [x] Chromium/macOS/Windows notification behavior notes
 - [ ] Mobile local notification planning
 - [ ] Native mobile permission UX
-- [ ] Cross-platform notification behavior notes
+- [ ] Native mobile notification behavior notes
 
 ## P2 Chromium Extension
 
@@ -104,6 +117,8 @@
 - [x] Local Chromium notification actions for Done and Snooze
 - [x] Notification logo and Chromium-compatible copy polish
 - [x] Extension notification reliability notes for browser/OS differences
+- [x] Extension recent activity history
+- [x] Extension custom reminders
 
 ## P2 Mobile Packaging
 
