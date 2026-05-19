@@ -14,6 +14,7 @@ export const defaultAppSettings: AppSettings = {
     "stretch",
     "stand-walk",
   ],
+  customReminders: [],
 };
 
 export function getDefaultAppSettings(): AppSettings {
@@ -22,5 +23,6 @@ export function getDefaultAppSettings(): AppSettings {
     preferredReminderCategories: [
       ...defaultAppSettings.preferredReminderCategories,
     ],
+    customReminders: [],
   };
 }

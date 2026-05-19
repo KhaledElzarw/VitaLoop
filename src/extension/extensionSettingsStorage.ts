@@ -69,6 +69,9 @@ function cloneExtensionSettings(settings: ExtensionSettings): ExtensionSettings 
   return {
     ...settings,
     preferredReminderCategories: [...settings.preferredReminderCategories],
+    customReminders: settings.customReminders.map((reminder) => ({
+      ...reminder,
+    })),
     snoozedUntilByReminderId: cloneSnoozedReminders(
       settings.snoozedUntilByReminderId,
     ),

@@ -196,6 +196,36 @@ describe("reminder scheduling", () => {
     expect(nextSchedule?.nextAt).toEqual(new Date(2026, 0, 1, 14, 0));
   });
 
+  it("uses custom reminder frequency without applying intensity", () => {
+    const customReminder = {
+      id: "custom-123e4567-e89b-42d3-a456-426614174000",
+      title: "Desk reset",
+      category: "Custom",
+      description: "Reset your desk and posture.",
+      suggestedFrequency: "Every 25 minutes",
+      enabledByDefault: true,
+      wellnessIntent: "Reset your desk and posture.",
+      displayPriority: 9,
+      customFrequencyMinutes: 25,
+    } as const;
+    const settings = createSettings({
+      quietHoursEnabled: false,
+      reminderIntensity: "active",
+      preferredReminderCategories: [customReminder.id],
+      customReminders: [customReminder],
+    });
+    const nextSchedule = getNextScheduledReminder(
+      [customReminder],
+      settings,
+      new Date(2026, 0, 1, 10, 0),
+    );
+
+    expect(getReminderFrequencyMinutes(customReminder, "gentle")).toBe(25);
+    expect(nextSchedule?.reminder.id).toBe(customReminder.id);
+    expect(nextSchedule?.frequencyMinutes).toBe(25);
+    expect(nextSchedule?.nextAt).toEqual(new Date(2026, 0, 1, 10, 25));
+  });
+
   it("does not depend on live timers", () => {
     const nowSpy = vi.spyOn(Date, "now");
 

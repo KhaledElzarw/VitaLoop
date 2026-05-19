@@ -1,5 +1,6 @@
 import {
   type AppSettings,
+  type BuiltinReminderId,
   type ReminderDefinition,
 } from "./schemas";
 
@@ -7,7 +8,7 @@ type ReminderId = AppSettings["preferredReminderCategories"][number];
 type ReminderIntensity = AppSettings["reminderIntensity"];
 
 type ReminderFrequencyMap = Record<
-  ReminderId,
+  BuiltinReminderId,
   Record<ReminderIntensity, number>
 >;
 
@@ -17,6 +18,10 @@ export type ReminderSchedule = {
   isAllowedNow: boolean;
   nextAt: Date | null;
 };
+
+function isBuiltinReminderId(reminderId: ReminderId): reminderId is BuiltinReminderId {
+  return reminderId in reminderFrequencies;
+}
 
 type ScheduledReminder = ReminderSchedule & {
   nextAt: Date;
@@ -140,10 +145,21 @@ export function isReminderAllowed(settings: AppSettings, currentDate: Date) {
 }
 
 export function getReminderFrequencyMinutes(
-  reminderId: ReminderId,
+  reminderOrId: ReminderDefinition | ReminderId,
   reminderIntensity: ReminderIntensity,
 ) {
-  return reminderFrequencies[reminderId][reminderIntensity];
+  const reminderId =
+    typeof reminderOrId === "string" ? reminderOrId : reminderOrId.id;
+
+  if (typeof reminderOrId !== "string" && reminderOrId.customFrequencyMinutes) {
+    return reminderOrId.customFrequencyMinutes;
+  }
+
+  if (isBuiltinReminderId(reminderId)) {
+    return reminderFrequencies[reminderId][reminderIntensity];
+  }
+
+  return 60;
 }
 
 export function getEnabledReminders(
@@ -190,7 +206,7 @@ export function getNextReminderTime(
   }
 
   const frequencyMinutes = getReminderFrequencyMinutes(
-    reminder.id,
+    reminder,
     settings.reminderIntensity,
   );
 
@@ -208,7 +224,7 @@ export function getReminderSchedule(
   return {
     reminder,
     frequencyMinutes: getReminderFrequencyMinutes(
-      reminder.id,
+      reminder,
       settings.reminderIntensity,
     ),
     isAllowedNow: isReminderAllowed(settings, currentDate),

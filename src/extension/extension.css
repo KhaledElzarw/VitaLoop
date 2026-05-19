@@ -758,6 +758,51 @@ input:focus-visible {
   font-size: 0.88rem;
 }
 
+.extension-custom-list {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.extension-custom-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(103, 83, 190, 0.12);
+  border-radius: var(--extension-radius);
+  background: rgba(255, 255, 255, 0.6);
+  padding: 8px;
+}
+
+.extension-custom-list div {
+  display: grid;
+  gap: 2px;
+  min-width: 150px;
+}
+
+.extension-custom-list strong {
+  color: var(--extension-text);
+}
+
+.extension-custom-list span {
+  color: var(--extension-muted);
+  font-size: 0.82rem;
+}
+
+.extension-custom-list button {
+  min-height: 30px;
+  border-radius: 999px;
+  background: var(--extension-accent-soft);
+  color: var(--extension-accent-strong);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 5px 10px;
+}
+
 @media (max-width: 480px) {
   .extension-options {
     padding: 16px 12px;

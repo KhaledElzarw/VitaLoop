@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { reminders } from "./data/reminders";
 import {
+  createCustomReminderDefinition,
+  defaultCustomReminderDraft,
+  deleteCustomReminderSettings,
+  getCustomReminderDraft,
+  getReminderListWithCustomReminders,
+  upsertCustomReminderSettings,
+  type CustomReminderDraft,
+} from "./domain/customReminders";
+import {
   applyReminderAction,
   createReminderActionState,
   getActionAwareNextReminder,
@@ -70,6 +79,10 @@ function App() {
     settingsService.loadSettings(),
   );
   const [currentDate] = useState(() => new Date(defaultPreviewDate));
+  const appReminders = getReminderListWithCustomReminders(
+    reminders,
+    appSettings,
+  );
   const activeLabel = screens.find((screen) => screen.id === activeScreen)?.label;
 
   return (
@@ -94,14 +107,14 @@ function App() {
         <p className="screen-label">{activeLabel}</p>
         {activeScreen === "home" && (
           <HomeScreen
-            reminders={reminders}
+            reminders={appReminders}
             settings={appSettings}
             currentDate={currentDate}
           />
         )}
         {activeScreen === "reminders" && (
           <RemindersScreen
-            reminders={reminders}
+            reminders={appReminders}
             settings={appSettings}
             currentDate={currentDate}
           />
@@ -462,6 +475,13 @@ export function SettingsScreen({
     initialSettings ?? service.loadSettings(),
   );
   const [status, setStatus] = useState<SettingsStatus>("idle");
+  const [customDraft, setCustomDraft] = useState<CustomReminderDraft>({
+    ...defaultCustomReminderDraft,
+  });
+  const allReminders = getReminderListWithCustomReminders(
+    reminderList,
+    settings,
+  );
 
   function updateSetting<Key extends keyof AppSettings>(
     key: Key,
@@ -493,6 +513,82 @@ export function SettingsScreen({
         preferredReminderCategories: nextCategories,
       };
     });
+    setStatus("idle");
+  }
+
+  function updateCustomDraft<Key extends keyof CustomReminderDraft>(
+    key: Key,
+    value: CustomReminderDraft[Key],
+  ) {
+    setCustomDraft((currentDraft) => ({
+      ...currentDraft,
+      [key]: value,
+    }));
+    setStatus("idle");
+  }
+
+  function resetCustomDraft() {
+    setCustomDraft({ ...defaultCustomReminderDraft });
+  }
+
+  function saveCustomReminder() {
+    if (
+      !customDraft.title.trim() ||
+      !customDraft.description.trim() ||
+      customDraft.frequencyMinutes < 5
+    ) {
+      setStatus("error");
+      return;
+    }
+
+    setSettings((currentSettings) => {
+      const existingReminder = currentSettings.customReminders.find(
+        (reminder) => reminder.id === customDraft.id,
+      );
+      const reminder = createCustomReminderDefinition({
+        draft: customDraft,
+        displayPriority:
+          existingReminder?.displayPriority ??
+          reminderList.length + currentSettings.customReminders.length + 1,
+      });
+
+      return upsertCustomReminderSettings({
+        settings: currentSettings,
+        reminder,
+        enabled: customDraft.enabled,
+      });
+    });
+    resetCustomDraft();
+    setStatus("idle");
+  }
+
+  function editCustomReminder(reminderId: ReminderId) {
+    const reminder = settings.customReminders.find(
+      (candidate) => candidate.id === reminderId,
+    );
+
+    if (!reminder) {
+      return;
+    }
+
+    setCustomDraft(
+      getCustomReminderDraft(
+        reminder,
+        settings.preferredReminderCategories.includes(reminder.id),
+      ),
+    );
+    setStatus("idle");
+  }
+
+  function deleteCustomReminder(reminderId: ReminderId) {
+    setSettings((currentSettings) =>
+      deleteCustomReminderSettings(currentSettings, reminderId),
+    );
+
+    if (customDraft.id === reminderId) {
+      resetCustomDraft();
+    }
+
     setStatus("idle");
   }
 
@@ -629,7 +725,7 @@ export function SettingsScreen({
         <fieldset className="settings-group">
           <legend>Preferred reminder categories</legend>
           <div className="category-grid">
-            {reminderList.map((reminder) => {
+            {allReminders.map((reminder) => {
               const isPreferred =
                 settings.preferredReminderCategories.includes(reminder.id);
               const isOnlyPreferred =
@@ -649,6 +745,105 @@ export function SettingsScreen({
               );
             })}
           </div>
+        </fieldset>
+
+        <fieldset className="settings-group">
+          <legend>Custom reminders</legend>
+          <div className="settings-columns">
+            <label className="field">
+              <span>Custom reminder title</span>
+              <input
+                type="text"
+                value={customDraft.title}
+                onChange={(event) =>
+                  updateCustomDraft("title", event.currentTarget.value)
+                }
+              />
+            </label>
+            <label className="field">
+              <span>Custom reminder category</span>
+              <input
+                type="text"
+                value={customDraft.category}
+                onChange={(event) =>
+                  updateCustomDraft("category", event.currentTarget.value)
+                }
+              />
+            </label>
+          </div>
+          <label className="field">
+            <span>Custom reminder message</span>
+            <input
+              type="text"
+              value={customDraft.description}
+              onChange={(event) =>
+                updateCustomDraft("description", event.currentTarget.value)
+              }
+            />
+          </label>
+          <div className="settings-columns">
+            <label className="field">
+              <span>Custom reminder frequency minutes</span>
+              <input
+                type="number"
+                min="5"
+                max="1440"
+                value={customDraft.frequencyMinutes}
+                onChange={(event) =>
+                  updateCustomDraft(
+                    "frequencyMinutes",
+                    Number(event.currentTarget.value),
+                  )
+                }
+              />
+            </label>
+            <label className="checkbox-row">
+              <input
+                type="checkbox"
+                checked={customDraft.enabled}
+                onChange={(event) =>
+                  updateCustomDraft("enabled", event.currentTarget.checked)
+                }
+              />
+              <span>Enable custom reminder</span>
+            </label>
+          </div>
+          <div className="settings-actions">
+            <button type="button" onClick={saveCustomReminder}>
+              {customDraft.id ? "Update custom reminder" : "Add custom reminder"}
+            </button>
+            {customDraft.id ? (
+              <button type="button" onClick={resetCustomDraft}>
+                Cancel edit
+              </button>
+            ) : null}
+          </div>
+          {settings.customReminders.length > 0 ? (
+            <ul className="custom-reminder-list" aria-label="Custom reminders">
+              {settings.customReminders.map((reminder) => (
+                <li key={reminder.id}>
+                  <div>
+                    <strong>{reminder.title}</strong>
+                    <span>{reminder.customFrequencyMinutes} min</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => editCustomReminder(reminder.id)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteCustomReminder(reminder.id)}
+                  >
+                    Delete
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No custom reminders yet.</p>
+          )}
         </fieldset>
 
         <div className="settings-actions">

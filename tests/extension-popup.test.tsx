@@ -17,7 +17,7 @@ import {
 
 const previewDate = new Date(2026, 4, 15, 10, 0);
 
-const activityIconAssetById = {
+const activityIconAssetById: Record<string, string> = {
   hydration: "/assets/activity-icons/hydration.png",
   "eye-strain": "/assets/activity-icons/eye-strain.png",
   stretch: "/assets/activity-icons/stretch.png",
@@ -143,6 +143,47 @@ describe("ExtensionPopup", () => {
       expect(activityImage?.getAttribute("aria-hidden")).toBe("true");
     },
   );
+
+  it("renders custom reminders with the fallback activity icon", async () => {
+    const customReminder = {
+      id: "custom-123e4567-e89b-42d3-a456-426614174000",
+      title: "Desk reset",
+      category: "Custom",
+      description: "Reset your desk and posture.",
+      suggestedFrequency: "Every 25 minutes",
+      enabledByDefault: true,
+      wellnessIntent: "Reset your desk and posture.",
+      displayPriority: 9,
+      customFrequencyMinutes: 25,
+    } as const;
+
+    render(
+      <ExtensionPopup
+        storage={createStorageMock({
+          ...getDefaultExtensionSettings(),
+          preferredReminderCategories: [customReminder.id],
+          customReminders: [customReminder],
+        })}
+        reminderList={[]}
+        currentDate={previewDate}
+        onOpenOptions={vi.fn()}
+      />,
+    );
+
+    const nextNudge = screen.getByLabelText("Next wellness nudge");
+
+    await waitFor(() => {
+      expect(
+        within(nextNudge).getByRole("heading", { name: "Desk reset" }),
+      ).toBeTruthy();
+    });
+    expect(nextNudge.querySelector("[data-activity-icon='fallback']")).toBeTruthy();
+    expect(
+      within(nextNudge).getByText(
+        "Suggested around 10:25 AM on a 25 minute rhythm.",
+      ),
+    ).toBeTruthy();
+  });
 
   it("renders Done, Snooze, and Skip once actions", () => {
     render(

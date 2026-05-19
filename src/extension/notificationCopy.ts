@@ -1,6 +1,8 @@
-import { type ReminderDefinition } from "../domain/schemas";
+import {
+  type BuiltinReminderId,
+  type ReminderDefinition,
+} from "../domain/schemas";
 
-type ReminderId = ReminderDefinition["id"];
 
 export type ReminderNotificationCopy = {
   title: string;
@@ -13,7 +15,7 @@ export const REMINDER_NOTIFICATION_BUTTONS = [
   { title: "Snooze" },
 ] as const;
 
-const notificationMessages: Record<ReminderId, string> = {
+const notificationMessages: Record<BuiltinReminderId, string> = {
   hydration: "Pause for a sip of water when it fits your moment.",
   "eye-strain": "Look away from the screen and soften your focus.",
   stretch: "Take a light stretch break before returning to your task.",
@@ -32,7 +34,9 @@ export function createReminderNotificationCopy(
 ): ReminderNotificationCopy {
   return {
     title: `VitaLoop: ${reminder.title}`,
-    message: notificationMessages[reminder.id],
+    message:
+      notificationMessages[reminder.id as BuiltinReminderId] ??
+      reminder.description,
     contextMessage: "Local browser reminder",
   };
 }
