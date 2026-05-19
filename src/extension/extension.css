@@ -555,6 +555,18 @@ input:focus-visible {
   transform: translateY(-1px);
 }
 
+.extension-actions button:disabled,
+.extension-save-row button:disabled {
+  cursor: default;
+  opacity: 0.58;
+  transform: none;
+}
+
+.extension-actions button:disabled:hover,
+.extension-save-row button:disabled:hover {
+  transform: none;
+}
+
 .extension-live-status,
 .extension-error {
   border-radius: var(--extension-radius);
