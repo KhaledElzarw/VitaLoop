@@ -54,10 +54,11 @@ Load the local extension in a Chromium-based browser:
 6. Open the VitaLoop Options page.
 7. Enable proactive reminders.
 8. Save the settings.
-9. Confirm the popup shows proactive reminders as enabled and still previews the next wellness nudge.
-10. If practical during manual testing, trigger or wait for the named alarm and confirm a VitaLoop notification appears.
-11. When practical, repeat the notification check in another Chromium-based browser, such as Edge or Brave.
-12. Disable proactive reminders in Options, save, and confirm proactive reminders show as disabled.
+9. Select Send test notification and confirm a VitaLoop notification appears.
+10. Confirm the popup shows proactive reminders as enabled and still previews the next wellness nudge.
+11. If practical during manual testing, trigger or wait for the named alarm and confirm a VitaLoop notification appears.
+12. When practical, repeat the notification check in another Chromium-based browser, such as Edge or Brave.
+13. Disable proactive reminders in Options, save, and confirm proactive reminders show as disabled.
 
 The MVP supports Chromium-based browsers such as Chrome, Edge, Brave, Atlas,
 and compatible Chromium browsers. It stores settings with `chrome.storage.local`
@@ -65,6 +66,11 @@ only. Chromium extension platforms expose storage, alarms, and notifications
 through the standard `chrome.*` API namespace. Proactive reminders are opt-in,
 local browser notifications powered by a Manifest V3 background service worker
 and `chrome.alarms`. All current extension features are free and unlocked.
+
+On macOS, if Send test notification reports success but no banner appears,
+check System Settings > Notifications for the active browser and its alert
+helper, then confirm notifications are allowed and Focus or Do Not Disturb is
+not suppressing banners.
 
 The popup and options page use lightweight CSS-only macOS-inspired styling. No
 external assets, Apple assets, external fonts, or UI libraries are used.

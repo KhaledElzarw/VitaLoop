@@ -32,7 +32,10 @@ function createStorageMock(
   };
 }
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe("ExtensionOptions", () => {
   it("renders key settings controls by accessible label", () => {
@@ -47,6 +50,9 @@ describe("ExtensionOptions", () => {
     expect(screen.getByLabelText("Workday end")).toBeTruthy();
     expect(screen.getByLabelText("Hydration")).toBeTruthy();
     expect(screen.getByLabelText("Eye strain")).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Send test notification" }),
+    ).toBeTruthy();
     expect(
       screen.getByText(
         "VitaLoop uses local browser alarms and notifications for proactive reminders in Chromium-based browsers. Notification permission is needed for this local extension feature.",
@@ -108,6 +114,61 @@ describe("ExtensionOptions", () => {
     ).toBe(true);
     expect(screen.getByRole("status").textContent).toContain(
       "Defaults restored.",
+    );
+  });
+
+  it("sends a test notification through the extension notification api", async () => {
+    const createNotification = vi.fn(
+      (
+        _notificationId: string,
+        _options: unknown,
+        callback?: () => void,
+      ) => {
+        callback?.();
+      },
+    );
+
+    vi.stubGlobal("chrome", {
+      notifications: {
+        create: createNotification,
+      },
+      runtime: {},
+    });
+
+    render(<ExtensionOptions storage={createStorageMock()} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Send test notification" }),
+    );
+
+    await waitFor(() => {
+      expect(createNotification).toHaveBeenCalledWith(
+        "vitaloop-test-notification",
+        expect.objectContaining({
+          type: "basic",
+          title: "VitaLoop: Eye strain",
+          message: "Look away from the screen and soften your focus.",
+          contextMessage: "Local browser reminder",
+        }),
+        expect.any(Function),
+      );
+    });
+    expect(screen.getByRole("status").textContent).toContain(
+      "Test notification sent.",
+    );
+  });
+
+  it("shows an unavailable state when test notifications cannot be created", () => {
+    vi.stubGlobal("chrome", undefined);
+
+    render(<ExtensionOptions storage={createStorageMock()} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Send test notification" }),
+    );
+
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Test notification could not be sent",
     );
   });
 });
