@@ -72,6 +72,15 @@ check System Settings > Notifications for the active browser and its alert
 helper, then confirm notifications are allowed and Focus or Do Not Disturb is
 not suppressing banners.
 
+Native notification layout and timing are controlled by the browser and
+operating system. VitaLoop requests persistent display with
+`requireInteraction: true`, but macOS, Windows, Focus, Do Not Disturb, and
+per-browser settings can still affect whether a banner stays visible. VitaLoop
+cannot place custom React UI, dropdowns, countdowns, or custom macOS-style
+surfaces inside the native notification banner. See
+`docs/extension-notification-reliability.md` for the manual validation checklist
+and platform limits.
+
 The popup and options page use lightweight CSS-only macOS-inspired styling. No
 external assets, Apple assets, external fonts, or UI libraries are used.
 

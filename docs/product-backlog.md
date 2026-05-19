@@ -103,7 +103,7 @@
 - [x] Alarm scheduling without host permissions
 - [x] Local Chromium notification actions for Done and Snooze
 - [x] Notification logo and Chromium-compatible copy polish
-- [ ] Extension notification reliability notes for browser/OS differences
+- [x] Extension notification reliability notes for browser/OS differences
 
 ## P2 Mobile Packaging
 
