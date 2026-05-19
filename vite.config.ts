@@ -9,8 +9,6 @@ export default defineConfig({
         main: new URL("./index.html", import.meta.url).pathname,
         popup: new URL("./extension/popup.html", import.meta.url).pathname,
         options: new URL("./extension/options.html", import.meta.url).pathname,
-        reminder: new URL("./extension/reminder.html", import.meta.url)
-          .pathname,
         background: new URL("./src/extension/background.ts", import.meta.url)
           .pathname,
       },
