@@ -47,7 +47,7 @@ describe("notification copy", () => {
 
   it("uses the packaged extension notification icon without external assets", () => {
     expect(VITALOOP_NOTIFICATION_ICON_URL).toBe(
-      "assets/app-icons/vitaloop-icon-128.png",
+      "assets/app-icons/vitaloop-notification-logo.png",
     );
     expect(VITALOOP_NOTIFICATION_ICON_URL).not.toMatch(/^https?:\/\//);
   });
