@@ -57,6 +57,7 @@ export type ChromeNotificationOptions = {
   title: string;
   message: string;
   contextMessage: string;
+  requireInteraction: boolean;
   buttons?: ChromeNotificationButton[];
 };
 
@@ -336,6 +337,7 @@ export function createBackgroundReminderNotification(
       title: copy.title,
       message: copy.message,
       contextMessage: copy.contextMessage,
+      requireInteraction: true,
       buttons: createNotificationButtons(),
     },
     schedule,

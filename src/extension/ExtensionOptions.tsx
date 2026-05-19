@@ -38,6 +38,7 @@ type ChromeNotificationOptions = {
   title: string;
   message: string;
   contextMessage: string;
+  requireInteraction: boolean;
   buttons?: ChromeNotificationButton[];
 };
 
@@ -247,6 +248,7 @@ export function ExtensionOptions({
           new BrowserNotification(copy.title, {
             body: copy.message,
             icon: getExtensionNotificationIconUrl(),
+            requireInteraction: true,
           });
           setStatus("test-sent");
           setTestNotificationMessage(
@@ -348,6 +350,7 @@ export function ExtensionOptions({
             title: copy.title,
             message: copy.message,
             contextMessage: copy.contextMessage,
+            requireInteraction: true,
             buttons: createNotificationButtons(),
           },
           () => {
