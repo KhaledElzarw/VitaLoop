@@ -5,18 +5,12 @@ import {
   getBackgroundReminderAlarmPlan,
   getNotificationReminderSchedule,
   getReminderNotificationButtonAction,
-  handleBackgroundReminderActionWindowAlarm,
   handleBackgroundReminderAlarm,
   PROACTIVE_REMINDER_ALARM_NAME,
   syncBackgroundReminderAlarm,
   type ChromeAlarmsApi,
   type ChromeNotificationsApi,
-  type ChromeWindowsApi,
 } from "../src/extension/backgroundScheduler";
-import {
-  REMINDER_ACTION_WINDOW_HEIGHT,
-  REMINDER_ACTION_WINDOW_WIDTH,
-} from "../src/extension/reminderWindow";
 import {
   getDefaultExtensionSettings,
   type ExtensionSettings,
@@ -37,7 +31,6 @@ function createSettings(
 function createChromeMocks(): {
   alarms: ChromeAlarmsApi;
   notifications: ChromeNotificationsApi;
-  windows: ChromeWindowsApi;
 } {
   return {
     alarms: {
@@ -46,9 +39,6 @@ function createChromeMocks(): {
     },
     notifications: {
       create: vi.fn<ChromeNotificationsApi["create"]>(),
-    },
-    windows: {
-      create: vi.fn<ChromeWindowsApi["create"]>(),
     },
   };
 }
@@ -265,37 +255,6 @@ describe("background reminder scheduler", () => {
         buttons: [{ title: "Done" }, { title: "Snooze" }],
       }),
     );
-    expect(alarms.create).toHaveBeenCalledWith(
-      PROACTIVE_REMINDER_ALARM_NAME,
-      expect.objectContaining({ periodInMinutes: 45 }),
-    );
-  });
-
-  it("opens a focused reminder action popup for eligible reminders", () => {
-    const { alarms, windows } = createChromeMocks();
-
-    const result = handleBackgroundReminderActionWindowAlarm({
-      alarm: { name: PROACTIVE_REMINDER_ALARM_NAME },
-      alarms,
-      windows,
-      settings: createSettings({
-        proactiveRemindersEnabled: true,
-        quietHoursEnabled: false,
-      }),
-      reminderList: reminders,
-      currentDate: new Date(2026, 4, 15, 10, 0),
-      createActionWindowUrl: (schedule) =>
-        `chrome-extension://vitaloop/extension/reminder.html?reminderId=${schedule.reminder.id}`,
-    });
-
-    expect(result.actionWindow?.schedule.reminder.id).toBe("eye-strain");
-    expect(windows.create).toHaveBeenCalledWith({
-      url: "chrome-extension://vitaloop/extension/reminder.html?reminderId=eye-strain",
-      type: "popup",
-      width: REMINDER_ACTION_WINDOW_WIDTH,
-      height: REMINDER_ACTION_WINDOW_HEIGHT,
-      focused: true,
-    });
     expect(alarms.create).toHaveBeenCalledWith(
       PROACTIVE_REMINDER_ALARM_NAME,
       expect.objectContaining({ periodInMinutes: 45 }),

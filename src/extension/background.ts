@@ -1,14 +1,12 @@
 import { reminders } from "../data/reminders";
 import {
   getBackgroundReminderNotificationAction,
-  handleBackgroundReminderActionWindowAlarm,
   handleBackgroundReminderAlarm,
   PROACTIVE_REMINDER_NOTIFICATION_PREFIX,
   syncBackgroundReminderAlarm,
   type ChromeAlarm,
   type ChromeAlarmsApi,
   type ChromeNotificationsApi,
-  type ChromeWindowsApi,
 } from "./backgroundScheduler";
 import {
   EXTENSION_SETTINGS_STORAGE_KEY,
@@ -16,7 +14,6 @@ import {
   saveExtensionSettings,
 } from "./extensionSettingsStorage";
 import { VITALOOP_NOTIFICATION_ICON_URL } from "./notificationCopy";
-import { createReminderActionWindowPath } from "./reminderWindow";
 
 type ChromeEvent<Listener> = {
   addListener: (listener: Listener) => void;
@@ -51,7 +48,6 @@ type ChromeBackgroundApi = {
       (changes: Record<string, ChromeStorageChange>, areaName: string) => void
     >;
   };
-  windows?: ChromeWindowsApi;
 };
 
 function getChromeApi() {
@@ -60,12 +56,6 @@ function getChromeApi() {
       chrome?: ChromeBackgroundApi;
     }
   ).chrome;
-}
-
-function getReminderActionWindowUrl(currentDate: Date, reminderId: string) {
-  const path = createReminderActionWindowPath(currentDate, reminderId);
-
-  return getChromeApi()?.runtime?.getURL?.(path) ?? path;
 }
 
 async function syncProactiveReminderAlarm() {
@@ -88,30 +78,11 @@ async function syncProactiveReminderAlarm() {
 async function notifyForAlarm(alarm: ChromeAlarm) {
   const chromeApi = getChromeApi();
 
-  if (!chromeApi?.alarms) {
+  if (!chromeApi?.alarms || !chromeApi.notifications) {
     return;
   }
 
-  const currentDate = new Date();
   const settings = await loadExtensionSettings();
-
-  if (chromeApi.windows) {
-    handleBackgroundReminderActionWindowAlarm({
-      alarm,
-      alarms: chromeApi.alarms,
-      windows: chromeApi.windows,
-      settings,
-      reminderList: reminders,
-      currentDate,
-      createActionWindowUrl: (schedule) =>
-        getReminderActionWindowUrl(currentDate, schedule.reminder.id),
-    });
-    return;
-  }
-
-  if (!chromeApi.notifications) {
-    return;
-  }
 
   handleBackgroundReminderAlarm({
     alarm,
@@ -119,7 +90,7 @@ async function notifyForAlarm(alarm: ChromeAlarm) {
     notifications: chromeApi.notifications,
     settings,
     reminderList: reminders,
-    currentDate,
+    currentDate: new Date(),
     notificationIconUrl:
       chromeApi.runtime?.getURL?.(VITALOOP_NOTIFICATION_ICON_URL) ??
       VITALOOP_NOTIFICATION_ICON_URL,

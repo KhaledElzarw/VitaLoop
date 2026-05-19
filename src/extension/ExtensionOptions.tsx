@@ -12,11 +12,6 @@ import {
   type ExtensionSettings,
   type ExtensionSettingsStorage,
 } from "./extensionSettingsStorage";
-import {
-  createReminderActionWindowPath,
-  REMINDER_ACTION_WINDOW_HEIGHT,
-  REMINDER_ACTION_WINDOW_WIDTH,
-} from "./reminderWindow";
 
 const reminderIntensityOptions = [
   { value: "gentle", label: "Gentle" },
@@ -50,14 +45,6 @@ type ChromeNotificationButton = {
   title: string;
 };
 
-type ChromeWindowCreateData = {
-  url: string;
-  type: "popup";
-  width: number;
-  height: number;
-  focused: boolean;
-};
-
 type ChromeOptionsApi = {
   notifications?: {
     create: (
@@ -74,12 +61,6 @@ type ChromeOptionsApi = {
     lastError?: {
       message?: string;
     };
-  };
-  windows?: {
-    create: (
-      createData: ChromeWindowCreateData,
-      callback?: () => void,
-    ) => void | Promise<unknown>;
   };
 };
 
@@ -234,69 +215,6 @@ export function ExtensionOptions({
       setTestNotificationMessage(
         "Browser accepted the test notification. If no macOS banner appeared, check Focus or Do Not Disturb and notification settings for this browser.",
       );
-    }
-
-    function showActionWindowOpened() {
-      setStatus("test-sent");
-      setTestNotificationMessage(
-        "Reminder popup opened with Snooze and Done buttons.",
-      );
-    }
-
-    function openReminderActionWindow() {
-      const windows = getChromeApi()?.windows;
-
-      if (!windows) {
-        return false;
-      }
-
-      const path = createReminderActionWindowPath(new Date(), reminder.id);
-      const url = getChromeApi()?.runtime?.getURL?.(path) ?? path;
-
-      try {
-        const result = windows.create(
-          {
-            url,
-            type: "popup",
-            width: REMINDER_ACTION_WINDOW_WIDTH,
-            height: REMINDER_ACTION_WINDOW_HEIGHT,
-            focused: true,
-          },
-          () => {
-            const errorMessage = getRuntimeErrorMessage();
-
-            if (errorMessage) {
-              showTestUnavailable(
-                `Reminder popup could not be opened: ${errorMessage}`,
-              );
-              return;
-            }
-
-            showActionWindowOpened();
-          },
-        );
-
-        if (result instanceof Promise) {
-          void result
-            .then(showActionWindowOpened)
-            .catch((error: unknown) => {
-              showTestUnavailable(
-                `Reminder popup could not be opened: ${String(error)}`,
-              );
-            });
-        }
-
-        return true;
-      } catch (error) {
-        showTestUnavailable(
-          `Reminder popup could not be opened: ${String(error)}`,
-        );
-        return true;
-      }
-    }
-
-    if (openReminderActionWindow()) {
-      return;
     }
 
     function sendPageNotificationFallback(reason: string) {

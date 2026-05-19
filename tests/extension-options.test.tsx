@@ -118,53 +118,6 @@ describe("ExtensionOptions", () => {
     );
   });
 
-  it("opens a reminder popup for the test notification when windows are available", async () => {
-    const createWindow = vi.fn((_createData: unknown, callback?: () => void) => {
-      callback?.();
-    });
-    const createNotification = vi.fn();
-
-    vi.stubGlobal("chrome", {
-      notifications: {
-        create: createNotification,
-      },
-      runtime: {
-        getURL: (path: string) => `chrome-extension://vitaloop/${path}`,
-      },
-      windows: {
-        create: createWindow,
-      },
-    });
-
-    render(<ExtensionOptions storage={createStorageMock()} />);
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Send test notification" }),
-    );
-
-    await waitFor(() => {
-      expect(createWindow).toHaveBeenCalledWith(
-        expect.objectContaining({
-          url: expect.stringContaining(
-            "chrome-extension://vitaloop/extension/reminder.html?",
-          ),
-          type: "popup",
-          width: 360,
-          height: 260,
-          focused: true,
-        }),
-        expect.any(Function),
-      );
-    });
-    const createData = createWindow.mock.calls[0][0] as { url: string };
-
-    expect(createData.url).toContain("reminderId=eye-strain");
-    expect(createNotification).not.toHaveBeenCalled();
-    expect(screen.getByRole("status").textContent).toContain(
-      "Reminder popup opened with Snooze and Done buttons.",
-    );
-  });
-
   it("sends a test notification through the extension notification api", async () => {
     const createNotification = vi.fn(
       (
