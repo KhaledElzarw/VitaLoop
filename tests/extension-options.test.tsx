@@ -35,6 +35,7 @@ function createStorageMock(
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe("ExtensionOptions", () => {
@@ -190,8 +191,52 @@ describe("ExtensionOptions", () => {
     );
   });
 
+  it("falls back to a page-level notification when extension notifications are unavailable", async () => {
+    const sentNotifications: Array<{
+      title: string;
+      options?: NotificationOptions;
+    }> = [];
+
+    class FakeNotification {
+      static permission = "granted" as NotificationPermission;
+
+      constructor(title: string, options?: NotificationOptions) {
+        sentNotifications.push({ title, options });
+      }
+    }
+
+    vi.stubGlobal("chrome", {
+      runtime: {
+        getURL: (path: string) => `chrome-extension://vitaloop/${path}`,
+      },
+    });
+    vi.stubGlobal("Notification", FakeNotification);
+
+    render(<ExtensionOptions storage={createStorageMock()} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Send test notification" }),
+    );
+
+    await waitFor(() => {
+      expect(sentNotifications).toEqual([
+        {
+          title: "VitaLoop: Eye strain",
+          options: expect.objectContaining({
+            body: "Look away from the screen and soften your focus.",
+            icon: "chrome-extension://vitaloop/assets/vitaloop-logo-source.png",
+          }),
+        },
+      ]);
+    });
+    expect(screen.getByRole("status").textContent).toContain(
+      "Fallback browser notification was sent",
+    );
+  });
+
   it("shows an unavailable state when test notifications cannot be created", () => {
     vi.stubGlobal("chrome", undefined);
+    vi.stubGlobal("Notification", undefined);
 
     render(<ExtensionOptions storage={createStorageMock()} />);
 

@@ -64,6 +64,10 @@ type ExtensionOptionsProps = {
 };
 
 const TEST_NOTIFICATION_ID = "vitaloop-test-notification";
+const PERMISSION_CHECK_TIMEOUT_MS = 1_500;
+const NOTIFICATION_CREATE_TIMEOUT_MS = 3_000;
+
+type BrowserNotificationApi = typeof Notification;
 
 function getChromeApi() {
   return (globalThis as typeof globalThis & { chrome?: ChromeOptionsApi })
@@ -79,6 +83,14 @@ function getExtensionNotificationIconUrl() {
     getChromeApi()?.runtime?.getURL?.(VITALOOP_NOTIFICATION_ICON_URL) ??
     VITALOOP_NOTIFICATION_ICON_URL
   );
+}
+
+function getBrowserNotificationApi() {
+  return (
+    globalThis as typeof globalThis & {
+      Notification?: BrowserNotificationApi;
+    }
+  ).Notification;
 }
 
 function getTestReminder(reminderList: ReminderDefinition[]) {
@@ -166,18 +178,18 @@ export function ExtensionOptions({
     const notifications = getChromeApi()?.notifications;
     const reminder = getTestReminder(reminderList);
 
-    if (!notifications || !reminder) {
+    if (!reminder) {
       setStatus("test-unavailable");
       setTestNotificationMessage(
-        "The extension notification API is unavailable on this page. Reload the unpacked extension from the built dist folder and try again.",
+        "No reminder copy is available for a test notification.",
       );
       return;
     }
 
-    const notificationsApi = notifications;
-
     setStatus("test-pending");
-    setTestNotificationMessage("Checking browser notification permission...");
+    setTestNotificationMessage(
+      "Send test notification was clicked. Preparing notification check...",
+    );
 
     function showTestUnavailable(message: string) {
       setStatus("test-unavailable");
@@ -191,10 +203,120 @@ export function ExtensionOptions({
       );
     }
 
+    function sendPageNotificationFallback(reason: string) {
+      const BrowserNotification = getBrowserNotificationApi();
+      const copy = createReminderNotificationCopy(reminder);
+
+      setStatus("test-pending");
+      setTestNotificationMessage(
+        `${reason} Trying a page-level browser notification fallback...`,
+      );
+
+      if (!BrowserNotification) {
+        showTestUnavailable(
+          `${reason} The page-level Notification API is also unavailable in this browser context.`,
+        );
+        return;
+      }
+
+      function createPageNotification() {
+        try {
+          new BrowserNotification(copy.title, {
+            body: copy.message,
+            icon: getExtensionNotificationIconUrl(),
+          });
+          setStatus("test-sent");
+          setTestNotificationMessage(
+            `${reason} Fallback browser notification was sent from the Options page. If no macOS banner appeared, system or browser notification settings are suppressing it. Scheduled reminders still require extension notification support.`,
+          );
+        } catch (error) {
+          showTestUnavailable(
+            `${reason} Page-level notification failed: ${String(error)}`,
+          );
+        }
+      }
+
+      if (BrowserNotification.permission === "granted") {
+        createPageNotification();
+        return;
+      }
+
+      if (BrowserNotification.permission === "denied") {
+        showTestUnavailable(
+          `${reason} Page-level notification permission is denied in this browser.`,
+        );
+        return;
+      }
+
+      if (!BrowserNotification.requestPermission) {
+        showTestUnavailable(
+          `${reason} Page-level notification permission is not granted, and this browser cannot request it from the Options page.`,
+        );
+        return;
+      }
+
+      void BrowserNotification.requestPermission()
+        .then((permission) => {
+          if (permission === "granted") {
+            createPageNotification();
+            return;
+          }
+
+          showTestUnavailable(
+            `${reason} Page-level notification permission is ${permission}.`,
+          );
+        })
+        .catch((error: unknown) => {
+          showTestUnavailable(
+            `${reason} Page-level notification permission request failed: ${String(
+              error,
+            )}`,
+          );
+        });
+    }
+
+    if (!notifications) {
+      sendPageNotificationFallback(
+        "The extension notification API is unavailable on this page.",
+      );
+      return;
+    }
+
+    const notificationsApi = notifications;
+
     function createTestNotification() {
       const copy = createReminderNotificationCopy(reminder);
 
       try {
+        let didSettle = false;
+        const timeoutId = window.setTimeout(() => {
+          if (didSettle) {
+            return;
+          }
+
+          didSettle = true;
+          sendPageNotificationFallback(
+            "The extension notification API did not confirm notification creation.",
+          );
+        }, NOTIFICATION_CREATE_TIMEOUT_MS);
+        const settleUnavailable = (message: string) => {
+          if (didSettle) {
+            return;
+          }
+
+          didSettle = true;
+          window.clearTimeout(timeoutId);
+          showTestUnavailable(message);
+        };
+        const settleSent = () => {
+          if (didSettle) {
+            return;
+          }
+
+          didSettle = true;
+          window.clearTimeout(timeoutId);
+          showTestSent();
+        };
         const result = notificationsApi.create(
           TEST_NOTIFICATION_ID,
           {
@@ -208,19 +330,19 @@ export function ExtensionOptions({
             const errorMessage = getRuntimeErrorMessage();
 
             if (errorMessage) {
-              showTestUnavailable(
+              settleUnavailable(
                 `Browser rejected the test notification: ${errorMessage}`,
               );
               return;
             }
 
-            showTestSent();
+            settleSent();
           },
         );
 
         if (result instanceof Promise) {
-          void result.then(showTestSent).catch((error: unknown) => {
-            showTestUnavailable(
+          void result.then(settleSent).catch((error: unknown) => {
+            settleUnavailable(
               `Browser rejected the test notification: ${String(error)}`,
             );
           });
@@ -234,7 +356,26 @@ export function ExtensionOptions({
 
     if (notificationsApi.getPermissionLevel) {
       try {
+        let didCheckPermission = false;
+        const timeoutId = window.setTimeout(() => {
+          if (didCheckPermission) {
+            return;
+          }
+
+          didCheckPermission = true;
+          setTestNotificationMessage(
+            "Browser did not answer the notification permission check. Trying the extension notification API directly...",
+          );
+          createTestNotification();
+        }, PERMISSION_CHECK_TIMEOUT_MS);
+
         notificationsApi.getPermissionLevel((permissionLevel) => {
+          if (didCheckPermission) {
+            return;
+          }
+
+          didCheckPermission = true;
+          window.clearTimeout(timeoutId);
           const errorMessage = getRuntimeErrorMessage();
 
           if (errorMessage) {
@@ -262,6 +403,9 @@ export function ExtensionOptions({
       return;
     }
 
+    setTestNotificationMessage(
+      "Browser does not expose a permission check. Trying the extension notification API directly...",
+    );
     createTestNotification();
   }
 
@@ -336,6 +480,34 @@ export function ExtensionOptions({
             Proactive reminders are{" "}
             {settings.proactiveRemindersEnabled ? "enabled" : "disabled"}.
           </p>
+          <div className="extension-save-row">
+            <button type="button" onClick={sendTestNotification}>
+              Send test notification
+            </button>
+          </div>
+          {status === "test-sent" && (
+            <p
+              className="extension-live-status"
+              role="status"
+              aria-live="polite"
+            >
+              {getTestNotificationStatusMessage()}
+            </p>
+          )}
+          {status === "test-pending" && (
+            <p
+              className="extension-live-status"
+              role="status"
+              aria-live="polite"
+            >
+              {getTestNotificationStatusMessage()}
+            </p>
+          )}
+          {status === "test-unavailable" && (
+            <p className="extension-error" role="alert">
+              {getTestNotificationStatusMessage()}
+            </p>
+          )}
         </fieldset>
 
         <fieldset className="extension-group">
@@ -450,9 +622,6 @@ export function ExtensionOptions({
 
         <div className="extension-save-row">
           <button type="submit">Save</button>
-          <button type="button" onClick={sendTestNotification}>
-            Send test notification
-          </button>
           <button type="button" onClick={() => void resetSettings()}>
             Reset to defaults
           </button>
@@ -473,24 +642,9 @@ export function ExtensionOptions({
             Keep at least one category active.
           </p>
         )}
-        {status === "test-sent" && (
-          <p className="extension-live-status" role="status" aria-live="polite">
-            {getTestNotificationStatusMessage()}
-          </p>
-        )}
-        {status === "test-pending" && (
-          <p className="extension-live-status" role="status" aria-live="polite">
-            {getTestNotificationStatusMessage()}
-          </p>
-        )}
         {status === "error" && (
           <p className="extension-error" role="alert">
             Settings could not be saved.
-          </p>
-        )}
-        {status === "test-unavailable" && (
-          <p className="extension-error" role="alert">
-            {getTestNotificationStatusMessage()}
           </p>
         )}
 
