@@ -140,8 +140,8 @@ function getSortedEligibleReminders(
 ) {
   return reminderList.sort((first, second) => {
     const frequencyDifference =
-      getReminderFrequencyMinutes(first.id, settings.reminderIntensity) -
-      getReminderFrequencyMinutes(second.id, settings.reminderIntensity);
+      getReminderFrequencyMinutes(first, settings.reminderIntensity) -
+      getReminderFrequencyMinutes(second, settings.reminderIntensity);
 
     if (frequencyDifference !== 0) {
       return frequencyDifference;
@@ -227,7 +227,7 @@ export function getBackgroundReminderAlarmPlan({
         getNextAllowedTime(settings, snoozedReminder.nextAt) ??
         snoozedReminder.nextAt;
       const frequencyMinutes = getReminderFrequencyMinutes(
-        snoozedReminder.reminder.id,
+        snoozedReminder.reminder,
         settings.reminderIntensity,
       );
 
@@ -318,7 +318,7 @@ export function getNotificationReminderSchedule({
   return {
     reminder,
     frequencyMinutes: getReminderFrequencyMinutes(
-      reminder.id,
+      reminder,
       settings.reminderIntensity,
     ),
     isAllowedNow: true,
@@ -466,7 +466,7 @@ export function getBackgroundReminderNotificationAction({
   const schedule = {
     reminder,
     frequencyMinutes: getReminderFrequencyMinutes(
-      reminder.id,
+      reminder,
       settings.reminderIntensity,
     ),
     isAllowedNow: true,

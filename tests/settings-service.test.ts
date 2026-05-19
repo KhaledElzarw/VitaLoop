@@ -48,4 +48,27 @@ describe("settings service", () => {
     expect(saveSettings(settings, storage)).toBe(true);
     expect(loadSettings(storage)).toEqual(settings);
   });
+
+  it("saves and reloads custom reminders", () => {
+    const storage = createMemoryStorage();
+    const customReminder = {
+      id: "custom-123e4567-e89b-42d3-a456-426614174000",
+      title: "Desk reset",
+      category: "Custom",
+      description: "Reset your desk and posture.",
+      suggestedFrequency: "Every 25 minutes",
+      enabledByDefault: true,
+      wellnessIntent: "Reset your desk and posture.",
+      displayPriority: 9,
+      customFrequencyMinutes: 25,
+    } as const;
+    const settings = {
+      ...getDefaultAppSettings(),
+      preferredReminderCategories: [customReminder.id],
+      customReminders: [customReminder],
+    };
+
+    expect(saveSettings(settings, storage)).toBe(true);
+    expect(loadSettings(storage)).toEqual(settings);
+  });
 });

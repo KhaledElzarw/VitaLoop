@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { reminders as defaultReminders } from "../data/reminders";
+import { getReminderListWithCustomReminders } from "../domain/customReminders";
 import {
   applyReminderAction,
   createReminderActionState,
@@ -13,7 +14,10 @@ import {
   type ReminderHistoryEntry,
 } from "../domain/reminderHistory";
 import { formatReminderTime } from "../domain/scheduling";
-import { type ReminderDefinition } from "../domain/schemas";
+import {
+  type BuiltinReminderId,
+  type ReminderDefinition,
+} from "../domain/schemas";
 import {
   extensionSettingsStorage,
   getDefaultExtensionSettings,
@@ -75,7 +79,7 @@ function ExtensionBrandMark() {
   );
 }
 
-type ActivityIconVariant = ReminderDefinition["id"] | "fallback";
+type ActivityIconVariant = BuiltinReminderId | "fallback";
 
 const activityIconSources = {
   hydration: "/assets/activity-icons/hydration.png",
@@ -196,14 +200,18 @@ export function ExtensionPopup({
   const [now] = useState(() => currentDate ?? new Date());
   const [actionState, setActionState] = useState(createReminderActionState);
   const [actionStatus, setActionStatus] = useState("");
-  const nextSchedule = getActionAwareNextReminder(
+  const resolvedReminderList = getReminderListWithCustomReminders(
     reminderList,
+    settings,
+  );
+  const nextSchedule = getActionAwareNextReminder(
+    resolvedReminderList,
     settings,
     now,
     actionState,
   );
   const nextSnoozedReminder = getNextSnoozedReminderAvailability(
-    reminderList,
+    resolvedReminderList,
     settings,
     now,
     actionState,

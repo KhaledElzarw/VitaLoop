@@ -51,4 +51,40 @@ describe("app settings schema", () => {
       getDefaultAppSettings().preferredReminderCategories.length,
     ).toBeGreaterThan(0);
   });
+
+  it("loads legacy settings with no custom reminders", () => {
+    const legacySettings = {
+      ...getDefaultAppSettings(),
+    };
+
+    delete (legacySettings as Partial<typeof legacySettings>).customReminders;
+
+    const result = appSettingsSchema.safeParse(legacySettings);
+
+    expect(result.success).toBe(true);
+    expect(result.success ? result.data.customReminders : null).toEqual([]);
+  });
+
+  it("accepts local custom reminders", () => {
+    const customReminderId = "custom-123e4567-e89b-42d3-a456-426614174000";
+    const result = appSettingsSchema.safeParse({
+      ...getDefaultAppSettings(),
+      preferredReminderCategories: [customReminderId],
+      customReminders: [
+        {
+          id: customReminderId,
+          title: "Desk reset",
+          category: "Custom",
+          description: "Reset your desk and posture.",
+          suggestedFrequency: "Every 25 minutes",
+          enabledByDefault: true,
+          wellnessIntent: "Reset your desk and posture.",
+          displayPriority: 9,
+          customFrequencyMinutes: 25,
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+  });
 });

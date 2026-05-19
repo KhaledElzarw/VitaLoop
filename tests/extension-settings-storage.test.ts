@@ -77,7 +77,9 @@ describe("extension settings storage", () => {
   });
 
   it("loads legacy extension settings with proactive reminders off", async () => {
-    const legacySettings = getDefaultAppSettings();
+    const legacySettings = { ...getDefaultAppSettings() };
+
+    delete (legacySettings as Partial<typeof legacySettings>).customReminders;
 
     vi.stubGlobal("chrome", createChromeStorageMock(legacySettings));
 
@@ -85,6 +87,7 @@ describe("extension settings storage", () => {
       ...legacySettings,
       proactiveRemindersEnabled: false,
       snoozedUntilByReminderId: {},
+      customReminders: [],
       reminderHistory: [],
     });
   });
@@ -146,6 +149,32 @@ describe("extension settings storage", () => {
           snoozedUntil,
         },
       ],
+    });
+  });
+
+  it("saves and loads custom reminders", async () => {
+    const chromeMock = createChromeStorageMock();
+    const settings = getDefaultExtensionSettings();
+    const customReminder = {
+      id: "custom-123e4567-e89b-42d3-a456-426614174000",
+      title: "Desk reset",
+      category: "Custom",
+      description: "Reset your desk and posture.",
+      suggestedFrequency: "Every 25 minutes",
+      enabledByDefault: true,
+      wellnessIntent: "Reset your desk and posture.",
+      displayPriority: 9,
+      customFrequencyMinutes: 25,
+    } as const;
+
+    settings.preferredReminderCategories = [customReminder.id];
+    settings.customReminders = [customReminder];
+    vi.stubGlobal("chrome", chromeMock);
+
+    await expect(saveExtensionSettings(settings)).resolves.toBe(true);
+    await expect(loadExtensionSettings()).resolves.toMatchObject({
+      preferredReminderCategories: [customReminder.id],
+      customReminders: [customReminder],
     });
   });
 });

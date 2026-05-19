@@ -263,6 +263,45 @@ describe("background reminder scheduler", () => {
     );
   });
 
+  it("creates notifications for custom reminders", () => {
+    const { alarms, notifications } = createChromeMocks();
+    const customReminder = {
+      id: "custom-123e4567-e89b-42d3-a456-426614174000",
+      title: "Desk reset",
+      category: "Custom",
+      description: "Reset your desk and posture.",
+      suggestedFrequency: "Every 25 minutes",
+      enabledByDefault: true,
+      wellnessIntent: "Reset your desk and posture.",
+      displayPriority: 9,
+      customFrequencyMinutes: 25,
+    } as const;
+
+    const result = handleBackgroundReminderAlarm({
+      alarm: { name: PROACTIVE_REMINDER_ALARM_NAME },
+      alarms,
+      notifications,
+      settings: createSettings({
+        proactiveRemindersEnabled: true,
+        quietHoursEnabled: false,
+        preferredReminderCategories: [customReminder.id],
+        customReminders: [customReminder],
+      }),
+      reminderList: [customReminder],
+      currentDate: new Date(2026, 4, 15, 10, 0),
+    });
+
+    expect(result.notification?.schedule.reminder.id).toBe(customReminder.id);
+    expect(result.notification?.schedule.frequencyMinutes).toBe(25);
+    expect(notifications.create).toHaveBeenCalledWith(
+      expect.stringContaining(`vitaloop-reminder-${customReminder.id}`),
+      expect.objectContaining({
+        title: "VitaLoop: Desk reset",
+        message: "Reset your desk and posture.",
+      }),
+    );
+  });
+
   it("maps reminder notification buttons to supported actions", () => {
     expect(getReminderNotificationButtonAction(0)).toBe("done");
     expect(getReminderNotificationButtonAction(1)).toBe("snooze");

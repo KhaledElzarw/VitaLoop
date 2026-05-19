@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { reminders as defaultReminders } from "../data/reminders";
+import {
+  createCustomReminderDefinition,
+  defaultCustomReminderDraft,
+  deleteCustomReminderSettingsFor,
+  getCustomReminderDraft,
+  getReminderListWithCustomReminders,
+  upsertCustomReminderSettingsFor,
+  type CustomReminderDraft,
+} from "../domain/customReminders";
 import { type ReminderDefinition } from "../domain/schemas";
 import {
   createReminderNotificationCopy,
@@ -124,8 +133,15 @@ export function ExtensionOptions({
   );
   const [status, setStatus] = useState<OptionsStatus>("idle");
   const [testNotificationMessage, setTestNotificationMessage] = useState("");
+  const [customDraft, setCustomDraft] = useState<CustomReminderDraft>({
+    ...defaultCustomReminderDraft,
+  });
   const isSendingTestNotificationRef = useRef(false);
   const isTestNotificationPending = status === "test-pending";
+  const allReminders = getReminderListWithCustomReminders(
+    reminderList,
+    settings,
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -177,6 +193,86 @@ export function ExtensionOptions({
     });
   }
 
+  function updateCustomDraft<Key extends keyof CustomReminderDraft>(
+    key: Key,
+    value: CustomReminderDraft[Key],
+  ) {
+    setCustomDraft((currentDraft) => ({
+      ...currentDraft,
+      [key]: value,
+    }));
+    setStatus("idle");
+    setTestNotificationMessage("");
+  }
+
+  function resetCustomDraft() {
+    setCustomDraft({ ...defaultCustomReminderDraft });
+  }
+
+  function saveCustomReminder() {
+    if (
+      !customDraft.title.trim() ||
+      !customDraft.description.trim() ||
+      customDraft.frequencyMinutes < 5
+    ) {
+      setStatus("error");
+      return;
+    }
+
+    setSettings((currentSettings) => {
+      const existingReminder = currentSettings.customReminders.find(
+        (reminder) => reminder.id === customDraft.id,
+      );
+      const reminder = createCustomReminderDefinition({
+        draft: customDraft,
+        displayPriority:
+          existingReminder?.displayPriority ??
+          reminderList.length + currentSettings.customReminders.length + 1,
+      });
+
+      return upsertCustomReminderSettingsFor({
+        settings: currentSettings,
+        reminder,
+        enabled: customDraft.enabled,
+      });
+    });
+    resetCustomDraft();
+    setStatus("idle");
+    setTestNotificationMessage("");
+  }
+
+  function editCustomReminder(reminderId: ReminderId) {
+    const reminder = settings.customReminders.find(
+      (candidate) => candidate.id === reminderId,
+    );
+
+    if (!reminder) {
+      return;
+    }
+
+    setCustomDraft(
+      getCustomReminderDraft(
+        reminder,
+        settings.preferredReminderCategories.includes(reminder.id),
+      ),
+    );
+    setStatus("idle");
+    setTestNotificationMessage("");
+  }
+
+  function deleteCustomReminder(reminderId: ReminderId) {
+    setSettings((currentSettings) =>
+      deleteCustomReminderSettingsFor(currentSettings, reminderId),
+    );
+
+    if (customDraft.id === reminderId) {
+      resetCustomDraft();
+    }
+
+    setStatus("idle");
+    setTestNotificationMessage("");
+  }
+
   async function saveCurrentSettings() {
     const didSave = await storage.saveSettings(settings);
 
@@ -197,7 +293,7 @@ export function ExtensionOptions({
     }
 
     const notifications = getChromeApi()?.notifications;
-    const reminder = getTestReminder(reminderList);
+    const reminder = getTestReminder(allReminders);
 
     if (!reminder) {
       setStatus("test-unavailable");
@@ -626,7 +722,7 @@ export function ExtensionOptions({
         <fieldset className="extension-group">
           <legend>Categories</legend>
           <div className="extension-category-grid">
-            {reminderList.map((reminder) => {
+            {allReminders.map((reminder) => {
               const isPreferred =
                 settings.preferredReminderCategories.includes(reminder.id);
               const isOnlyPreferred =
@@ -649,6 +745,107 @@ export function ExtensionOptions({
               );
             })}
           </div>
+        </fieldset>
+
+        <fieldset className="extension-group">
+          <legend>Custom reminders</legend>
+          <div className="extension-field-grid">
+            <label className="extension-setting-row extension-field">
+              <span>Custom reminder title</span>
+              <input
+                type="text"
+                value={customDraft.title}
+                onChange={(event) =>
+                  updateCustomDraft("title", event.currentTarget.value)
+                }
+              />
+            </label>
+            <label className="extension-setting-row extension-field">
+              <span>Custom reminder category</span>
+              <input
+                type="text"
+                value={customDraft.category}
+                onChange={(event) =>
+                  updateCustomDraft("category", event.currentTarget.value)
+                }
+              />
+            </label>
+          </div>
+          <label className="extension-setting-row extension-field">
+            <span>Custom reminder message</span>
+            <input
+              type="text"
+              value={customDraft.description}
+              onChange={(event) =>
+                updateCustomDraft("description", event.currentTarget.value)
+              }
+            />
+          </label>
+          <div className="extension-field-grid">
+            <label className="extension-setting-row extension-field">
+              <span>Custom reminder frequency minutes</span>
+              <input
+                type="number"
+                min="5"
+                max="1440"
+                value={customDraft.frequencyMinutes}
+                onChange={(event) =>
+                  updateCustomDraft(
+                    "frequencyMinutes",
+                    Number(event.currentTarget.value),
+                  )
+                }
+              />
+            </label>
+            <label className="extension-setting-row extension-check-row">
+              <input
+                type="checkbox"
+                checked={customDraft.enabled}
+                onChange={(event) =>
+                  updateCustomDraft("enabled", event.currentTarget.checked)
+                }
+              />
+              <span>Enable custom reminder</span>
+            </label>
+          </div>
+          <div className="extension-save-row">
+            <button type="button" onClick={saveCustomReminder}>
+              {customDraft.id ? "Update custom reminder" : "Add custom reminder"}
+            </button>
+            {customDraft.id ? (
+              <button type="button" onClick={resetCustomDraft}>
+                Cancel edit
+              </button>
+            ) : null}
+          </div>
+          {settings.customReminders.length > 0 ? (
+            <ul className="extension-custom-list" aria-label="Custom reminders">
+              {settings.customReminders.map((reminder) => (
+                <li key={reminder.id}>
+                  <div>
+                    <strong>{reminder.title}</strong>
+                    <span>{reminder.customFrequencyMinutes} min</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => editCustomReminder(reminder.id)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteCustomReminder(reminder.id)}
+                  >
+                    Delete
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="extension-options-footnote">
+              No custom reminders yet.
+            </p>
+          )}
         </fieldset>
 
         <div className="extension-save-row">

@@ -1,4 +1,5 @@
 import { reminders } from "../data/reminders";
+import { getReminderListWithCustomReminders } from "../domain/customReminders";
 import {
   getBackgroundReminderNotificationAction,
   handleBackgroundReminderAlarm,
@@ -66,11 +67,12 @@ async function syncProactiveReminderAlarm() {
   }
 
   const settings = await loadExtensionSettings();
+  const reminderList = getReminderListWithCustomReminders(reminders, settings);
 
   syncBackgroundReminderAlarm({
     alarms: chromeApi.alarms,
     settings,
-    reminderList: reminders,
+    reminderList,
     currentDate: new Date(),
   });
 }
@@ -83,13 +85,14 @@ async function notifyForAlarm(alarm: ChromeAlarm) {
   }
 
   const settings = await loadExtensionSettings();
+  const reminderList = getReminderListWithCustomReminders(reminders, settings);
 
   handleBackgroundReminderAlarm({
     alarm,
     alarms: chromeApi.alarms,
     notifications: chromeApi.notifications,
     settings,
-    reminderList: reminders,
+    reminderList,
     currentDate: new Date(),
     notificationIconUrl:
       chromeApi.runtime?.getURL?.(VITALOOP_NOTIFICATION_ICON_URL) ??
@@ -120,11 +123,12 @@ async function handleNotificationButton(
 
   const currentDate = new Date();
   const settings = await loadExtensionSettings();
+  const reminderList = getReminderListWithCustomReminders(reminders, settings);
   const notificationAction = getBackgroundReminderNotificationAction({
     notificationId,
     buttonIndex,
     settings,
-    reminderList: reminders,
+    reminderList,
     currentDate,
   });
 
@@ -149,7 +153,10 @@ async function handleNotificationButton(
   syncBackgroundReminderAlarm({
     alarms: chromeApi.alarms,
     settings: notificationAction.updatedSettings,
-    reminderList: reminders,
+    reminderList: getReminderListWithCustomReminders(
+      reminders,
+      notificationAction.updatedSettings,
+    ),
     currentDate: new Date(),
   });
 }

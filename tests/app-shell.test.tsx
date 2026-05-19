@@ -280,6 +280,54 @@ describe("VitaLoop app shell", () => {
     expect(screen.getByRole("status").textContent).toContain("Settings saved.");
   });
 
+  it("creates, edits, and deletes a custom reminder in settings", () => {
+    const service = createTestSettingsService();
+
+    render(<SettingsScreen service={service} reminderList={reminders} />);
+
+    fireEvent.change(screen.getByLabelText("Custom reminder title"), {
+      target: { value: "Desk reset" },
+    });
+    fireEvent.change(screen.getByLabelText("Custom reminder message"), {
+      target: { value: "Reset your desk and posture." },
+    });
+    fireEvent.change(screen.getByLabelText("Custom reminder frequency minutes"), {
+      target: { value: "25" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
+
+    expect(screen.getByLabelText("Desk reset")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Save settings" }));
+
+    const savedSettings = service.saveSettings.mock.calls[0][0];
+
+    expect(savedSettings.customReminders).toEqual([
+      expect.objectContaining({
+        id: expect.stringMatching(/^custom-/),
+        title: "Desk reset",
+        description: "Reset your desk and posture.",
+        customFrequencyMinutes: 25,
+      }),
+    ]);
+    expect(savedSettings.preferredReminderCategories).toContain(
+      savedSettings.customReminders[0].id,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    fireEvent.change(screen.getByLabelText("Custom reminder title"), {
+      target: { value: "Desk walk" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Update custom reminder" }),
+    );
+
+    expect(screen.getByLabelText("Desk walk")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(screen.getByText("No custom reminders yet.")).toBeTruthy();
+  });
+
   it("resets settings to defaults", () => {
     const service = createTestSettingsService({
       ...getDefaultAppSettings(),

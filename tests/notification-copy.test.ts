@@ -45,6 +45,26 @@ describe("notification copy", () => {
     }
   });
 
+  it("uses custom reminder descriptions as notification messages", () => {
+    const copy = createReminderNotificationCopy({
+      id: "custom-123e4567-e89b-42d3-a456-426614174000",
+      title: "Desk reset",
+      category: "Custom",
+      description: "Reset your desk and posture.",
+      suggestedFrequency: "Every 25 minutes",
+      enabledByDefault: true,
+      wellnessIntent: "Reset your desk and posture.",
+      displayPriority: 9,
+      customFrequencyMinutes: 25,
+    });
+
+    expect(copy).toMatchObject({
+      title: "VitaLoop: Desk reset",
+      message: "Reset your desk and posture.",
+      contextMessage: "Local browser reminder",
+    });
+  });
+
   it("uses the packaged extension notification icon without external assets", () => {
     expect(VITALOOP_NOTIFICATION_ICON_URL).toBe(
       "assets/app-icons/vitaloop-notification-logo.png",
