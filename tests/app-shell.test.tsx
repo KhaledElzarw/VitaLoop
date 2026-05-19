@@ -2,8 +2,10 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App, { HomeScreen, RemindersScreen, SettingsScreen } from "../src/App";
 import { reminders } from "../src/data/reminders";
+import { type ReminderHistoryEntry } from "../src/domain/reminderHistory";
 import { type AppSettings } from "../src/domain/schemas";
 import { getDefaultAppSettings } from "../src/domain/settings";
+import { type ReminderHistoryService } from "../src/services/reminderHistoryService";
 import { type SettingsService } from "../src/services/settingsService";
 
 afterEach(cleanup);
@@ -26,6 +28,25 @@ function createTestSettingsService(
   return {
     loadSettings: () => currentSettings,
     saveSettings,
+  };
+}
+
+function createTestHistoryService(
+  initialHistory: ReminderHistoryEntry[] = [],
+): ReminderHistoryService & {
+  saveReminderHistory: ReturnType<
+    typeof vi.fn<(history: ReminderHistoryEntry[]) => boolean>
+  >;
+} {
+  let currentHistory = initialHistory;
+  const saveReminderHistory = vi.fn((history: ReminderHistoryEntry[]) => {
+    currentHistory = history;
+    return true;
+  });
+
+  return {
+    loadReminderHistory: () => currentHistory,
+    saveReminderHistory,
   };
 }
 
@@ -136,22 +157,46 @@ describe("VitaLoop app shell", () => {
   });
 
   it("updates visible status after Done", () => {
-    render(<HomeScreen reminders={reminders} />);
+    const historyService = createTestHistoryService();
+
+    render(<HomeScreen reminders={reminders} historyService={historyService} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Done" }));
 
     expect(screen.getByRole("status").textContent).toContain("marked done");
     expect(screen.getByRole("heading", { name: "Stand/walk" })).toBeTruthy();
+    const recentActivity = screen.getByLabelText("Recent activity");
+
+    expect(recentActivity).toBeTruthy();
+    expect(within(recentActivity).getByText("Done")).toBeTruthy();
+    expect(historyService.saveReminderHistory).toHaveBeenCalledWith([
+      expect.objectContaining({
+        reminderId: "eye-strain",
+        reminderTitle: "Eye strain",
+        actionType: "done",
+      }),
+    ]);
   });
 
   it("updates visible status after Snooze", () => {
-    render(<HomeScreen reminders={reminders} />);
+    const historyService = createTestHistoryService();
+
+    render(<HomeScreen reminders={reminders} historyService={historyService} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Snooze" }));
 
     expect(screen.getByRole("status").textContent).toContain(
       "snoozed until 11:00 AM",
     );
+    expect(screen.getByText("Snoozed")).toBeTruthy();
+    expect(screen.getByText("Until 11:00 AM")).toBeTruthy();
+  });
+
+  it("renders an empty recent activity state", () => {
+    render(<HomeScreen reminders={reminders} />);
+
+    expect(screen.getByLabelText("Recent activity")).toBeTruthy();
+    expect(screen.getByText("No reminder activity yet.")).toBeTruthy();
   });
 
   it("updates visible status after Skip once", () => {

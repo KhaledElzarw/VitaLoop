@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  cloneReminderHistory,
+  reminderHistoryEntrySchema,
+  type ReminderHistoryEntry,
+} from "../domain/reminderHistory";
 import { type ReminderActionState } from "../domain/reminderActions";
 import { appSettingsSchema, reminderIdSchema } from "../domain/schemas";
 import { getDefaultAppSettings } from "../domain/settings";
@@ -13,6 +18,7 @@ const snoozedUntilByReminderIdSchema = z.partialRecord(
 export const extensionSettingsSchema = appSettingsSchema.extend({
   proactiveRemindersEnabled: z.boolean().default(false),
   snoozedUntilByReminderId: snoozedUntilByReminderIdSchema.default({}),
+  reminderHistory: reminderHistoryEntrySchema.array().default([]),
 });
 
 export type ExtensionSettings = z.infer<typeof extensionSettingsSchema>;
@@ -55,6 +61,7 @@ export function getDefaultExtensionSettings(): ExtensionSettings {
     ...getDefaultAppSettings(),
     proactiveRemindersEnabled: false,
     snoozedUntilByReminderId: {},
+    reminderHistory: [],
   };
 }
 
@@ -65,6 +72,7 @@ function cloneExtensionSettings(settings: ExtensionSettings): ExtensionSettings 
     snoozedUntilByReminderId: cloneSnoozedReminders(
       settings.snoozedUntilByReminderId,
     ),
+    reminderHistory: cloneReminderHistory(settings.reminderHistory),
   };
 }
 
@@ -109,7 +117,16 @@ function serializeExtensionSettings(settings: ExtensionSettings) {
     snoozedUntilByReminderId: serializeSnoozedReminders(
       settings.snoozedUntilByReminderId,
     ),
+    reminderHistory: serializeReminderHistory(settings.reminderHistory),
   };
+}
+
+function serializeReminderHistory(history: ReminderHistoryEntry[]) {
+  return history.map((entry) => ({
+    ...entry,
+    occurredAt: entry.occurredAt.toISOString(),
+    snoozedUntil: entry.snoozedUntil?.toISOString(),
+  }));
 }
 
 export function getExtensionReminderActionState(
@@ -131,6 +148,16 @@ export function withExtensionReminderActionState(
   return cloneExtensionSettings({
     ...settings,
     snoozedUntilByReminderId: actionState.snoozedUntilByReminderId,
+  });
+}
+
+export function withExtensionReminderHistory(
+  settings: ExtensionSettings,
+  reminderHistory: ReminderHistoryEntry[],
+): ExtensionSettings {
+  return cloneExtensionSettings({
+    ...settings,
+    reminderHistory,
   });
 }
 

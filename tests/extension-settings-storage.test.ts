@@ -85,6 +85,7 @@ describe("extension settings storage", () => {
       ...legacySettings,
       proactiveRemindersEnabled: false,
       snoozedUntilByReminderId: {},
+      reminderHistory: [],
     });
   });
 
@@ -108,6 +109,43 @@ describe("extension settings storage", () => {
       snoozedUntilByReminderId: {
         "eye-strain": snoozedUntil,
       },
+    });
+  });
+
+  it("saves and loads reminder history entries", async () => {
+    const chromeMock = createChromeStorageMock();
+    const settings = getDefaultExtensionSettings();
+    const occurredAt = new Date(2026, 4, 15, 10, 0);
+    const snoozedUntil = new Date(2026, 4, 15, 11, 0);
+
+    settings.reminderHistory = [
+      {
+        id: `${occurredAt.toISOString()}-eye-strain-snooze`,
+        reminderId: "eye-strain",
+        reminderTitle: "Eye strain",
+        actionType: "snooze",
+        occurredAt,
+        snoozedUntil,
+      },
+    ];
+    vi.stubGlobal("chrome", chromeMock);
+
+    await expect(saveExtensionSettings(settings)).resolves.toBe(true);
+    expect(chromeMock.getStoredValue()).toMatchObject({
+      reminderHistory: [
+        {
+          occurredAt: occurredAt.toISOString(),
+          snoozedUntil: snoozedUntil.toISOString(),
+        },
+      ],
+    });
+    await expect(loadExtensionSettings()).resolves.toMatchObject({
+      reminderHistory: [
+        {
+          occurredAt,
+          snoozedUntil,
+        },
+      ],
     });
   });
 });

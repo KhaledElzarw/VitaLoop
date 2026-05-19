@@ -184,9 +184,11 @@ describe("ExtensionPopup", () => {
   });
 
   it("updates visible in-session status after reminder actions", () => {
+    const storage = createStorageMock();
+
     render(
       <ExtensionPopup
-        storage={createStorageMock()}
+        storage={storage}
         currentDate={previewDate}
         onOpenOptions={vi.fn()}
       />,
@@ -196,10 +198,55 @@ describe("ExtensionPopup", () => {
 
     expect(screen.getByRole("status").textContent).toContain("marked done");
     expect(screen.getByRole("heading", { name: "Stand/walk" })).toBeTruthy();
+    const recentActivity = screen.getByLabelText("Recent activity");
+
+    expect(recentActivity).toBeTruthy();
+    expect(within(recentActivity).getByText("Done")).toBeTruthy();
+    expect(storage.saveSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reminderHistory: [
+          expect.objectContaining({
+            reminderId: "eye-strain",
+            reminderTitle: "Eye strain",
+            actionType: "done",
+          }),
+        ],
+      }),
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Skip once" }));
 
     expect(screen.getByRole("status").textContent).toContain("skipped once");
+  });
+
+  it("renders stored recent activity", async () => {
+    render(
+      <ExtensionPopup
+        storage={createStorageMock({
+          ...getDefaultExtensionSettings(),
+          reminderHistory: [
+            {
+              id: "history-1",
+              reminderId: "hydration",
+              reminderTitle: "Hydration",
+              actionType: "snooze",
+              occurredAt: previewDate,
+              snoozedUntil: new Date(2026, 4, 15, 10, 15),
+            },
+          ],
+        })}
+        currentDate={previewDate}
+        onOpenOptions={vi.fn()}
+      />,
+    );
+
+    const recentActivity = screen.getByLabelText("Recent activity");
+
+    await waitFor(() => {
+      expect(within(recentActivity).getByText("Hydration")).toBeTruthy();
+    });
+    expect(within(recentActivity).getByText("Snoozed")).toBeTruthy();
+    expect(within(recentActivity).getByText("Until 10:15 AM")).toBeTruthy();
   });
 
   it("does not immediately reselect a snoozed reminder", async () => {
