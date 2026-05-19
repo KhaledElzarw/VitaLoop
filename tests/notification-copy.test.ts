@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { reminders } from "../src/data/reminders";
 import {
   createReminderNotificationCopy,
+  REMINDER_NOTIFICATION_BUTTONS,
   VITALOOP_NOTIFICATION_ICON_URL,
 } from "../src/extension/notificationCopy";
 
@@ -49,5 +50,12 @@ describe("notification copy", () => {
       "assets/vitaloop-logo-source.png",
     );
     expect(VITALOOP_NOTIFICATION_ICON_URL).not.toMatch(/^https?:\/\//);
+  });
+
+  it("defines the two supported notification action buttons", () => {
+    expect(REMINDER_NOTIFICATION_BUTTONS).toEqual([
+      { title: "Done" },
+      { title: "Snooze" },
+    ]);
   });
 });
