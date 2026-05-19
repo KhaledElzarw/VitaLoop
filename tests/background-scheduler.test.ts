@@ -241,7 +241,7 @@ describe("background reminder scheduler", () => {
       reminderList: reminders,
       currentDate: new Date(2026, 4, 15, 10, 0),
       notificationIconUrl:
-        "chrome-extension://vitaloop/assets/vitaloop-logo-source.png",
+        "chrome-extension://vitaloop/assets/app-icons/vitaloop-icon-128.png",
     });
 
     expect(result.notification?.schedule.reminder.id).toBe("eye-strain");
@@ -249,7 +249,8 @@ describe("background reminder scheduler", () => {
       expect.stringContaining("vitaloop-reminder-eye-strain"),
       expect.objectContaining({
         type: "basic",
-        iconUrl: "chrome-extension://vitaloop/assets/vitaloop-logo-source.png",
+        iconUrl:
+          "chrome-extension://vitaloop/assets/app-icons/vitaloop-icon-128.png",
         title: "VitaLoop: Eye strain",
         message: "Look away from the screen and soften your focus.",
         buttons: [{ title: "Done" }, { title: "Snooze" }],

@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import manifestJson from "../public/manifest.json";
 
 type ExtensionManifest = {
+  icons?: Record<string, string>;
+  action?: {
+    default_icon?: Record<string, string>;
+    default_title?: string;
+    default_popup?: string;
+  };
   permissions?: string[];
   background?: {
     service_worker?: string;
@@ -15,7 +21,19 @@ function loadManifest(): ExtensionManifest {
   return manifestJson as ExtensionManifest;
 }
 
+const expectedBrandIcons = {
+  "16": "assets/app-icons/vitaloop-icon-16.png",
+  "32": "assets/app-icons/vitaloop-icon-32.png",
+  "48": "assets/app-icons/vitaloop-icon-48.png",
+  "128": "assets/app-icons/vitaloop-icon-128.png",
+};
+
 describe("extension manifest", () => {
+  it("uses the VitaLoop brand logo for extension surfaces", () => {
+    expect(loadManifest().icons).toEqual(expectedBrandIcons);
+    expect(loadManifest().action?.default_icon).toEqual(expectedBrandIcons);
+  });
+
   it("requests exactly local storage, alarms, and notifications permissions", () => {
     expect(loadManifest().permissions).toEqual([
       "storage",
