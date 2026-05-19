@@ -8,6 +8,11 @@ export type ReminderNotificationCopy = {
   contextMessage: string;
 };
 
+export const REMINDER_NOTIFICATION_BUTTONS = [
+  { title: "Done" },
+  { title: "Snooze" },
+] as const;
+
 const notificationMessages: Record<ReminderId, string> = {
   hydration: "Pause for a sip of water when it fits your moment.",
   "eye-strain": "Look away from the screen and soften your focus.",

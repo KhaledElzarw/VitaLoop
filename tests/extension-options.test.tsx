@@ -158,6 +158,7 @@ describe("ExtensionOptions", () => {
           message: "Look away from the screen and soften your focus.",
           contextMessage: "Local browser reminder",
           iconUrl: "chrome-extension://vitaloop/assets/vitaloop-logo-source.png",
+          buttons: [{ title: "Done" }, { title: "Snooze" }],
         }),
         expect.any(Function),
       );

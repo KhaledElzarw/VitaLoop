@@ -17,6 +17,7 @@ import {
 import { type ReminderDefinition } from "../domain/schemas";
 import {
   createReminderNotificationCopy,
+  REMINDER_NOTIFICATION_BUTTONS,
   VITALOOP_NOTIFICATION_ICON_URL,
 } from "./notificationCopy";
 import {
@@ -29,8 +30,8 @@ export const PROACTIVE_REMINDER_ALARM_NAME = "vitaloop.proactiveReminder";
 export const PROACTIVE_REMINDER_NOTIFICATION_PREFIX = "vitaloop-reminder";
 
 const reminderNotificationButtonActions = [
-  { actionType: "done", title: "Done" },
-  { actionType: "snooze", title: "Snooze" },
+  { actionType: "done", title: REMINDER_NOTIFICATION_BUTTONS[0].title },
+  { actionType: "snooze", title: REMINDER_NOTIFICATION_BUTTONS[1].title },
 ] as const satisfies ReadonlyArray<{
   actionType: ReminderActionType;
   title: string;

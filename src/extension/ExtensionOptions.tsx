@@ -3,6 +3,7 @@ import { reminders as defaultReminders } from "../data/reminders";
 import { type ReminderDefinition } from "../domain/schemas";
 import {
   createReminderNotificationCopy,
+  REMINDER_NOTIFICATION_BUTTONS,
   VITALOOP_NOTIFICATION_ICON_URL,
 } from "./notificationCopy";
 import {
@@ -37,6 +38,11 @@ type ChromeNotificationOptions = {
   title: string;
   message: string;
   contextMessage: string;
+  buttons?: ChromeNotificationButton[];
+};
+
+type ChromeNotificationButton = {
+  title: string;
 };
 
 type ChromeOptionsApi = {
@@ -95,6 +101,10 @@ function getBrowserNotificationApi() {
 
 function getTestNotificationId() {
   return `${TEST_NOTIFICATION_ID}-${Date.now()}`;
+}
+
+function createNotificationButtons(): ChromeNotificationButton[] {
+  return REMINDER_NOTIFICATION_BUTTONS.map(({ title }) => ({ title }));
 }
 
 function getTestReminder(reminderList: ReminderDefinition[]) {
@@ -329,6 +339,7 @@ export function ExtensionOptions({
             title: copy.title,
             message: copy.message,
             contextMessage: copy.contextMessage,
+            buttons: createNotificationButtons(),
           },
           () => {
             const errorMessage = getRuntimeErrorMessage();
