@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { reminders as defaultReminders } from "../data/reminders";
 import { type ReminderDefinition } from "../domain/schemas";
 import {
+  createReminderNotificationCopy,
+  VITALOOP_NOTIFICATION_ICON_URL,
+} from "./notificationCopy";
+import {
   extensionSettingsStorage,
   getDefaultExtensionSettings,
   type ExtensionSettings,
@@ -15,12 +19,60 @@ const reminderIntensityOptions = [
 ] as const;
 
 type ReminderId = ExtensionSettings["preferredReminderCategories"][number];
-type OptionsStatus = "idle" | "saved" | "reset" | "error" | "category-required";
+type OptionsStatus =
+  | "idle"
+  | "saved"
+  | "reset"
+  | "error"
+  | "category-required"
+  | "test-sent"
+  | "test-unavailable";
+
+type ChromeNotificationOptions = {
+  type: "basic";
+  iconUrl: string;
+  title: string;
+  message: string;
+  contextMessage: string;
+};
+
+type ChromeOptionsApi = {
+  notifications?: {
+    create: (
+      notificationId: string,
+      options: ChromeNotificationOptions,
+      callback?: () => void,
+    ) => void;
+  };
+  runtime?: {
+    lastError?: {
+      message?: string;
+    };
+  };
+};
 
 type ExtensionOptionsProps = {
   storage?: ExtensionSettingsStorage;
   reminderList?: ReminderDefinition[];
 };
+
+const TEST_NOTIFICATION_ID = "vitaloop-test-notification";
+
+function getChromeApi() {
+  return (globalThis as typeof globalThis & { chrome?: ChromeOptionsApi })
+    .chrome;
+}
+
+function getRuntimeErrorMessage() {
+  return getChromeApi()?.runtime?.lastError?.message;
+}
+
+function getTestReminder(reminderList: ReminderDefinition[]) {
+  return (
+    reminderList.find((reminder) => reminder.id === "eye-strain") ??
+    reminderList[0]
+  );
+}
 
 export function ExtensionOptions({
   storage = extensionSettingsStorage,
@@ -92,6 +144,39 @@ export function ExtensionOptions({
 
     setSettings(defaultSettings);
     setStatus(didSave ? "reset" : "error");
+  }
+
+  function sendTestNotification() {
+    const notifications = getChromeApi()?.notifications;
+    const reminder = getTestReminder(reminderList);
+
+    if (!notifications || !reminder) {
+      setStatus("test-unavailable");
+      return;
+    }
+
+    const copy = createReminderNotificationCopy(reminder);
+
+    try {
+      setStatus("test-sent");
+      notifications.create(
+        TEST_NOTIFICATION_ID,
+        {
+          type: "basic",
+          iconUrl: VITALOOP_NOTIFICATION_ICON_URL,
+          title: copy.title,
+          message: copy.message,
+          contextMessage: copy.contextMessage,
+        },
+        () => {
+          if (getRuntimeErrorMessage()) {
+            setStatus("test-unavailable");
+          }
+        },
+      );
+    } catch {
+      setStatus("test-unavailable");
+    }
   }
 
   return (
@@ -267,6 +352,9 @@ export function ExtensionOptions({
 
         <div className="extension-save-row">
           <button type="submit">Save</button>
+          <button type="button" onClick={sendTestNotification}>
+            Send test notification
+          </button>
           <button type="button" onClick={() => void resetSettings()}>
             Reset to defaults
           </button>
@@ -287,9 +375,20 @@ export function ExtensionOptions({
             Keep at least one category active.
           </p>
         )}
+        {status === "test-sent" && (
+          <p className="extension-live-status" role="status" aria-live="polite">
+            Test notification sent. If no banner appears, check macOS Focus and
+            browser notification settings.
+          </p>
+        )}
         {status === "error" && (
           <p className="extension-error" role="alert">
             Settings could not be saved.
+          </p>
+        )}
+        {status === "test-unavailable" && (
+          <p className="extension-error" role="alert">
+            Test notification could not be sent from this browser context.
           </p>
         )}
 
