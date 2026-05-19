@@ -44,9 +44,10 @@ describe("notification copy", () => {
     }
   });
 
-  it("uses an inline extension notification icon without external assets", () => {
-    expect(VITALOOP_NOTIFICATION_ICON_URL).toMatch(
-      /^data:image\/svg\+xml;charset=UTF-8,/,
+  it("uses the packaged extension notification icon without external assets", () => {
+    expect(VITALOOP_NOTIFICATION_ICON_URL).toBe(
+      "assets/vitaloop-logo-source.png",
     );
+    expect(VITALOOP_NOTIFICATION_ICON_URL).not.toMatch(/^https?:\/\//);
   });
 });

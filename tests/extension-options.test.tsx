@@ -131,8 +131,15 @@ describe("ExtensionOptions", () => {
     vi.stubGlobal("chrome", {
       notifications: {
         create: createNotification,
+        getPermissionLevel: vi.fn(
+          (callback: (permissionLevel: "granted") => void) => {
+            callback("granted");
+          },
+        ),
       },
-      runtime: {},
+      runtime: {
+        getURL: (path: string) => `chrome-extension://vitaloop/${path}`,
+      },
     });
 
     render(<ExtensionOptions storage={createStorageMock()} />);
@@ -149,12 +156,37 @@ describe("ExtensionOptions", () => {
           title: "VitaLoop: Eye strain",
           message: "Look away from the screen and soften your focus.",
           contextMessage: "Local browser reminder",
+          iconUrl: "chrome-extension://vitaloop/assets/vitaloop-logo-source.png",
         }),
         expect.any(Function),
       );
     });
     expect(screen.getByRole("status").textContent).toContain(
-      "Test notification sent.",
+      "Browser accepted the test notification.",
+    );
+  });
+
+  it("shows permission guidance when browser notifications are denied", () => {
+    vi.stubGlobal("chrome", {
+      notifications: {
+        create: vi.fn(),
+        getPermissionLevel: vi.fn(
+          (callback: (permissionLevel: "denied") => void) => {
+            callback("denied");
+          },
+        ),
+      },
+      runtime: {},
+    });
+
+    render(<ExtensionOptions storage={createStorageMock()} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Send test notification" }),
+    );
+
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Browser notification permission is denied.",
     );
   });
 
@@ -168,7 +200,7 @@ describe("ExtensionOptions", () => {
     );
 
     expect(screen.getByRole("alert").textContent).toContain(
-      "Test notification could not be sent",
+      "The extension notification API is unavailable",
     );
   });
 });
