@@ -93,14 +93,14 @@ reading.
 - React, TypeScript, and Vite provide the web foundation.
 - The app uses simple React tab state for Home, Reminders, Settings, Backlog, Watch Preview, and About.
 - Zod schemas define reminder definitions and app settings.
-- Mocked reminder data covers hydration, eye strain, stretch, stand/walk, posture, breathing reset, sleep routine, and mood/energy check-in.
-- Settings use safe local defaults and a small localStorage-backed service for quiet hours, reminder intensity, workday window, timezone, and preferred reminder categories.
-- Pure scheduling helpers calculate quiet-hour blocks, workday eligibility, intensity-adjusted frequencies, and simulated next reminder times without timers or notification APIs.
-- Reminder actions are simulated in app state for now: done, snooze, and skip once do not persist history or trigger notifications.
-- A Manifest V3 Chromium extension MVP builds popup, options, and an opt-in background reminder worker from the shared reminder settings, scheduling, and action logic.
+- Built-in reminder data covers hydration, eye strain, stretch, stand/walk, posture, breathing reset, sleep routine, and mood/energy check-in.
+- Settings use safe local defaults and a small localStorage-backed service for quiet hours, reminder intensity, workday window, timezone, preferred reminder categories, and custom reminders.
+- Pure scheduling helpers calculate quiet-hour blocks, workday eligibility, intensity-adjusted built-in frequencies, custom reminder frequencies, and next reminder times.
+- Reminder actions support done, snooze, and skip once, with local recent activity history for the web app and Chromium extension.
+- A Manifest V3 Chromium extension MVP builds popup, options, and an opt-in background reminder worker from the shared reminder settings, scheduling, custom reminder, and action logic.
 - Vitest with React Testing Library covers the app shell, navigation, reminders, backlog categories, and settings schema behavior.
 - Styling is minimal custom CSS with a mobile-first shell and bottom navigation.
-- Data is local and mocked. There are no backend services, analytics SDKs, payments, accounts, external API calls, cloud sync, content scripts, host permissions, or page reading.
+- Data is local, with static built-in reminder definitions and user-created custom reminders stored locally. There are no backend services, analytics SDKs, payments, accounts, external API calls, cloud sync, content scripts, host permissions, or page reading.
 
 ## Future iOS and Android Path
 
