@@ -25,6 +25,11 @@ import {
   type ExtensionSettings,
   withExtensionReminderActionState,
 } from "./extensionSettingsStorage";
+import {
+  createReminderActionWindowData,
+  type ReminderActionWindowCreateData,
+  type ReminderActionWindowReferenceBounds,
+} from "./reminderWindow";
 
 export const PROACTIVE_REMINDER_ALARM_NAME = "vitaloop.proactiveReminder";
 export const PROACTIVE_REMINDER_NOTIFICATION_PREFIX = "vitaloop-reminder";
@@ -68,6 +73,16 @@ export type ChromeNotificationsApi = {
   create: (notificationId: string, options: ChromeNotificationOptions) => void;
 };
 
+export type ChromeWindowsApi = {
+  create: (
+    createData: ReminderActionWindowCreateData,
+    callback?: () => void,
+  ) => void | Promise<unknown>;
+  getLastFocused?: (
+    callback: (window: ReminderActionWindowReferenceBounds) => void,
+  ) => void | Promise<ReminderActionWindowReferenceBounds>;
+};
+
 export type BackgroundReminderAlarmPlan =
   | {
       action: "create";
@@ -84,6 +99,11 @@ export type BackgroundReminderAlarmPlan =
 export type BackgroundReminderNotification = {
   id: string;
   options: ChromeNotificationOptions;
+  schedule: ReminderSchedule & { nextAt: Date };
+};
+
+export type BackgroundReminderActionWindow = {
+  createData: ReminderActionWindowCreateData;
   schedule: ReminderSchedule & { nextAt: Date };
 };
 
@@ -118,6 +138,14 @@ type AlarmHandlerOptions = AlarmSyncOptions & {
   alarm: ChromeAlarm;
   notifications: ChromeNotificationsApi;
   notificationIconUrl?: string;
+};
+
+type ActionWindowAlarmHandlerOptions = AlarmSyncOptions & {
+  alarm: ChromeAlarm;
+  createActionWindowUrl: (
+    schedule: ReminderSchedule & { nextAt: Date },
+  ) => string;
+  referenceWindow?: ReminderActionWindowReferenceBounds | null;
 };
 
 function getDelayInMinutes(nextAt: Date, currentDate: Date) {
@@ -364,6 +392,32 @@ export function showBackgroundReminderNotification({
   return notification;
 }
 
+export function createBackgroundReminderActionWindow(
+  schedule: ReminderSchedule & { nextAt: Date },
+  actionWindowUrl: string,
+  referenceWindow?: ReminderActionWindowReferenceBounds | null,
+): BackgroundReminderActionWindow {
+  return {
+    createData: createReminderActionWindowData(
+      actionWindowUrl,
+      referenceWindow,
+    ),
+    schedule,
+  };
+}
+
+export function showBackgroundReminderActionWindow({
+  windows,
+  actionWindow,
+}: {
+  windows: ChromeWindowsApi;
+  actionWindow: BackgroundReminderActionWindow;
+}) {
+  windows.create(actionWindow.createData);
+
+  return actionWindow;
+}
+
 export function handleBackgroundReminderAlarm({
   alarm,
   alarms,
@@ -410,6 +464,54 @@ export function handleBackgroundReminderAlarm({
       currentDate,
       notificationIconUrl,
     }),
+  };
+}
+
+export function handleBackgroundReminderActionWindowAlarm({
+  alarm,
+  alarms,
+  settings,
+  reminderList = defaultReminders,
+  currentDate,
+  actionState,
+  createActionWindowUrl,
+  referenceWindow,
+}: ActionWindowAlarmHandlerOptions) {
+  if (alarm.name !== PROACTIVE_REMINDER_ALARM_NAME) {
+    return {
+      alarmPlan: null,
+      actionWindow: null,
+    };
+  }
+
+  const alarmPlan = syncBackgroundReminderAlarm({
+    alarms,
+    settings,
+    reminderList,
+    currentDate,
+    actionState,
+  });
+  const schedule = getNotificationReminderSchedule({
+    settings,
+    reminderList,
+    currentDate,
+    actionState,
+  });
+
+  if (!schedule) {
+    return {
+      alarmPlan,
+      actionWindow: null,
+    };
+  }
+
+  return {
+    alarmPlan,
+    actionWindow: createBackgroundReminderActionWindow(
+      schedule,
+      createActionWindowUrl(schedule),
+      referenceWindow,
+    ),
   };
 }
 

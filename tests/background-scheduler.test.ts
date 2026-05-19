@@ -3,13 +3,16 @@ import { reminders } from "../src/data/reminders";
 import {
   getBackgroundReminderNotificationAction,
   getBackgroundReminderAlarmPlan,
+  handleBackgroundReminderActionWindowAlarm,
   getNotificationReminderSchedule,
   getReminderNotificationButtonAction,
   handleBackgroundReminderAlarm,
   PROACTIVE_REMINDER_ALARM_NAME,
+  showBackgroundReminderActionWindow,
   syncBackgroundReminderAlarm,
   type ChromeAlarmsApi,
   type ChromeNotificationsApi,
+  type ChromeWindowsApi,
 } from "../src/extension/backgroundScheduler";
 import {
   getDefaultExtensionSettings,
@@ -31,6 +34,7 @@ function createSettings(
 function createChromeMocks(): {
   alarms: ChromeAlarmsApi;
   notifications: ChromeNotificationsApi;
+  windows: ChromeWindowsApi;
 } {
   return {
     alarms: {
@@ -39,6 +43,9 @@ function createChromeMocks(): {
     },
     notifications: {
       create: vi.fn<ChromeNotificationsApi["create"]>(),
+    },
+    windows: {
+      create: vi.fn<ChromeWindowsApi["create"]>(),
     },
   };
 }
@@ -260,6 +267,73 @@ describe("background reminder scheduler", () => {
       PROACTIVE_REMINDER_ALARM_NAME,
       expect.objectContaining({ periodInMinutes: 45 }),
     );
+  });
+
+  it("creates custom reminder action window data for eligible reminders", () => {
+    const { alarms } = createChromeMocks();
+
+    const result = handleBackgroundReminderActionWindowAlarm({
+      alarm: { name: PROACTIVE_REMINDER_ALARM_NAME },
+      alarms,
+      settings: createSettings({
+        proactiveRemindersEnabled: true,
+        quietHoursEnabled: false,
+      }),
+      reminderList: reminders,
+      currentDate: new Date(2026, 4, 15, 10, 0),
+      referenceWindow: {
+        left: 80,
+        top: 20,
+        width: 1_200,
+        height: 900,
+      },
+      createActionWindowUrl: (schedule) =>
+        `chrome-extension://vitaloop/extension/reminder.html?reminderId=${schedule.reminder.id}`,
+    });
+
+    expect(result.actionWindow?.schedule.reminder.id).toBe("eye-strain");
+    expect(result.actionWindow?.createData).toEqual({
+      url: "chrome-extension://vitaloop/extension/reminder.html?reminderId=eye-strain",
+      type: "popup",
+      width: 720,
+      height: 220,
+      focused: true,
+      left: 536,
+      top: 44,
+    });
+  });
+
+  it("opens the custom reminder action window when requested", () => {
+    const { alarms, windows } = createChromeMocks();
+    const result = handleBackgroundReminderActionWindowAlarm({
+      alarm: { name: PROACTIVE_REMINDER_ALARM_NAME },
+      alarms,
+      settings: createSettings({
+        proactiveRemindersEnabled: true,
+        quietHoursEnabled: false,
+      }),
+      reminderList: reminders,
+      currentDate: new Date(2026, 4, 15, 10, 0),
+      createActionWindowUrl: () =>
+        "chrome-extension://vitaloop/extension/reminder.html?reminderId=eye-strain",
+    });
+
+    if (!result.actionWindow) {
+      throw new Error("Expected a reminder action window.");
+    }
+
+    showBackgroundReminderActionWindow({
+      windows,
+      actionWindow: result.actionWindow,
+    });
+
+    expect(windows.create).toHaveBeenCalledWith({
+      url: "chrome-extension://vitaloop/extension/reminder.html?reminderId=eye-strain",
+      type: "popup",
+      width: 720,
+      height: 220,
+      focused: true,
+    });
   });
 
   it("maps reminder notification buttons to supported actions", () => {

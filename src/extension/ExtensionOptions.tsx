@@ -7,6 +7,12 @@ import {
   VITALOOP_NOTIFICATION_ICON_URL,
 } from "./notificationCopy";
 import {
+  createReminderActionWindowData,
+  createReminderActionWindowPath,
+  type ReminderActionWindowCreateData,
+  type ReminderActionWindowReferenceBounds,
+} from "./reminderWindow";
+import {
   extensionSettingsStorage,
   getDefaultExtensionSettings,
   type ExtensionSettings,
@@ -62,6 +68,15 @@ type ChromeOptionsApi = {
       message?: string;
     };
   };
+  windows?: {
+    create: (
+      createData: ReminderActionWindowCreateData,
+      callback?: () => void,
+    ) => void | Promise<unknown>;
+    getLastFocused?: (
+      callback: (window: ReminderActionWindowReferenceBounds) => void,
+    ) => void | Promise<ReminderActionWindowReferenceBounds>;
+  };
 };
 
 type ExtensionOptionsProps = {
@@ -70,6 +85,8 @@ type ExtensionOptionsProps = {
 };
 
 const TEST_NOTIFICATION_ID = "vitaloop-test-notification";
+const ACTION_WINDOW_CREATE_TIMEOUT_MS = 3_000;
+const FOCUSED_WINDOW_LOOKUP_TIMEOUT_MS = 1_000;
 const PERMISSION_CHECK_TIMEOUT_MS = 1_500;
 const NOTIFICATION_CREATE_TIMEOUT_MS = 3_000;
 
@@ -84,11 +101,92 @@ function getRuntimeErrorMessage() {
   return getChromeApi()?.runtime?.lastError?.message;
 }
 
-function getExtensionNotificationIconUrl() {
+function getExtensionUrl(path: string) {
   return (
-    getChromeApi()?.runtime?.getURL?.(VITALOOP_NOTIFICATION_ICON_URL) ??
-    VITALOOP_NOTIFICATION_ICON_URL
+    getChromeApi()?.runtime?.getURL?.(path) ??
+    path
   );
+}
+
+function getExtensionNotificationIconUrl() {
+  return getExtensionUrl(VITALOOP_NOTIFICATION_ICON_URL);
+}
+
+function getReminderActionWindowUrl(currentDate: Date, reminderId: string) {
+  return getExtensionUrl(createReminderActionWindowPath(currentDate, reminderId));
+}
+
+async function getLastFocusedWindow(
+  windows: NonNullable<ChromeOptionsApi["windows"]>,
+): Promise<ReminderActionWindowReferenceBounds | null> {
+  if (!windows.getLastFocused) {
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    let didSettle = false;
+    const timeoutId = window.setTimeout(() => {
+      settle(null);
+    }, FOCUSED_WINDOW_LOOKUP_TIMEOUT_MS);
+    const settle = (focusedWindow: ReminderActionWindowReferenceBounds | null) => {
+      if (didSettle) {
+        return;
+      }
+
+      didSettle = true;
+      window.clearTimeout(timeoutId);
+      resolve(focusedWindow);
+    };
+
+    try {
+      const result = windows.getLastFocused?.((focusedWindow) =>
+        settle(focusedWindow),
+      );
+
+      if (result instanceof Promise) {
+        void result.then((focusedWindow) => settle(focusedWindow)).catch(() => {
+          settle(null);
+        });
+      }
+    } catch {
+      settle(null);
+    }
+  });
+}
+
+async function openReminderActionWindow(
+  windows: NonNullable<ChromeOptionsApi["windows"]>,
+  createData: ReminderActionWindowCreateData,
+) {
+  return new Promise<boolean>((resolve) => {
+    let didSettle = false;
+    const timeoutId = window.setTimeout(() => {
+      settle(false);
+    }, ACTION_WINDOW_CREATE_TIMEOUT_MS);
+    const settle = (didOpen: boolean) => {
+      if (didSettle) {
+        return;
+      }
+
+      didSettle = true;
+      window.clearTimeout(timeoutId);
+      resolve(didOpen);
+    };
+
+    try {
+      const result = windows.create(createData, () => {
+        settle(!getRuntimeErrorMessage());
+      });
+
+      if (result instanceof Promise) {
+        void result.then(() => settle(true)).catch(() => {
+          settle(false);
+        });
+      }
+    } catch {
+      settle(false);
+    }
+  });
 }
 
 function getBrowserNotificationApi() {
@@ -189,7 +287,9 @@ export function ExtensionOptions({
   }
 
   function sendTestNotification() {
-    const notifications = getChromeApi()?.notifications;
+    const chromeApi = getChromeApi();
+    const notifications = chromeApi?.notifications;
+    const windows = chromeApi?.windows;
     const reminder = getTestReminder(reminderList);
 
     if (!reminder) {
@@ -210,11 +310,19 @@ export function ExtensionOptions({
       setTestNotificationMessage(message);
     }
 
-    function showTestSent() {
+    function showTestSent(message: string) {
       setStatus("test-sent");
-      setTestNotificationMessage(
-        "Browser accepted the test notification. If no macOS banner appeared, check Focus or Do Not Disturb and notification settings for this browser.",
+      setTestNotificationMessage(message);
+    }
+
+    function showTestWindowSent() {
+      showTestSent(
+        "Custom reminder window opened. Use Done or Snooze in the reminder window.",
       );
+    }
+
+    function withFallbackReason(message: string, fallbackReason?: string) {
+      return fallbackReason ? `${fallbackReason} ${message}` : message;
     }
 
     function sendPageNotificationFallback(reason: string) {
@@ -239,8 +347,7 @@ export function ExtensionOptions({
             body: copy.message,
             icon: getExtensionNotificationIconUrl(),
           });
-          setStatus("test-sent");
-          setTestNotificationMessage(
+          showTestSent(
             `${reason} Fallback browser notification was sent from the Options page. If no macOS banner appeared, system or browser notification settings are suppressing it. Scheduled reminders still require extension notification support.`,
           );
         } catch (error) {
@@ -289,139 +396,189 @@ export function ExtensionOptions({
         });
     }
 
-    if (!notifications) {
-      sendPageNotificationFallback(
-        "The extension notification API is unavailable on this page.",
-      );
-      return;
-    }
+    function sendNativeTestNotification(fallbackReason?: string) {
+      if (!notifications) {
+        sendPageNotificationFallback(
+          withFallbackReason(
+            "The extension notification API is unavailable on this page.",
+            fallbackReason,
+          ),
+        );
+        return;
+      }
 
-    const notificationsApi = notifications;
+      const notificationsApi = notifications;
 
-    function createTestNotification() {
-      const copy = createReminderNotificationCopy(reminder);
+      function createTestNotification() {
+        const copy = createReminderNotificationCopy(reminder);
 
-      try {
-        let didSettle = false;
-        const timeoutId = window.setTimeout(() => {
-          if (didSettle) {
-            return;
-          }
+        try {
+          let didSettle = false;
+          const timeoutId = window.setTimeout(() => {
+            if (didSettle) {
+              return;
+            }
 
-          didSettle = true;
-          sendPageNotificationFallback(
-            "The extension notification API did not confirm notification creation.",
+            didSettle = true;
+            sendPageNotificationFallback(
+              withFallbackReason(
+                "The extension notification API did not confirm notification creation.",
+                fallbackReason,
+              ),
+            );
+          }, NOTIFICATION_CREATE_TIMEOUT_MS);
+          const settleUnavailable = (message: string) => {
+            if (didSettle) {
+              return;
+            }
+
+            didSettle = true;
+            window.clearTimeout(timeoutId);
+            showTestUnavailable(message);
+          };
+          const settleSent = () => {
+            if (didSettle) {
+              return;
+            }
+
+            didSettle = true;
+            window.clearTimeout(timeoutId);
+            showTestSent(
+              withFallbackReason(
+                "Browser accepted the fallback native notification. If no macOS banner appeared, check Focus or Do Not Disturb and notification settings for this browser.",
+                fallbackReason,
+              ),
+            );
+          };
+          const result = notificationsApi.create(
+            getTestNotificationId(),
+            {
+              type: "basic",
+              iconUrl: getExtensionNotificationIconUrl(),
+              title: copy.title,
+              message: copy.message,
+              contextMessage: copy.contextMessage,
+              buttons: createNotificationButtons(),
+            },
+            () => {
+              const errorMessage = getRuntimeErrorMessage();
+
+              if (errorMessage) {
+                settleUnavailable(
+                  `Browser rejected the test notification: ${errorMessage}`,
+                );
+                return;
+              }
+
+              settleSent();
+            },
           );
-        }, NOTIFICATION_CREATE_TIMEOUT_MS);
-        const settleUnavailable = (message: string) => {
-          if (didSettle) {
-            return;
-          }
 
-          didSettle = true;
-          window.clearTimeout(timeoutId);
-          showTestUnavailable(message);
-        };
-        const settleSent = () => {
-          if (didSettle) {
-            return;
+          if (result instanceof Promise) {
+            void result.then(settleSent).catch((error: unknown) => {
+              settleUnavailable(
+                `Browser rejected the test notification: ${String(error)}`,
+              );
+            });
           }
+        } catch (error) {
+          showTestUnavailable(
+            `Test notification could not be sent: ${String(error)}`,
+          );
+        }
+      }
 
-          didSettle = true;
-          window.clearTimeout(timeoutId);
-          showTestSent();
-        };
-        const result = notificationsApi.create(
-          getTestNotificationId(),
-          {
-            type: "basic",
-            iconUrl: getExtensionNotificationIconUrl(),
-            title: copy.title,
-            message: copy.message,
-            contextMessage: copy.contextMessage,
-            buttons: createNotificationButtons(),
-          },
-          () => {
+      if (notificationsApi.getPermissionLevel) {
+        try {
+          let didCheckPermission = false;
+          const timeoutId = window.setTimeout(() => {
+            if (didCheckPermission) {
+              return;
+            }
+
+            didCheckPermission = true;
+            setTestNotificationMessage(
+              withFallbackReason(
+                "Browser did not answer the notification permission check. Trying the extension notification API directly...",
+                fallbackReason,
+              ),
+            );
+            createTestNotification();
+          }, PERMISSION_CHECK_TIMEOUT_MS);
+
+          notificationsApi.getPermissionLevel((permissionLevel) => {
+            if (didCheckPermission) {
+              return;
+            }
+
+            didCheckPermission = true;
+            window.clearTimeout(timeoutId);
             const errorMessage = getRuntimeErrorMessage();
 
             if (errorMessage) {
-              settleUnavailable(
-                `Browser rejected the test notification: ${errorMessage}`,
+              showTestUnavailable(
+                `Browser could not check notification permission: ${errorMessage}`,
               );
               return;
             }
 
-            settleSent();
-          },
-        );
+            if (permissionLevel === "denied") {
+              showTestUnavailable(
+                withFallbackReason(
+                  "Browser notification permission is denied. Allow notifications for this browser in macOS System Settings, then try again.",
+                  fallbackReason,
+                ),
+              );
+              return;
+            }
 
-        if (result instanceof Promise) {
-          void result.then(settleSent).catch((error: unknown) => {
-            settleUnavailable(
-              `Browser rejected the test notification: ${String(error)}`,
-            );
+            createTestNotification();
           });
-        }
-      } catch (error) {
-        showTestUnavailable(
-          `Test notification could not be sent: ${String(error)}`,
-        );
-      }
-    }
-
-    if (notificationsApi.getPermissionLevel) {
-      try {
-        let didCheckPermission = false;
-        const timeoutId = window.setTimeout(() => {
-          if (didCheckPermission) {
-            return;
-          }
-
-          didCheckPermission = true;
-          setTestNotificationMessage(
-            "Browser did not answer the notification permission check. Trying the extension notification API directly...",
+        } catch (error) {
+          showTestUnavailable(
+            `Browser could not check notification permission: ${String(error)}`,
           );
-          createTestNotification();
-        }, PERMISSION_CHECK_TIMEOUT_MS);
+        }
 
-        notificationsApi.getPermissionLevel((permissionLevel) => {
-          if (didCheckPermission) {
-            return;
-          }
-
-          didCheckPermission = true;
-          window.clearTimeout(timeoutId);
-          const errorMessage = getRuntimeErrorMessage();
-
-          if (errorMessage) {
-            showTestUnavailable(
-              `Browser could not check notification permission: ${errorMessage}`,
-            );
-            return;
-          }
-
-          if (permissionLevel === "denied") {
-            showTestUnavailable(
-              "Browser notification permission is denied. Allow notifications for this browser in macOS System Settings, then try again.",
-            );
-            return;
-          }
-
-          createTestNotification();
-        });
-      } catch (error) {
-        showTestUnavailable(
-          `Browser could not check notification permission: ${String(error)}`,
-        );
+        return;
       }
 
-      return;
+      setTestNotificationMessage(
+        withFallbackReason(
+          "Browser does not expose a permission check. Trying the extension notification API directly...",
+          fallbackReason,
+        ),
+      );
+      createTestNotification();
     }
 
-    setTestNotificationMessage(
-      "Browser does not expose a permission check. Trying the extension notification API directly...",
-    );
-    createTestNotification();
+    async function openTestReminderWindow() {
+      if (!windows) {
+        return false;
+      }
+
+      const currentDate = new Date();
+      const referenceWindow = await getLastFocusedWindow(windows);
+      const createData = createReminderActionWindowData(
+        getReminderActionWindowUrl(currentDate, reminder.id),
+        referenceWindow,
+      );
+
+      return openReminderActionWindow(windows, createData);
+    }
+
+    void openTestReminderWindow().then((didOpen) => {
+      if (didOpen) {
+        showTestWindowSent();
+        return;
+      }
+
+      sendNativeTestNotification(
+        windows
+          ? "The custom reminder window could not open."
+          : "The custom reminder window API is unavailable.",
+      );
+    });
   }
 
   function getTestNotificationStatusMessage() {

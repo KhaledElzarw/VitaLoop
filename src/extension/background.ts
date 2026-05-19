@@ -1,12 +1,16 @@
 import { reminders } from "../data/reminders";
 import {
   getBackgroundReminderNotificationAction,
+  handleBackgroundReminderActionWindowAlarm,
   handleBackgroundReminderAlarm,
   PROACTIVE_REMINDER_NOTIFICATION_PREFIX,
+  showBackgroundReminderNotification,
   syncBackgroundReminderAlarm,
+  type BackgroundReminderActionWindow,
   type ChromeAlarm,
   type ChromeAlarmsApi,
   type ChromeNotificationsApi,
+  type ChromeWindowsApi,
 } from "./backgroundScheduler";
 import {
   EXTENSION_SETTINGS_STORAGE_KEY,
@@ -14,6 +18,10 @@ import {
   saveExtensionSettings,
 } from "./extensionSettingsStorage";
 import { VITALOOP_NOTIFICATION_ICON_URL } from "./notificationCopy";
+import {
+  createReminderActionWindowPath,
+  type ReminderActionWindowReferenceBounds,
+} from "./reminderWindow";
 
 type ChromeEvent<Listener> = {
   addListener: (listener: Listener) => void;
@@ -21,6 +29,9 @@ type ChromeEvent<Listener> = {
 
 type ChromeRuntimeApi = {
   getURL?: (path: string) => string;
+  lastError?: {
+    message?: string;
+  };
   onInstalled?: ChromeEvent<() => void>;
   onStartup?: ChromeEvent<() => void>;
   openOptionsPage?: () => void;
@@ -48,7 +59,11 @@ type ChromeBackgroundApi = {
       (changes: Record<string, ChromeStorageChange>, areaName: string) => void
     >;
   };
+  windows?: ChromeWindowsApi;
 };
+
+const ACTION_WINDOW_CREATE_TIMEOUT_MS = 3_000;
+const FOCUSED_WINDOW_LOOKUP_TIMEOUT_MS = 1_000;
 
 function getChromeApi() {
   return (
@@ -56,6 +71,87 @@ function getChromeApi() {
       chrome?: ChromeBackgroundApi;
     }
   ).chrome;
+}
+
+function getRuntimeErrorMessage() {
+  return getChromeApi()?.runtime?.lastError?.message;
+}
+
+function getReminderActionWindowUrl(currentDate: Date, reminderId: string) {
+  const path = createReminderActionWindowPath(currentDate, reminderId);
+
+  return getChromeApi()?.runtime?.getURL?.(path) ?? path;
+}
+
+async function getLastFocusedWindow(
+  windows: ChromeWindowsApi,
+): Promise<ReminderActionWindowReferenceBounds | null> {
+  if (!windows.getLastFocused) {
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    let didSettle = false;
+    const timeoutId = setTimeout(() => {
+      settle(null);
+    }, FOCUSED_WINDOW_LOOKUP_TIMEOUT_MS);
+    const settle = (window: ReminderActionWindowReferenceBounds | null) => {
+      if (didSettle) {
+        return;
+      }
+
+      didSettle = true;
+      clearTimeout(timeoutId);
+      resolve(window);
+    };
+
+    try {
+      const result = windows.getLastFocused?.((window) => settle(window));
+
+      if (result instanceof Promise) {
+        void result.then((window) => settle(window)).catch(() => {
+          settle(null);
+        });
+      }
+    } catch {
+      settle(null);
+    }
+  });
+}
+
+async function openReminderActionWindow(
+  windows: ChromeWindowsApi,
+  actionWindow: BackgroundReminderActionWindow,
+) {
+  return new Promise<boolean>((resolve) => {
+    let didSettle = false;
+    const timeoutId = setTimeout(() => {
+      settle(false);
+    }, ACTION_WINDOW_CREATE_TIMEOUT_MS);
+    const settle = (didOpen: boolean) => {
+      if (didSettle) {
+        return;
+      }
+
+      didSettle = true;
+      clearTimeout(timeoutId);
+      resolve(didOpen);
+    };
+
+    try {
+      const result = windows.create(actionWindow.createData, () => {
+        settle(!getRuntimeErrorMessage());
+      });
+
+      if (result instanceof Promise) {
+        void result.then(() => settle(true)).catch(() => {
+          settle(false);
+        });
+      }
+    } catch {
+      settle(false);
+    }
+  });
 }
 
 async function syncProactiveReminderAlarm() {
@@ -78,11 +174,53 @@ async function syncProactiveReminderAlarm() {
 async function notifyForAlarm(alarm: ChromeAlarm) {
   const chromeApi = getChromeApi();
 
-  if (!chromeApi?.alarms || !chromeApi.notifications) {
+  if (!chromeApi?.alarms) {
     return;
   }
 
+  const currentDate = new Date();
   const settings = await loadExtensionSettings();
+
+  if (chromeApi.windows) {
+    const referenceWindow = await getLastFocusedWindow(chromeApi.windows);
+    const actionWindowResult = handleBackgroundReminderActionWindowAlarm({
+      alarm,
+      alarms: chromeApi.alarms,
+      settings,
+      reminderList: reminders,
+      currentDate,
+      referenceWindow,
+      createActionWindowUrl: (schedule) =>
+        getReminderActionWindowUrl(currentDate, schedule.reminder.id),
+    });
+
+    if (!actionWindowResult.actionWindow) {
+      return;
+    }
+
+    const didOpenActionWindow = await openReminderActionWindow(
+      chromeApi.windows,
+      actionWindowResult.actionWindow,
+    );
+
+    if (didOpenActionWindow || !chromeApi.notifications) {
+      return;
+    }
+
+    showBackgroundReminderNotification({
+      notifications: chromeApi.notifications,
+      schedule: actionWindowResult.actionWindow.schedule,
+      currentDate,
+      notificationIconUrl:
+        chromeApi.runtime?.getURL?.(VITALOOP_NOTIFICATION_ICON_URL) ??
+        VITALOOP_NOTIFICATION_ICON_URL,
+    });
+    return;
+  }
+
+  if (!chromeApi.notifications) {
+    return;
+  }
 
   handleBackgroundReminderAlarm({
     alarm,
@@ -90,7 +228,7 @@ async function notifyForAlarm(alarm: ChromeAlarm) {
     notifications: chromeApi.notifications,
     settings,
     reminderList: reminders,
-    currentDate: new Date(),
+    currentDate,
     notificationIconUrl:
       chromeApi.runtime?.getURL?.(VITALOOP_NOTIFICATION_ICON_URL) ??
       VITALOOP_NOTIFICATION_ICON_URL,

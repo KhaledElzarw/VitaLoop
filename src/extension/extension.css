@@ -698,6 +698,123 @@ input:focus-visible {
   font-size: 0.88rem;
 }
 
+.extension-reminder-window-page {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #111113;
+  color: #f6f6f8;
+  padding: 8px;
+}
+
+.extension-reminder-window-card {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  width: min(100%, 704px);
+  min-height: 204px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(64, 64, 68, 0.98), rgba(48, 48, 53, 0.98)),
+    #303035;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 16px 42px rgba(0, 0, 0, 0.38);
+  padding: 22px 28px;
+}
+
+.extension-reminder-window-logo {
+  display: block;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.28));
+}
+
+.extension-reminder-window-copy {
+  min-width: 0;
+}
+
+.extension-reminder-window-copy h1 {
+  margin: 0;
+  color: #f7f7fa;
+  font-size: 1.55rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.08;
+}
+
+.extension-reminder-window-context,
+.extension-reminder-window-message {
+  margin: 0;
+  color: #f0f0f4;
+  letter-spacing: 0;
+}
+
+.extension-reminder-window-context {
+  margin-top: 3px;
+  font-size: 1.34rem;
+  font-weight: 780;
+  line-height: 1.08;
+}
+
+.extension-reminder-window-message {
+  margin-top: 4px;
+  max-width: 470px;
+  color: #ebebef;
+  font-size: 1.28rem;
+  font-weight: 520;
+  line-height: 1.18;
+}
+
+.extension-reminder-window-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.extension-reminder-window-actions button {
+  min-width: 112px;
+  min-height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #f8f8fb;
+  font-size: 0.95rem;
+  font-weight: 760;
+  padding: 6px 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.extension-reminder-window-actions button:first-child {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.extension-reminder-window-actions button:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.extension-reminder-window-actions button:disabled {
+  cursor: default;
+  opacity: 0.54;
+}
+
+.extension-reminder-window-status {
+  width: min(100%, 704px);
+  margin: 0;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 0.78rem;
+}
+
 @media (max-width: 480px) {
   .extension-options {
     padding: 16px 12px;
@@ -714,6 +831,39 @@ input:focus-visible {
 
   .extension-save-row button {
     flex: 1 1 160px;
+  }
+
+  .extension-reminder-window-page {
+    padding: 6px;
+  }
+
+  .extension-reminder-window-card {
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 12px;
+    border-radius: 22px;
+    padding: 18px;
+  }
+
+  .extension-reminder-window-logo {
+    width: 48px;
+    height: 48px;
+  }
+
+  .extension-reminder-window-copy h1 {
+    font-size: 1.2rem;
+  }
+
+  .extension-reminder-window-context,
+  .extension-reminder-window-message {
+    font-size: 1rem;
+  }
+
+  .extension-reminder-window-actions {
+    flex-wrap: wrap;
+  }
+
+  .extension-reminder-window-actions button {
+    flex: 1 1 100px;
   }
 }
 

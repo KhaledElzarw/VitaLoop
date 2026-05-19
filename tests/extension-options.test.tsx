@@ -118,7 +118,59 @@ describe("ExtensionOptions", () => {
     );
   });
 
-  it("sends a test notification through the extension notification api", async () => {
+  it("opens a custom reminder window from the test notification button", async () => {
+    const createWindow = vi.fn((_createData: unknown, callback?: () => void) => {
+      callback?.();
+    });
+    const createNotification = vi.fn();
+
+    vi.stubGlobal("chrome", {
+      notifications: {
+        create: createNotification,
+        getPermissionLevel: vi.fn(),
+      },
+      runtime: {
+        getURL: (path: string) => `chrome-extension://vitaloop/${path}`,
+      },
+      windows: {
+        create: createWindow,
+        getLastFocused: vi.fn(
+          (callback: (focusedWindow: unknown) => void) => {
+            callback({ left: 80, top: 20, width: 1_200, height: 900 });
+          },
+        ),
+      },
+    });
+
+    render(<ExtensionOptions storage={createStorageMock()} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Send test notification" }),
+    );
+
+    await waitFor(() => {
+      expect(createWindow).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "popup",
+          width: 720,
+          height: 220,
+          focused: true,
+          left: 536,
+          top: 44,
+          url: expect.stringMatching(
+            /^chrome-extension:\/\/vitaloop\/extension\/reminder.html\?at=\d+&reminderId=eye-strain$/,
+          ),
+        }),
+        expect.any(Function),
+      );
+    });
+    expect(createNotification).not.toHaveBeenCalled();
+    expect(screen.getByRole("status").textContent).toContain(
+      "Custom reminder window opened.",
+    );
+  });
+
+  it("falls back to a native test notification when the custom window is unavailable", async () => {
     const createNotification = vi.fn(
       (
         _notificationId: string,
@@ -165,11 +217,62 @@ describe("ExtensionOptions", () => {
       );
     });
     expect(screen.getByRole("status").textContent).toContain(
-      "Browser accepted the test notification.",
+      "Browser accepted the fallback native notification.",
     );
   });
 
-  it("shows permission guidance when browser notifications are denied", () => {
+  it("falls back to a native test notification when the custom window fails", async () => {
+    const createNotification = vi.fn(
+      (
+        _notificationId: string,
+        _options: unknown,
+        callback?: () => void,
+      ) => {
+        callback?.();
+      },
+    );
+
+    vi.stubGlobal("chrome", {
+      notifications: {
+        create: createNotification,
+        getPermissionLevel: vi.fn(
+          (callback: (permissionLevel: "granted") => void) => {
+            callback("granted");
+          },
+        ),
+      },
+      runtime: {
+        getURL: (path: string) => `chrome-extension://vitaloop/${path}`,
+      },
+      windows: {
+        create: vi.fn(() => {
+          throw new Error("Window blocked");
+        }),
+      },
+    });
+
+    render(<ExtensionOptions storage={createStorageMock()} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Send test notification" }),
+    );
+
+    await waitFor(() => {
+      expect(createNotification).toHaveBeenCalledWith(
+        expect.stringMatching(/^vitaloop-test-notification-\d+$/),
+        expect.objectContaining({
+          title: "VitaLoop: Eye strain",
+          buttons: [{ title: "Done" }, { title: "Snooze" }],
+        }),
+        expect.any(Function),
+      );
+    });
+    expect(screen.getByRole("status").textContent).toContain(
+      "The custom reminder window could not open.",
+    );
+  });
+
+  it("shows permission guidance when browser notifications are denied", async () => {
     vi.stubGlobal("chrome", {
       notifications: {
         create: vi.fn(),
@@ -188,9 +291,11 @@ describe("ExtensionOptions", () => {
       screen.getByRole("button", { name: "Send test notification" }),
     );
 
-    expect(screen.getByRole("alert").textContent).toContain(
-      "Browser notification permission is denied.",
-    );
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent).toContain(
+        "Browser notification permission is denied.",
+      );
+    });
   });
 
   it("falls back to a page-level notification when extension notifications are unavailable", async () => {
@@ -237,7 +342,7 @@ describe("ExtensionOptions", () => {
     );
   });
 
-  it("shows an unavailable state when test notifications cannot be created", () => {
+  it("shows an unavailable state when test notifications cannot be created", async () => {
     vi.stubGlobal("chrome", undefined);
     vi.stubGlobal("Notification", undefined);
 
@@ -247,8 +352,10 @@ describe("ExtensionOptions", () => {
       screen.getByRole("button", { name: "Send test notification" }),
     );
 
-    expect(screen.getByRole("alert").textContent).toContain(
-      "The extension notification API is unavailable",
-    );
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent).toContain(
+        "The extension notification API is unavailable",
+      );
+    });
   });
 });
