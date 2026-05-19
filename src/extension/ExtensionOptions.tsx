@@ -25,8 +25,11 @@ type OptionsStatus =
   | "reset"
   | "error"
   | "category-required"
+  | "test-pending"
   | "test-sent"
   | "test-unavailable";
+
+type NotificationPermissionLevel = "granted" | "denied";
 
 type ChromeNotificationOptions = {
   type: "basic";
@@ -41,10 +44,14 @@ type ChromeOptionsApi = {
     create: (
       notificationId: string,
       options: ChromeNotificationOptions,
-      callback?: () => void,
+      callback?: (notificationId?: string) => void,
+    ) => void | Promise<string>;
+    getPermissionLevel?: (
+      callback: (permissionLevel: NotificationPermissionLevel) => void,
     ) => void;
   };
   runtime?: {
+    getURL?: (path: string) => string;
     lastError?: {
       message?: string;
     };
@@ -67,6 +74,13 @@ function getRuntimeErrorMessage() {
   return getChromeApi()?.runtime?.lastError?.message;
 }
 
+function getExtensionNotificationIconUrl() {
+  return (
+    getChromeApi()?.runtime?.getURL?.(VITALOOP_NOTIFICATION_ICON_URL) ??
+    VITALOOP_NOTIFICATION_ICON_URL
+  );
+}
+
 function getTestReminder(reminderList: ReminderDefinition[]) {
   return (
     reminderList.find((reminder) => reminder.id === "eye-strain") ??
@@ -82,6 +96,7 @@ export function ExtensionOptions({
     getDefaultExtensionSettings(),
   );
   const [status, setStatus] = useState<OptionsStatus>("idle");
+  const [testNotificationMessage, setTestNotificationMessage] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -106,6 +121,7 @@ export function ExtensionOptions({
       [key]: value,
     }));
     setStatus("idle");
+    setTestNotificationMessage("");
   }
 
   function toggleReminderCategory(reminderId: ReminderId) {
@@ -152,31 +168,113 @@ export function ExtensionOptions({
 
     if (!notifications || !reminder) {
       setStatus("test-unavailable");
+      setTestNotificationMessage(
+        "The extension notification API is unavailable on this page. Reload the unpacked extension from the built dist folder and try again.",
+      );
       return;
     }
 
-    const copy = createReminderNotificationCopy(reminder);
+    const notificationsApi = notifications;
 
-    try {
-      setStatus("test-sent");
-      notifications.create(
-        TEST_NOTIFICATION_ID,
-        {
-          type: "basic",
-          iconUrl: VITALOOP_NOTIFICATION_ICON_URL,
-          title: copy.title,
-          message: copy.message,
-          contextMessage: copy.contextMessage,
-        },
-        () => {
-          if (getRuntimeErrorMessage()) {
-            setStatus("test-unavailable");
-          }
-        },
-      );
-    } catch {
+    setStatus("test-pending");
+    setTestNotificationMessage("Checking browser notification permission...");
+
+    function showTestUnavailable(message: string) {
       setStatus("test-unavailable");
+      setTestNotificationMessage(message);
     }
+
+    function showTestSent() {
+      setStatus("test-sent");
+      setTestNotificationMessage(
+        "Browser accepted the test notification. If no macOS banner appeared, check Focus or Do Not Disturb and notification settings for this browser.",
+      );
+    }
+
+    function createTestNotification() {
+      const copy = createReminderNotificationCopy(reminder);
+
+      try {
+        const result = notificationsApi.create(
+          TEST_NOTIFICATION_ID,
+          {
+            type: "basic",
+            iconUrl: getExtensionNotificationIconUrl(),
+            title: copy.title,
+            message: copy.message,
+            contextMessage: copy.contextMessage,
+          },
+          () => {
+            const errorMessage = getRuntimeErrorMessage();
+
+            if (errorMessage) {
+              showTestUnavailable(
+                `Browser rejected the test notification: ${errorMessage}`,
+              );
+              return;
+            }
+
+            showTestSent();
+          },
+        );
+
+        if (result instanceof Promise) {
+          void result.then(showTestSent).catch((error: unknown) => {
+            showTestUnavailable(
+              `Browser rejected the test notification: ${String(error)}`,
+            );
+          });
+        }
+      } catch (error) {
+        showTestUnavailable(
+          `Test notification could not be sent: ${String(error)}`,
+        );
+      }
+    }
+
+    if (notificationsApi.getPermissionLevel) {
+      try {
+        notificationsApi.getPermissionLevel((permissionLevel) => {
+          const errorMessage = getRuntimeErrorMessage();
+
+          if (errorMessage) {
+            showTestUnavailable(
+              `Browser could not check notification permission: ${errorMessage}`,
+            );
+            return;
+          }
+
+          if (permissionLevel === "denied") {
+            showTestUnavailable(
+              "Browser notification permission is denied. Allow notifications for this browser in macOS System Settings, then try again.",
+            );
+            return;
+          }
+
+          createTestNotification();
+        });
+      } catch (error) {
+        showTestUnavailable(
+          `Browser could not check notification permission: ${String(error)}`,
+        );
+      }
+
+      return;
+    }
+
+    createTestNotification();
+  }
+
+  function getTestNotificationStatusMessage() {
+    if (testNotificationMessage) {
+      return testNotificationMessage;
+    }
+
+    if (status === "test-unavailable") {
+      return "Test notification could not be sent from this browser context.";
+    }
+
+    return "";
   }
 
   return (
@@ -377,8 +475,12 @@ export function ExtensionOptions({
         )}
         {status === "test-sent" && (
           <p className="extension-live-status" role="status" aria-live="polite">
-            Test notification sent. If no banner appears, check macOS Focus and
-            browser notification settings.
+            {getTestNotificationStatusMessage()}
+          </p>
+        )}
+        {status === "test-pending" && (
+          <p className="extension-live-status" role="status" aria-live="polite">
+            {getTestNotificationStatusMessage()}
           </p>
         )}
         {status === "error" && (
@@ -388,7 +490,7 @@ export function ExtensionOptions({
         )}
         {status === "test-unavailable" && (
           <p className="extension-error" role="alert">
-            Test notification could not be sent from this browser context.
+            {getTestNotificationStatusMessage()}
           </p>
         )}
 
