@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { reminders as defaultReminders } from "../data/reminders";
 import { type ReminderDefinition } from "../domain/schemas";
 import {
@@ -123,6 +123,8 @@ export function ExtensionOptions({
   );
   const [status, setStatus] = useState<OptionsStatus>("idle");
   const [testNotificationMessage, setTestNotificationMessage] = useState("");
+  const isSendingTestNotificationRef = useRef(false);
+  const isTestNotificationPending = status === "test-pending";
 
   useEffect(() => {
     let isMounted = true;
@@ -189,6 +191,10 @@ export function ExtensionOptions({
   }
 
   function sendTestNotification() {
+    if (isSendingTestNotificationRef.current) {
+      return;
+    }
+
     const notifications = getChromeApi()?.notifications;
     const reminder = getTestReminder(reminderList);
 
@@ -200,17 +206,20 @@ export function ExtensionOptions({
       return;
     }
 
+    isSendingTestNotificationRef.current = true;
     setStatus("test-pending");
     setTestNotificationMessage(
       "Send test notification was clicked. Preparing notification check...",
     );
 
     function showTestUnavailable(message: string) {
+      isSendingTestNotificationRef.current = false;
       setStatus("test-unavailable");
       setTestNotificationMessage(message);
     }
 
     function showTestSent() {
+      isSendingTestNotificationRef.current = false;
       setStatus("test-sent");
       setTestNotificationMessage(
         "Browser accepted the test notification. If no macOS banner appeared, check Focus or Do Not Disturb and notification settings for this browser.",
@@ -496,7 +505,11 @@ export function ExtensionOptions({
             {settings.proactiveRemindersEnabled ? "enabled" : "disabled"}.
           </p>
           <div className="extension-save-row">
-            <button type="button" onClick={sendTestNotification}>
+            <button
+              type="button"
+              onClick={sendTestNotification}
+              disabled={isTestNotificationPending}
+            >
               Send test notification
             </button>
           </div>

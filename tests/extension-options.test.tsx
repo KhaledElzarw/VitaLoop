@@ -169,6 +169,39 @@ describe("ExtensionOptions", () => {
     );
   });
 
+  it("disables the test notification button while a send is pending", async () => {
+    const getPermissionLevel = vi.fn();
+
+    vi.stubGlobal("chrome", {
+      notifications: {
+        create: vi.fn(),
+        getPermissionLevel,
+      },
+      runtime: {
+        getURL: (path: string) => `chrome-extension://vitaloop/${path}`,
+      },
+    });
+
+    render(<ExtensionOptions storage={createStorageMock()} />);
+
+    const testButton = screen.getByRole("button", {
+      name: "Send test notification",
+    }) as HTMLButtonElement;
+
+    fireEvent.click(testButton);
+
+    await waitFor(() => {
+      expect(testButton.disabled).toBe(true);
+    });
+    expect(screen.getByRole("status").textContent).toContain(
+      "Preparing notification check",
+    );
+
+    fireEvent.click(testButton);
+
+    expect(getPermissionLevel).toHaveBeenCalledTimes(1);
+  });
+
   it("shows permission guidance when browser notifications are denied", () => {
     vi.stubGlobal("chrome", {
       notifications: {
