@@ -1,5 +1,6 @@
 import { reminders } from "../data/reminders";
 import {
+  getBackgroundReminderNotificationAction,
   handleBackgroundReminderAlarm,
   PROACTIVE_REMINDER_NOTIFICATION_PREFIX,
   syncBackgroundReminderAlarm,
@@ -10,6 +11,7 @@ import {
 import {
   EXTENSION_SETTINGS_STORAGE_KEY,
   loadExtensionSettings,
+  saveExtensionSettings,
 } from "./extensionSettingsStorage";
 import { VITALOOP_NOTIFICATION_ICON_URL } from "./notificationCopy";
 
@@ -36,6 +38,9 @@ type ChromeBackgroundApi = {
   notifications?: ChromeNotificationsApi & {
     clear?: (notificationId: string) => void;
     onClicked?: ChromeEvent<(notificationId: string) => void>;
+    onButtonClicked?: ChromeEvent<
+      (notificationId: string, buttonIndex: number) => void
+    >;
   };
   runtime?: ChromeRuntimeApi;
   storage?: {
@@ -103,6 +108,52 @@ function openOptionsForNotification(notificationId: string) {
   chromeApi?.runtime?.openOptionsPage?.();
 }
 
+async function handleNotificationButton(
+  notificationId: string,
+  buttonIndex: number,
+) {
+  const chromeApi = getChromeApi();
+
+  if (!chromeApi?.alarms || !chromeApi.notifications) {
+    return;
+  }
+
+  const currentDate = new Date();
+  const settings = await loadExtensionSettings();
+  const notificationAction = getBackgroundReminderNotificationAction({
+    notificationId,
+    buttonIndex,
+    settings,
+    reminderList: reminders,
+    currentDate,
+  });
+
+  if (notificationAction.action === "ignore") {
+    return;
+  }
+
+  chromeApi.notifications.clear?.(notificationId);
+
+  if (!notificationAction.shouldPersistSettings) {
+    return;
+  }
+
+  const didSave = await saveExtensionSettings(
+    notificationAction.updatedSettings,
+  );
+
+  if (!didSave) {
+    return;
+  }
+
+  syncBackgroundReminderAlarm({
+    alarms: chromeApi.alarms,
+    settings: notificationAction.updatedSettings,
+    reminderList: reminders,
+    currentDate: new Date(),
+  });
+}
+
 const chromeApi = getChromeApi();
 
 chromeApi?.runtime?.onInstalled?.addListener(() => {
@@ -128,3 +179,9 @@ chromeApi?.alarms?.onAlarm?.addListener((alarm) => {
 chromeApi?.notifications?.onClicked?.addListener((notificationId) => {
   openOptionsForNotification(notificationId);
 });
+
+chromeApi?.notifications?.onButtonClicked?.addListener(
+  (notificationId, buttonIndex) => {
+    void handleNotificationButton(notificationId, buttonIndex);
+  },
+);
