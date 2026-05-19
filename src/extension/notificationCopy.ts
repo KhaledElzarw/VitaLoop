@@ -25,7 +25,7 @@ const notificationMessages: Record<ReminderId, string> = {
 };
 
 export const VITALOOP_NOTIFICATION_ICON_URL =
-  "assets/app-icons/vitaloop-icon-128.png";
+  "assets/app-icons/vitaloop-notification-logo.png";
 
 export function createReminderNotificationCopy(
   reminder: ReminderDefinition,
