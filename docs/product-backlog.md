@@ -11,6 +11,7 @@
 - [x] Chromium extension MVP shell: Manifest V3 popup/options pages, local extension settings storage, and no content scripts, background worker, notifications, alarms, host permissions, backend, analytics, or external APIs.
 - [x] Unlocked Chromium background reminders: opt-in Manifest V3 service worker, `chrome.alarms` scheduling, local `chrome.notifications`, popup status, options controls, and no content scripts, host permissions, backend, analytics, accounts, payments, or cloud sync.
 - [x] macOS-inspired extension UI polish: compact frosted popup, grouped settings pane, clear proactive reminder status, and CSS-only visual treatment without external or Apple assets.
+- [x] Native Chromium reminder notification polish: local browser notification copy, Done and Snooze notification buttons, persistent interaction hint, VitaLoop notification logo asset, and Chrome-compatible API namespace guidance for Chromium-based browsers.
 
 ## P0 Foundation
 
@@ -83,20 +84,26 @@
 
 ## P2 Notifications
 
-- Browser notification planning
-- Opt-in Chromium browser notifications
-- Mobile local notification planning
-- Permission UX
-- Notification copy
+- [x] Browser notification planning
+- [x] Opt-in Chromium browser notifications
+- [x] Chromium notification action buttons
+- [x] Chromium notification branding and copy
+- [x] Chromium notification persistence hint
+- [ ] Mobile local notification planning
+- [ ] Native mobile permission UX
+- [ ] Cross-platform notification behavior notes
 
 ## P2 Chromium Extension
 
-- Popup MVP
-- Options page MVP
-- Local extension settings storage
-- Manual load-unpacked validation
-- Opt-in background reminder worker without page reading
-- Alarm scheduling without host permissions
+- [x] Popup MVP
+- [x] Options page MVP
+- [x] Local extension settings storage
+- [x] Manual load-unpacked validation
+- [x] Opt-in background reminder worker without page reading
+- [x] Alarm scheduling without host permissions
+- [x] Local Chromium notification actions for Done and Snooze
+- [x] Notification logo and Chromium-compatible copy polish
+- [ ] Extension notification reliability notes for browser/OS differences
 
 ## P2 Mobile Packaging
 
