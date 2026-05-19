@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { reminders } from "../src/data/reminders";
 import {
+  getBackgroundReminderNotificationAction,
   getBackgroundReminderAlarmPlan,
   getNotificationReminderSchedule,
+  getReminderNotificationButtonAction,
   handleBackgroundReminderAlarm,
   PROACTIVE_REMINDER_ALARM_NAME,
   syncBackgroundReminderAlarm,
@@ -250,11 +252,95 @@ describe("background reminder scheduler", () => {
         iconUrl: "chrome-extension://vitaloop/assets/vitaloop-logo-source.png",
         title: "VitaLoop: Eye strain",
         message: "Look away from the screen and soften your focus.",
+        buttons: [{ title: "Done" }, { title: "Snooze" }],
       }),
     );
     expect(alarms.create).toHaveBeenCalledWith(
       PROACTIVE_REMINDER_ALARM_NAME,
       expect.objectContaining({ periodInMinutes: 45 }),
     );
+  });
+
+  it("maps reminder notification buttons to supported actions", () => {
+    expect(getReminderNotificationButtonAction(0)).toBe("done");
+    expect(getReminderNotificationButtonAction(1)).toBe("snooze");
+    expect(getReminderNotificationButtonAction(2)).toBeNull();
+  });
+
+  it("creates a snooze update from a notification button click", () => {
+    const settings = createSettings({
+      proactiveRemindersEnabled: true,
+      quietHoursEnabled: false,
+    });
+    const result = getBackgroundReminderNotificationAction({
+      notificationId: "vitaloop-reminder-eye-strain-1778824800000",
+      buttonIndex: 1,
+      settings,
+      reminderList: reminders,
+      currentDate: new Date(2026, 4, 15, 10, 0),
+    });
+
+    expect(result.action).toBe("apply");
+
+    if (result.action !== "apply") {
+      throw new Error("Expected a notification action result.");
+    }
+
+    expect(result.actionType).toBe("snooze");
+    expect(result.shouldPersistSettings).toBe(true);
+    expect(result.result.message).toContain("snoozed until 10:15 AM");
+    expect(result.updatedSettings.snoozedUntilByReminderId).toMatchObject({
+      "eye-strain": new Date(2026, 4, 15, 10, 15),
+    });
+  });
+
+  it("acknowledges a done notification button without persisting settings", () => {
+    const result = getBackgroundReminderNotificationAction({
+      notificationId: "vitaloop-reminder-eye-strain-1778824800000",
+      buttonIndex: 0,
+      settings: createSettings({
+        proactiveRemindersEnabled: true,
+        quietHoursEnabled: false,
+      }),
+      reminderList: reminders,
+      currentDate: new Date(2026, 4, 15, 10, 0),
+    });
+
+    expect(result.action).toBe("apply");
+
+    if (result.action !== "apply") {
+      throw new Error("Expected a notification action result.");
+    }
+
+    expect(result.actionType).toBe("done");
+    expect(result.shouldPersistSettings).toBe(false);
+    expect(result.result.message).toContain("marked done");
+  });
+
+  it("ignores unsupported notification button clicks", () => {
+    expect(
+      getBackgroundReminderNotificationAction({
+        notificationId: "vitaloop-reminder-eye-strain-1778824800000",
+        buttonIndex: 2,
+        settings: createSettings({ proactiveRemindersEnabled: true }),
+        reminderList: reminders,
+        currentDate: new Date(2026, 4, 15, 10, 0),
+      }),
+    ).toEqual({
+      action: "ignore",
+      reason: "unsupported-button",
+    });
+    expect(
+      getBackgroundReminderNotificationAction({
+        notificationId: "other-notification",
+        buttonIndex: 0,
+        settings: createSettings({ proactiveRemindersEnabled: true }),
+        reminderList: reminders,
+        currentDate: new Date(2026, 4, 15, 10, 0),
+      }),
+    ).toEqual({
+      action: "ignore",
+      reason: "unrelated-notification",
+    });
   });
 });

@@ -1,8 +1,11 @@
 import { reminders as defaultReminders } from "../data/reminders";
 import {
+  applyReminderAction,
   getActionAvailableReminders,
   getNextSnoozedReminderAvailability,
+  type ReminderActionResult,
   type ReminderActionState,
+  type ReminderActionType,
 } from "../domain/reminderActions";
 import {
   getNextAllowedTime,
@@ -19,10 +22,19 @@ import {
 import {
   getExtensionReminderActionState,
   type ExtensionSettings,
+  withExtensionReminderActionState,
 } from "./extensionSettingsStorage";
 
 export const PROACTIVE_REMINDER_ALARM_NAME = "vitaloop.proactiveReminder";
 export const PROACTIVE_REMINDER_NOTIFICATION_PREFIX = "vitaloop-reminder";
+
+const reminderNotificationButtonActions = [
+  { actionType: "done", title: "Done" },
+  { actionType: "snooze", title: "Snooze" },
+] as const satisfies ReadonlyArray<{
+  actionType: ReminderActionType;
+  title: string;
+}>;
 
 type ChromeAlarmCreateInfo = {
   delayInMinutes: number;
@@ -44,6 +56,11 @@ export type ChromeNotificationOptions = {
   title: string;
   message: string;
   contextMessage: string;
+  buttons?: ChromeNotificationButton[];
+};
+
+export type ChromeNotificationButton = {
+  title: string;
 };
 
 export type ChromeNotificationsApi = {
@@ -68,6 +85,22 @@ export type BackgroundReminderNotification = {
   options: ChromeNotificationOptions;
   schedule: ReminderSchedule & { nextAt: Date };
 };
+
+export type BackgroundReminderNotificationAction =
+  | {
+      action: "apply";
+      actionType: ReminderActionType;
+      result: ReminderActionResult;
+      updatedSettings: ExtensionSettings;
+      shouldPersistSettings: boolean;
+    }
+  | {
+      action: "ignore";
+      reason:
+        | "unsupported-button"
+        | "unrelated-notification"
+        | "unknown-reminder";
+    };
 
 type SchedulerOptions = {
   settings: ExtensionSettings;
@@ -116,6 +149,35 @@ function getSchedulerActionState(
   actionState?: ReminderActionState,
 ) {
   return actionState ?? getExtensionReminderActionState(settings);
+}
+
+function createNotificationButtons(): ChromeNotificationButton[] {
+  return reminderNotificationButtonActions.map(({ title }) => ({ title }));
+}
+
+function getReminderIdFromNotificationId(
+  notificationId: string,
+  reminderList: ReminderDefinition[],
+) {
+  if (!notificationId.startsWith(`${PROACTIVE_REMINDER_NOTIFICATION_PREFIX}-`)) {
+    return null;
+  }
+
+  return (
+    [...reminderList]
+      .sort((first, second) => second.id.length - first.id.length)
+      .find((reminder) =>
+        notificationId.startsWith(
+          `${PROACTIVE_REMINDER_NOTIFICATION_PREFIX}-${reminder.id}-`,
+        ),
+      )?.id ?? null
+  );
+}
+
+export function getReminderNotificationButtonAction(
+  buttonIndex: number,
+): ReminderActionType | null {
+  return reminderNotificationButtonActions[buttonIndex]?.actionType ?? null;
 }
 
 export function getBackgroundReminderAlarmPlan({
@@ -273,6 +335,7 @@ export function createBackgroundReminderNotification(
       title: copy.title,
       message: copy.message,
       contextMessage: copy.contextMessage,
+      buttons: createNotificationButtons(),
     },
     schedule,
   };
@@ -346,5 +409,73 @@ export function handleBackgroundReminderAlarm({
       currentDate,
       notificationIconUrl,
     }),
+  };
+}
+
+export function getBackgroundReminderNotificationAction({
+  notificationId,
+  buttonIndex,
+  settings,
+  reminderList = defaultReminders,
+  currentDate,
+  actionState,
+}: SchedulerOptions & {
+  notificationId: string;
+  buttonIndex: number;
+}): BackgroundReminderNotificationAction {
+  const actionType = getReminderNotificationButtonAction(buttonIndex);
+
+  if (!actionType) {
+    return {
+      action: "ignore",
+      reason: "unsupported-button",
+    };
+  }
+
+  const reminderId = getReminderIdFromNotificationId(
+    notificationId,
+    reminderList,
+  );
+
+  if (!reminderId) {
+    return {
+      action: "ignore",
+      reason: "unrelated-notification",
+    };
+  }
+
+  const reminder = reminderList.find(
+    (candidateReminder) => candidateReminder.id === reminderId,
+  );
+
+  if (!reminder) {
+    return {
+      action: "ignore",
+      reason: "unknown-reminder",
+    };
+  }
+
+  const result = applyReminderAction(
+    actionType,
+    {
+      reminder,
+      frequencyMinutes: getReminderFrequencyMinutes(
+        reminder.id,
+        settings.reminderIntensity,
+      ),
+      isAllowedNow: true,
+      nextAt: currentDate,
+    },
+    settings,
+    currentDate,
+    getSchedulerActionState(settings, actionState),
+  );
+
+  return {
+    action: "apply",
+    actionType,
+    result,
+    updatedSettings: withExtensionReminderActionState(settings, result.state),
+    shouldPersistSettings: actionType === "snooze",
   };
 }
