@@ -151,7 +151,7 @@ describe("ExtensionOptions", () => {
 
     await waitFor(() => {
       expect(createNotification).toHaveBeenCalledWith(
-        "vitaloop-test-notification",
+        expect.stringMatching(/^vitaloop-test-notification-\d+$/),
         expect.objectContaining({
           type: "basic",
           title: "VitaLoop: Eye strain",

@@ -83,6 +83,7 @@ type AlarmSyncOptions = SchedulerOptions & {
 type AlarmHandlerOptions = AlarmSyncOptions & {
   alarm: ChromeAlarm;
   notifications: ChromeNotificationsApi;
+  notificationIconUrl?: string;
 };
 
 function getDelayInMinutes(nextAt: Date, currentDate: Date) {
@@ -259,6 +260,7 @@ export function getNotificationReminderSchedule({
 export function createBackgroundReminderNotification(
   schedule: ReminderSchedule & { nextAt: Date },
   currentDate: Date,
+  notificationIconUrl = VITALOOP_NOTIFICATION_ICON_URL,
 ): BackgroundReminderNotification {
   const copy = createReminderNotificationCopy(schedule.reminder);
   const id = `${PROACTIVE_REMINDER_NOTIFICATION_PREFIX}-${schedule.reminder.id}-${currentDate.getTime()}`;
@@ -267,7 +269,7 @@ export function createBackgroundReminderNotification(
     id,
     options: {
       type: "basic",
-      iconUrl: VITALOOP_NOTIFICATION_ICON_URL,
+      iconUrl: notificationIconUrl,
       title: copy.title,
       message: copy.message,
       contextMessage: copy.contextMessage,
@@ -280,14 +282,17 @@ export function showBackgroundReminderNotification({
   notifications,
   schedule,
   currentDate,
+  notificationIconUrl,
 }: {
   notifications: ChromeNotificationsApi;
   schedule: ReminderSchedule & { nextAt: Date };
   currentDate: Date;
+  notificationIconUrl?: string;
 }) {
   const notification = createBackgroundReminderNotification(
     schedule,
     currentDate,
+    notificationIconUrl,
   );
 
   notifications.create(notification.id, notification.options);
@@ -303,6 +308,7 @@ export function handleBackgroundReminderAlarm({
   reminderList = defaultReminders,
   currentDate,
   actionState,
+  notificationIconUrl,
 }: AlarmHandlerOptions) {
   if (alarm.name !== PROACTIVE_REMINDER_ALARM_NAME) {
     return {
@@ -338,6 +344,7 @@ export function handleBackgroundReminderAlarm({
       notifications,
       schedule,
       currentDate,
+      notificationIconUrl,
     }),
   };
 }

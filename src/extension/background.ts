@@ -11,12 +11,14 @@ import {
   EXTENSION_SETTINGS_STORAGE_KEY,
   loadExtensionSettings,
 } from "./extensionSettingsStorage";
+import { VITALOOP_NOTIFICATION_ICON_URL } from "./notificationCopy";
 
 type ChromeEvent<Listener> = {
   addListener: (listener: Listener) => void;
 };
 
 type ChromeRuntimeApi = {
+  getURL?: (path: string) => string;
   onInstalled?: ChromeEvent<() => void>;
   onStartup?: ChromeEvent<() => void>;
   openOptionsPage?: () => void;
@@ -84,6 +86,9 @@ async function notifyForAlarm(alarm: ChromeAlarm) {
     settings,
     reminderList: reminders,
     currentDate: new Date(),
+    notificationIconUrl:
+      chromeApi.runtime?.getURL?.(VITALOOP_NOTIFICATION_ICON_URL) ??
+      VITALOOP_NOTIFICATION_ICON_URL,
   });
 }
 
