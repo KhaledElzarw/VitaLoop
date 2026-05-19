@@ -8,6 +8,10 @@ import {
   type ReminderActionType,
 } from "../domain/reminderActions";
 import {
+  appendReminderHistoryEntry,
+  createReminderHistoryEntry,
+} from "../domain/reminderHistory";
+import {
   getNextAllowedTime,
   getNextScheduledReminder,
   getReminderFrequencyMinutes,
@@ -24,6 +28,7 @@ import {
   getExtensionReminderActionState,
   type ExtensionSettings,
   withExtensionReminderActionState,
+  withExtensionReminderHistory,
 } from "./extensionSettingsStorage";
 
 export const PROACTIVE_REMINDER_ALARM_NAME = "vitaloop.proactiveReminder";
@@ -458,27 +463,41 @@ export function getBackgroundReminderNotificationAction({
     };
   }
 
+  const schedule = {
+    reminder,
+    frequencyMinutes: getReminderFrequencyMinutes(
+      reminder.id,
+      settings.reminderIntensity,
+    ),
+    isAllowedNow: true,
+    nextAt: currentDate,
+  };
   const result = applyReminderAction(
     actionType,
-    {
-      reminder,
-      frequencyMinutes: getReminderFrequencyMinutes(
-        reminder.id,
-        settings.reminderIntensity,
-      ),
-      isAllowedNow: true,
-      nextAt: currentDate,
-    },
+    schedule,
     settings,
     currentDate,
     getSchedulerActionState(settings, actionState),
+  );
+  const reminderHistory = appendReminderHistoryEntry(
+    settings.reminderHistory,
+    createReminderHistoryEntry({
+      actionType,
+      schedule,
+      result,
+      occurredAt: currentDate,
+    }),
+  );
+  const updatedSettings = withExtensionReminderHistory(
+    withExtensionReminderActionState(settings, result.state),
+    reminderHistory,
   );
 
   return {
     action: "apply",
     actionType,
     result,
-    updatedSettings: withExtensionReminderActionState(settings, result.state),
-    shouldPersistSettings: actionType === "snooze",
+    updatedSettings,
+    shouldPersistSettings: true,
   };
 }

@@ -294,9 +294,17 @@ describe("background reminder scheduler", () => {
     expect(result.updatedSettings.snoozedUntilByReminderId).toMatchObject({
       "eye-strain": new Date(2026, 4, 15, 10, 15),
     });
+    expect(result.updatedSettings.reminderHistory).toEqual([
+      expect.objectContaining({
+        reminderId: "eye-strain",
+        reminderTitle: "Eye strain",
+        actionType: "snooze",
+        snoozedUntil: new Date(2026, 4, 15, 10, 15),
+      }),
+    ]);
   });
 
-  it("acknowledges a done notification button without persisting settings", () => {
+  it("acknowledges a done notification button and records history", () => {
     const result = getBackgroundReminderNotificationAction({
       notificationId: "vitaloop-reminder-eye-strain-1778824800000",
       buttonIndex: 0,
@@ -315,8 +323,15 @@ describe("background reminder scheduler", () => {
     }
 
     expect(result.actionType).toBe("done");
-    expect(result.shouldPersistSettings).toBe(false);
+    expect(result.shouldPersistSettings).toBe(true);
     expect(result.result.message).toContain("marked done");
+    expect(result.updatedSettings.reminderHistory).toEqual([
+      expect.objectContaining({
+        reminderId: "eye-strain",
+        reminderTitle: "Eye strain",
+        actionType: "done",
+      }),
+    ]);
   });
 
   it("ignores unsupported notification button clicks", () => {

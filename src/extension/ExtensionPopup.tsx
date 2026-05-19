@@ -7,6 +7,11 @@ import {
   getNextSnoozedReminderAvailability,
   type ReminderActionType,
 } from "../domain/reminderActions";
+import {
+  appendReminderHistoryEntry,
+  createReminderHistoryEntry,
+  type ReminderHistoryEntry,
+} from "../domain/reminderHistory";
 import { formatReminderTime } from "../domain/scheduling";
 import { type ReminderDefinition } from "../domain/schemas";
 import {
@@ -16,6 +21,7 @@ import {
   type ExtensionSettings,
   type ExtensionSettingsStorage,
   withExtensionReminderActionState,
+  withExtensionReminderHistory,
 } from "./extensionSettingsStorage";
 
 type ChromeOptionsApi = {
@@ -137,6 +143,47 @@ function ActivityIcon({ reminder }: { reminder: ReminderDefinition }) {
   );
 }
 
+function getHistoryActionLabel(entry: ReminderHistoryEntry) {
+  if (entry.actionType === "done") {
+    return "Done";
+  }
+
+  if (entry.actionType === "snooze") {
+    return "Snoozed";
+  }
+
+  return "Skipped";
+}
+
+function ExtensionRecentActivity({
+  history,
+}: {
+  history: ReminderHistoryEntry[];
+}) {
+  return (
+    <section className="extension-panel extension-history-panel" aria-label="Recent activity">
+      <div className="extension-panel-heading">
+        <p className="extension-eyebrow">Recent activity</p>
+      </div>
+      {history.length > 0 ? (
+        <ul className="extension-history-list">
+          {history.slice(0, 3).map((entry) => (
+            <li key={entry.id}>
+              <span>{entry.reminderTitle}</span>
+              <strong>{getHistoryActionLabel(entry)}</strong>
+              {entry.snoozedUntil ? (
+                <small>Until {formatReminderTime(entry.snoozedUntil)}</small>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="extension-history-empty">No reminder activity yet.</p>
+      )}
+    </section>
+  );
+}
+
 export function ExtensionPopup({
   storage = extensionSettingsStorage,
   reminderList = defaultReminders,
@@ -193,15 +240,27 @@ export function ExtensionPopup({
     setActionState(result.state);
     setActionStatus(result.message);
 
-    if (actionType === "snooze") {
-      const updatedSettings = withExtensionReminderActionState(
-        settings,
-        result.state,
-      );
+    const historyEntry = createReminderHistoryEntry({
+      actionType,
+      schedule: nextSchedule,
+      result,
+      occurredAt: now,
+    });
+    const nextHistory = appendReminderHistoryEntry(
+      settings.reminderHistory,
+      historyEntry,
+    );
+    const settingsWithAction =
+      actionType === "snooze"
+        ? withExtensionReminderActionState(settings, result.state)
+        : settings;
+    const updatedSettings = withExtensionReminderHistory(
+      settingsWithAction,
+      nextHistory,
+    );
 
-      setSettings(updatedSettings);
-      void storage.saveSettings(updatedSettings);
-    }
+    setSettings(updatedSettings);
+    void storage.saveSettings(updatedSettings);
   }
 
   return (
@@ -316,6 +375,7 @@ export function ExtensionPopup({
           {actionStatus}
         </p>
       )}
+      <ExtensionRecentActivity history={settings.reminderHistory} />
     </main>
   );
 }

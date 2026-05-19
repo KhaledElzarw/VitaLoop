@@ -710,6 +710,54 @@ input:focus-visible {
   font-size: 0.88rem;
 }
 
+.extension-history-panel {
+  margin-top: 10px;
+}
+
+.extension-history-list {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.extension-history-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  align-items: center;
+  border: 1px solid rgba(103, 83, 190, 0.12);
+  border-radius: var(--extension-radius);
+  background: rgba(255, 255, 255, 0.6);
+  padding: 8px;
+}
+
+.extension-history-list span {
+  min-width: 0;
+  color: var(--extension-text);
+  font-weight: 750;
+}
+
+.extension-history-list strong {
+  border-radius: 999px;
+  background: var(--extension-accent-soft);
+  color: var(--extension-accent-strong);
+  font-size: 0.72rem;
+  padding: 3px 7px;
+}
+
+.extension-history-list small {
+  grid-column: 1 / -1;
+  color: var(--extension-muted);
+}
+
+.extension-history-empty {
+  margin: 8px 0 0;
+  color: var(--extension-muted);
+  font-size: 0.88rem;
+}
+
 @media (max-width: 480px) {
   .extension-options {
     padding: 16px 12px;

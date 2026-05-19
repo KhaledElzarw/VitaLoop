@@ -7,6 +7,11 @@ import {
   type ReminderActionType,
 } from "./domain/reminderActions";
 import {
+  appendReminderHistoryEntry,
+  createReminderHistoryEntry,
+  type ReminderHistoryEntry,
+} from "./domain/reminderHistory";
+import {
   formatReminderTime,
   getEnabledReminders as getScheduledEnabledReminders,
   getReminderSchedule,
@@ -17,6 +22,10 @@ import {
   settingsService,
   type SettingsService,
 } from "./services/settingsService";
+import {
+  reminderHistoryService,
+  type ReminderHistoryService,
+} from "./services/reminderHistoryService";
 
 const tagline = "Recurring wellness reminders for busy days.";
 
@@ -130,15 +139,61 @@ type ReminderScreenProps = {
   settings?: AppSettings;
   currentDate?: Date;
   hasError?: boolean;
+  historyService?: ReminderHistoryService;
+  initialHistory?: ReminderHistoryEntry[];
 };
+
+type RecentActivityProps = {
+  history: ReminderHistoryEntry[];
+};
+
+function formatHistoryAction(entry: ReminderHistoryEntry) {
+  if (entry.actionType === "done") {
+    return "Done";
+  }
+
+  if (entry.actionType === "snooze") {
+    return "Snoozed";
+  }
+
+  return "Skipped";
+}
+
+function RecentActivity({ history }: RecentActivityProps) {
+  return (
+    <section className="recent-activity" aria-label="Recent activity">
+      <h2>Recent activity</h2>
+      {history.length > 0 ? (
+        <ul>
+          {history.slice(0, 3).map((entry) => (
+            <li key={entry.id}>
+              <strong>{entry.reminderTitle}</strong>
+              <span>{formatHistoryAction(entry)}</span>
+              {entry.snoozedUntil ? (
+                <span>Until {formatReminderTime(entry.snoozedUntil)}</span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No reminder activity yet.</p>
+      )}
+    </section>
+  );
+}
 
 export function HomeScreen({
   reminders,
   settings = getDefaultAppSettings(),
   currentDate = defaultPreviewDate,
+  historyService = reminderHistoryService,
+  initialHistory,
 }: ReminderScreenProps) {
   const [actionState, setActionState] = useState(createReminderActionState);
   const [actionStatus, setActionStatus] = useState("");
+  const [history, setHistory] = useState<ReminderHistoryEntry[]>(() =>
+    initialHistory ?? historyService.loadReminderHistory(),
+  );
   const enabledReminders = getScheduledEnabledReminders(reminders, settings);
   const nextSchedule = getActionAwareNextReminder(
     reminders,
@@ -162,6 +217,17 @@ export function HomeScreen({
 
     setActionState(result.state);
     setActionStatus(result.message);
+
+    const historyEntry = createReminderHistoryEntry({
+      actionType,
+      schedule: nextSchedule,
+      result,
+      occurredAt: currentDate,
+    });
+    const nextHistory = appendReminderHistoryEntry(history, historyEntry);
+
+    setHistory(nextHistory);
+    historyService.saveReminderHistory(nextHistory);
   }
 
   return (
@@ -225,6 +291,7 @@ export function HomeScreen({
           {actionStatus}
         </p>
       )}
+      <RecentActivity history={history} />
       <p className="rhythm-summary">
         Current rhythm: {settings.reminderIntensity} reminders stay inside your
         workday window and pause during quiet hours.
