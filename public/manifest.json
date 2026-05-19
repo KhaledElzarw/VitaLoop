@@ -3,7 +3,19 @@
   "name": "VitaLoop",
   "version": "0.1.0",
   "description": "Gentle local-first wellness nudges for busy browser days.",
+  "icons": {
+    "16": "assets/app-icons/vitaloop-icon-16.png",
+    "32": "assets/app-icons/vitaloop-icon-32.png",
+    "48": "assets/app-icons/vitaloop-icon-48.png",
+    "128": "assets/app-icons/vitaloop-icon-128.png"
+  },
   "action": {
+    "default_icon": {
+      "16": "assets/app-icons/vitaloop-icon-16.png",
+      "32": "assets/app-icons/vitaloop-icon-32.png",
+      "48": "assets/app-icons/vitaloop-icon-48.png",
+      "128": "assets/app-icons/vitaloop-icon-128.png"
+    },
     "default_title": "VitaLoop",
     "default_popup": "extension/popup.html"
   },
