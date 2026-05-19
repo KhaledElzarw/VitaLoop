@@ -253,6 +253,7 @@ describe("background reminder scheduler", () => {
           "chrome-extension://vitaloop/assets/app-icons/vitaloop-notification-logo.png",
         title: "VitaLoop: Eye strain",
         message: "Look away from the screen and soften your focus.",
+        requireInteraction: true,
         buttons: [{ title: "Done" }, { title: "Snooze" }],
       }),
     );
