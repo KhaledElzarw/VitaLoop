@@ -93,6 +93,10 @@ function getBrowserNotificationApi() {
   ).Notification;
 }
 
+function getTestNotificationId() {
+  return `${TEST_NOTIFICATION_ID}-${Date.now()}`;
+}
+
 function getTestReminder(reminderList: ReminderDefinition[]) {
   return (
     reminderList.find((reminder) => reminder.id === "eye-strain") ??
@@ -318,7 +322,7 @@ export function ExtensionOptions({
           showTestSent();
         };
         const result = notificationsApi.create(
-          TEST_NOTIFICATION_ID,
+          getTestNotificationId(),
           {
             type: "basic",
             iconUrl: getExtensionNotificationIconUrl(),
