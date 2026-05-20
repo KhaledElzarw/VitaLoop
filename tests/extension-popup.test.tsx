@@ -81,6 +81,11 @@ describe("ExtensionPopup", () => {
         within(nextNudge).getByRole("heading", { name: "Eye strain" }),
       ).toBeTruthy();
     });
+    expect(within(nextNudge).getByText("45 min")).toBeTruthy();
+    expect(within(nextNudge).getByText("10:45 AM")).toBeTruthy();
+    expect(
+      within(nextNudge).getByLabelText("Next reminder in 45 min at 10:45 AM"),
+    ).toBeTruthy();
 
     const activityIcon = nextNudge.querySelector(
       "[data-activity-icon='eye-strain']",
