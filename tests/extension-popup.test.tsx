@@ -10,12 +10,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { reminders } from "../src/data/reminders";
 import { ExtensionPopup } from "../src/extension/ExtensionPopup";
 import {
+  activityFunFactsByReminderId,
+  getActivityFunFact,
+} from "../src/extension/activityFunFacts";
+import {
   getDefaultExtensionSettings,
   type ExtensionSettings,
   type ExtensionSettingsStorage,
 } from "../src/extension/extensionSettingsStorage";
 
 const previewDate = new Date(2026, 4, 15, 10, 0);
+const firstEyeStrainFact = activityFunFactsByReminderId["eye-strain"][0];
 
 const activityIconAssetById: Record<string, string> = {
   hydration: "/assets/activity-icons/hydration.png",
@@ -37,11 +42,15 @@ function createStorageMock(
   };
 }
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 describe("ExtensionPopup", () => {
   it("renders VitaLoop branding and the next nudge", async () => {
     const onOpenOptions = vi.fn();
+    vi.spyOn(Math, "random").mockReturnValue(0);
     const { container } = render(
       <ExtensionPopup
         storage={createStorageMock()}
@@ -81,6 +90,12 @@ describe("ExtensionPopup", () => {
         within(nextNudge).getByRole("heading", { name: "Eye strain" }),
       ).toBeTruthy();
     });
+    expect(within(nextNudge).getByText("45 min")).toBeTruthy();
+    expect(within(nextNudge).getByText("10:45 AM")).toBeTruthy();
+    expect(
+      within(nextNudge).getByLabelText("Next reminder in 45 min at 10:45 AM"),
+    ).toBeTruthy();
+    expect(within(nextNudge).getByText(firstEyeStrainFact)).toBeTruthy();
 
     const activityIcon = nextNudge.querySelector(
       "[data-activity-icon='eye-strain']",
@@ -97,6 +112,11 @@ describe("ExtensionPopup", () => {
     expect(activityImage?.getAttribute("alt")).toBe("");
     expect(activityImage?.getAttribute("aria-hidden")).toBe("true");
     expect(within(nextNudge).queryByText("Screen breaks")).toBeNull();
+    expect(
+      within(nextNudge).queryByText(
+        "Look away from the screen and soften your focus.",
+      ),
+    ).toBeNull();
     expect(
       within(nextNudge).getByText(
         "Suggested around 10:45 AM on a 45 minute rhythm.",
@@ -144,6 +164,37 @@ describe("ExtensionPopup", () => {
     },
   );
 
+  it("defines ten activity facts for each built-in reminder", () => {
+    expect(Object.keys(activityFunFactsByReminderId).sort()).toEqual(
+      reminders.map((reminder) => reminder.id).sort(),
+    );
+
+    for (const facts of Object.values(activityFunFactsByReminderId)) {
+      expect(facts).toHaveLength(10);
+      expect(new Set(facts).size).toBe(10);
+      expect(
+        facts.every((fact) => fact.length >= 40 && fact.length <= 120),
+      ).toBe(true);
+    }
+  });
+
+  it("selects built-in activity facts by open seed", () => {
+    const hydrationReminder = reminders.find(
+      (reminder) => reminder.id === "hydration",
+    );
+
+    if (!hydrationReminder) {
+      throw new Error("Expected Hydration reminder fixture.");
+    }
+
+    expect(getActivityFunFact(hydrationReminder, 0)).toBe(
+      activityFunFactsByReminderId.hydration[0],
+    );
+    expect(getActivityFunFact(hydrationReminder, 0.999)).toBe(
+      activityFunFactsByReminderId.hydration[9],
+    );
+  });
+
   it("renders custom reminders with the fallback activity icon", async () => {
     const customReminder = {
       id: "custom-123e4567-e89b-42d3-a456-426614174000",
@@ -177,7 +228,15 @@ describe("ExtensionPopup", () => {
         within(nextNudge).getByRole("heading", { name: "Desk reset" }),
       ).toBeTruthy();
     });
-    expect(nextNudge.querySelector("[data-activity-icon='fallback']")).toBeTruthy();
+    expect(
+      nextNudge.querySelector("[data-activity-icon='fallback']"),
+    ).toBeTruthy();
+    expect(
+      within(nextNudge).getByText("Reset your desk and posture."),
+    ).toBeTruthy();
+    expect(getActivityFunFact(customReminder)).toBe(
+      "Reset your desk and posture.",
+    );
     expect(
       within(nextNudge).getByText(
         "Suggested around 10:25 AM on a 25 minute rhythm.",

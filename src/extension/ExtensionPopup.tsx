@@ -18,6 +18,7 @@ import {
   type BuiltinReminderId,
   type ReminderDefinition,
 } from "../domain/schemas";
+import { getActivityFunFact } from "./activityFunFacts";
 import {
   extensionSettingsStorage,
   getDefaultExtensionSettings,
@@ -66,6 +67,58 @@ function getTimingStatus(
   return `Suggested around ${formatReminderTime(
     nextAt,
   )} on a ${frequencyMinutes} minute rhythm.`;
+}
+
+const minuteInMilliseconds = 60_000;
+
+function formatCountdownUnit(
+  value: number,
+  singularUnit: string,
+  pluralUnit = `${singularUnit}s`,
+) {
+  return `${value} ${value === 1 ? singularUnit : pluralUnit}`;
+}
+
+function formatReminderCountdown(nextAt: Date, currentDate: Date) {
+  const remainingMinutes = Math.max(
+    0,
+    Math.ceil((Number(nextAt) - Number(currentDate)) / minuteInMilliseconds),
+  );
+
+  if (remainingMinutes === 0) {
+    return "Due now";
+  }
+
+  if (remainingMinutes < 60) {
+    return formatCountdownUnit(remainingMinutes, "min", "min");
+  }
+
+  const remainingHours = Math.floor(remainingMinutes / 60);
+  const minutesAfterHours = remainingMinutes % 60;
+
+  if (remainingHours < 24) {
+    const hourText = formatCountdownUnit(remainingHours, "hr");
+
+    return minutesAfterHours > 0
+      ? `${hourText} ${formatCountdownUnit(minutesAfterHours, "min", "min")}`
+      : hourText;
+  }
+
+  const remainingDays = Math.floor(remainingHours / 24);
+  const hoursAfterDays = remainingHours % 24;
+  const dayText = formatCountdownUnit(remainingDays, "day");
+
+  return hoursAfterDays > 0
+    ? `${dayText} ${formatCountdownUnit(hoursAfterDays, "hr")}`
+    : dayText;
+}
+
+function getCountdownTimingLabel(countdown: string, reminderTime: string) {
+  if (countdown === "Due now") {
+    return `Next reminder is due now at ${reminderTime}`;
+  }
+
+  return `Next reminder in ${countdown} at ${reminderTime}`;
 }
 
 function ExtensionBrandMark() {
@@ -200,7 +253,8 @@ export function ExtensionPopup({
   const [settings, setSettings] = useState<ExtensionSettings>(() =>
     getDefaultExtensionSettings(),
   );
-  const [now] = useState(() => currentDate ?? new Date());
+  const [now, setNow] = useState(() => currentDate ?? new Date());
+  const [activityFactSeed] = useState(() => Math.random());
   const [actionState, setActionState] = useState(createReminderActionState);
   const [actionStatus, setActionStatus] = useState("");
   const resolvedReminderList = getReminderListWithCustomReminders(
@@ -219,6 +273,30 @@ export function ExtensionPopup({
     now,
     actionState,
   );
+  const nextReminderCountdown = nextSchedule
+    ? formatReminderCountdown(nextSchedule.nextAt, now)
+    : "";
+  const nextReminderTime = nextSchedule
+    ? formatReminderTime(nextSchedule.nextAt)
+    : "";
+  const nextReminderFact = nextSchedule
+    ? getActivityFunFact(nextSchedule.reminder, activityFactSeed)
+    : "";
+
+  useEffect(() => {
+    if (currentDate) {
+      setNow(currentDate);
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setNow(new Date());
+    }, minuteInMilliseconds);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [currentDate]);
 
   useEffect(() => {
     let isMounted = true;
@@ -321,15 +399,26 @@ export function ExtensionPopup({
           <div className="extension-panel-heading">
             <p className="extension-eyebrow">Next reminder</p>
           </div>
-          <p className="extension-reminder-time">
-            {formatReminderTime(nextSchedule.nextAt)}
+          <p
+            className="extension-reminder-time"
+            aria-label={getCountdownTimingLabel(
+              nextReminderCountdown,
+              nextReminderTime,
+            )}
+          >
+            <span className="extension-reminder-countdown">
+              {nextReminderCountdown}
+            </span>
+            <span className="extension-reminder-scheduled-time">
+              {nextReminderTime}
+            </span>
           </p>
           <div className="extension-reminder-meta">
             <div className="extension-reminder-title-row">
               <ActivityIcon reminder={nextSchedule.reminder} />
               <div className="extension-reminder-title-copy">
                 <h2>{nextSchedule.reminder.title}</h2>
-                <p>{nextSchedule.reminder.description}</p>
+                <p>{nextReminderFact}</p>
               </div>
             </div>
           </div>
