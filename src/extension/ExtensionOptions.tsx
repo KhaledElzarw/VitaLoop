@@ -1,13 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { reminders as defaultReminders } from "../data/reminders";
 import {
+  CUSTOM_REMINDER_CATEGORY_MAX_LENGTH,
+  CUSTOM_REMINDER_MESSAGE_MAX_LENGTH,
+  CUSTOM_REMINDER_TITLE_MAX_LENGTH,
   createCustomReminderDefinition,
   defaultCustomReminderDraft,
   deleteCustomReminderSettingsFor,
   getCustomReminderDraft,
   getReminderListWithCustomReminders,
   upsertCustomReminderSettingsFor,
+  validateCustomReminderDraft,
   type CustomReminderDraft,
+  type CustomReminderDraftErrors,
 } from "../domain/customReminders";
 import { type ReminderDefinition } from "../domain/schemas";
 import {
@@ -37,7 +42,9 @@ type OptionsStatus =
   | "category-required"
   | "test-pending"
   | "test-sent"
-  | "test-unavailable";
+  | "test-unavailable"
+  | "custom-error"
+  | "custom-removed";
 
 type NotificationPermissionLevel = "granted" | "denied";
 
@@ -136,6 +143,10 @@ export function ExtensionOptions({
   const [customDraft, setCustomDraft] = useState<CustomReminderDraft>({
     ...defaultCustomReminderDraft,
   });
+  const [customDraftErrors, setCustomDraftErrors] =
+    useState<CustomReminderDraftErrors>({});
+  const [pendingDeleteCustomReminderId, setPendingDeleteCustomReminderId] =
+    useState<ReminderId | null>(null);
   const isSendingTestNotificationRef = useRef(false);
   const isTestNotificationPending = status === "test-pending";
   const allReminders = getReminderListWithCustomReminders(
@@ -167,6 +178,7 @@ export function ExtensionOptions({
     }));
     setStatus("idle");
     setTestNotificationMessage("");
+    setPendingDeleteCustomReminderId(null);
   }
 
   function toggleReminderCategory(reminderId: ReminderId) {
@@ -201,21 +213,22 @@ export function ExtensionOptions({
       ...currentDraft,
       [key]: value,
     }));
+    setCustomDraftErrors({});
     setStatus("idle");
     setTestNotificationMessage("");
   }
 
   function resetCustomDraft() {
     setCustomDraft({ ...defaultCustomReminderDraft });
+    setCustomDraftErrors({});
   }
 
   function saveCustomReminder() {
-    if (
-      !customDraft.title.trim() ||
-      !customDraft.description.trim() ||
-      customDraft.frequencyMinutes < 5
-    ) {
-      setStatus("error");
+    const validationResult = validateCustomReminderDraft(customDraft);
+
+    if (!validationResult.success) {
+      setCustomDraftErrors(validationResult.errors);
+      setStatus("custom-error");
       return;
     }
 
@@ -224,7 +237,7 @@ export function ExtensionOptions({
         (reminder) => reminder.id === customDraft.id,
       );
       const reminder = createCustomReminderDefinition({
-        draft: customDraft,
+        draft: validationResult.draft,
         displayPriority:
           existingReminder?.displayPriority ??
           reminderList.length + currentSettings.customReminders.length + 1,
@@ -237,6 +250,7 @@ export function ExtensionOptions({
       });
     });
     resetCustomDraft();
+    setPendingDeleteCustomReminderId(null);
     setStatus("idle");
     setTestNotificationMessage("");
   }
@@ -256,11 +270,19 @@ export function ExtensionOptions({
         settings.preferredReminderCategories.includes(reminder.id),
       ),
     );
+    setCustomDraftErrors({});
+    setPendingDeleteCustomReminderId(null);
     setStatus("idle");
     setTestNotificationMessage("");
   }
 
   function deleteCustomReminder(reminderId: ReminderId) {
+    setPendingDeleteCustomReminderId(reminderId);
+    setStatus("idle");
+    setTestNotificationMessage("");
+  }
+
+  function confirmDeleteCustomReminder(reminderId: ReminderId) {
     setSettings((currentSettings) =>
       deleteCustomReminderSettingsFor(currentSettings, reminderId),
     );
@@ -269,6 +291,13 @@ export function ExtensionOptions({
       resetCustomDraft();
     }
 
+    setPendingDeleteCustomReminderId(null);
+    setStatus("custom-removed");
+    setTestNotificationMessage("");
+  }
+
+  function cancelDeleteCustomReminder() {
+    setPendingDeleteCustomReminderId(null);
     setStatus("idle");
     setTestNotificationMessage("");
   }
@@ -754,32 +783,95 @@ export function ExtensionOptions({
               <span>Custom reminder title</span>
               <input
                 type="text"
+                maxLength={CUSTOM_REMINDER_TITLE_MAX_LENGTH}
                 value={customDraft.title}
                 onChange={(event) =>
                   updateCustomDraft("title", event.currentTarget.value)
                 }
+                aria-describedby={`extension-custom-reminder-title-hint${
+                  customDraftErrors.title
+                    ? " extension-custom-reminder-title-error"
+                    : ""
+                }`}
+                aria-invalid={Boolean(customDraftErrors.title)}
               />
+              <small
+                id="extension-custom-reminder-title-hint"
+                className="extension-field-hint"
+              >
+                {customDraft.title.length}/{CUSTOM_REMINDER_TITLE_MAX_LENGTH}
+              </small>
+              {customDraftErrors.title ? (
+                <small
+                  id="extension-custom-reminder-title-error"
+                  className="extension-field-error"
+                >
+                  {customDraftErrors.title}
+                </small>
+              ) : null}
             </label>
             <label className="extension-setting-row extension-field">
               <span>Custom reminder category</span>
               <input
                 type="text"
+                maxLength={CUSTOM_REMINDER_CATEGORY_MAX_LENGTH}
                 value={customDraft.category}
                 onChange={(event) =>
                   updateCustomDraft("category", event.currentTarget.value)
                 }
+                aria-describedby={`extension-custom-reminder-category-hint${
+                  customDraftErrors.category
+                    ? " extension-custom-reminder-category-error"
+                    : ""
+                }`}
+                aria-invalid={Boolean(customDraftErrors.category)}
               />
+              <small
+                id="extension-custom-reminder-category-hint"
+                className="extension-field-hint"
+              >
+                {customDraft.category.length}/{CUSTOM_REMINDER_CATEGORY_MAX_LENGTH}
+              </small>
+              {customDraftErrors.category ? (
+                <small
+                  id="extension-custom-reminder-category-error"
+                  className="extension-field-error"
+                >
+                  {customDraftErrors.category}
+                </small>
+              ) : null}
             </label>
           </div>
           <label className="extension-setting-row extension-field">
             <span>Custom reminder message</span>
             <input
               type="text"
+              maxLength={CUSTOM_REMINDER_MESSAGE_MAX_LENGTH}
               value={customDraft.description}
               onChange={(event) =>
                 updateCustomDraft("description", event.currentTarget.value)
               }
+              aria-describedby={`extension-custom-reminder-message-hint${
+                customDraftErrors.description
+                  ? " extension-custom-reminder-message-error"
+                  : ""
+              }`}
+              aria-invalid={Boolean(customDraftErrors.description)}
             />
+            <small
+              id="extension-custom-reminder-message-hint"
+              className="extension-field-hint"
+            >
+              {customDraft.description.length}/{CUSTOM_REMINDER_MESSAGE_MAX_LENGTH}
+            </small>
+            {customDraftErrors.description ? (
+              <small
+                id="extension-custom-reminder-message-error"
+                className="extension-field-error"
+              >
+                {customDraftErrors.description}
+              </small>
+            ) : null}
           </label>
           <div className="extension-field-grid">
             <label className="extension-setting-row extension-field">
@@ -788,6 +880,7 @@ export function ExtensionOptions({
                 type="number"
                 min="5"
                 max="1440"
+                step="1"
                 value={customDraft.frequencyMinutes}
                 onChange={(event) =>
                   updateCustomDraft(
@@ -795,7 +888,27 @@ export function ExtensionOptions({
                     Number(event.currentTarget.value),
                   )
                 }
+                aria-describedby={`extension-custom-reminder-frequency-hint${
+                  customDraftErrors.frequencyMinutes
+                    ? " extension-custom-reminder-frequency-error"
+                    : ""
+                }`}
+                aria-invalid={Boolean(customDraftErrors.frequencyMinutes)}
               />
+              <small
+                id="extension-custom-reminder-frequency-hint"
+                className="extension-field-hint"
+              >
+                Whole number, 5-1440 minutes.
+              </small>
+              {customDraftErrors.frequencyMinutes ? (
+                <small
+                  id="extension-custom-reminder-frequency-error"
+                  className="extension-field-error"
+                >
+                  {customDraftErrors.frequencyMinutes}
+                </small>
+              ) : null}
             </label>
             <label className="extension-setting-row extension-check-row">
               <input
@@ -822,22 +935,42 @@ export function ExtensionOptions({
             <ul className="extension-custom-list" aria-label="Custom reminders">
               {settings.customReminders.map((reminder) => (
                 <li key={reminder.id}>
-                  <div>
-                    <strong>{reminder.title}</strong>
-                    <span>{reminder.customFrequencyMinutes} min</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => editCustomReminder(reminder.id)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteCustomReminder(reminder.id)}
-                  >
-                    Delete
-                  </button>
+                  {pendingDeleteCustomReminderId === reminder.id ? (
+                    <>
+                      <div>
+                        <strong>Delete {reminder.title}?</strong>
+                        <span>Save settings to apply.</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => confirmDeleteCustomReminder(reminder.id)}
+                      >
+                        Confirm delete
+                      </button>
+                      <button type="button" onClick={cancelDeleteCustomReminder}>
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <strong>{reminder.title}</strong>
+                        <span>{reminder.customFrequencyMinutes} min</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => editCustomReminder(reminder.id)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteCustomReminder(reminder.id)}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
@@ -873,6 +1006,16 @@ export function ExtensionOptions({
         {status === "error" && (
           <p className="extension-error" role="alert">
             Settings could not be saved.
+          </p>
+        )}
+        {status === "custom-error" && (
+          <p className="extension-error" role="alert">
+            Check the highlighted custom reminder fields and try again.
+          </p>
+        )}
+        {status === "custom-removed" && (
+          <p className="extension-live-status" role="status" aria-live="polite">
+            Custom reminder removed. Save settings to apply.
           </p>
         )}
 

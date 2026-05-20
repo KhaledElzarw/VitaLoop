@@ -693,6 +693,21 @@ input:focus-visible {
   padding: 6px 8px;
 }
 
+.extension-field-hint,
+.extension-field-error {
+  grid-column: 1 / -1;
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.extension-field-hint {
+  color: var(--extension-muted);
+}
+
+.extension-field-error {
+  color: #9d244c;
+}
+
 .extension-check-row input,
 .extension-radio-card input {
   width: 18px;

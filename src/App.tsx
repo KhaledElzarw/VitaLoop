@@ -1,13 +1,18 @@
 import { useState } from "react";
 import { reminders } from "./data/reminders";
 import {
+  CUSTOM_REMINDER_CATEGORY_MAX_LENGTH,
+  CUSTOM_REMINDER_MESSAGE_MAX_LENGTH,
+  CUSTOM_REMINDER_TITLE_MAX_LENGTH,
   createCustomReminderDefinition,
   defaultCustomReminderDraft,
   deleteCustomReminderSettings,
   getCustomReminderDraft,
   getReminderListWithCustomReminders,
   upsertCustomReminderSettings,
+  validateCustomReminderDraft,
   type CustomReminderDraft,
+  type CustomReminderDraftErrors,
 } from "./domain/customReminders";
 import {
   applyReminderAction,
@@ -181,7 +186,10 @@ function RecentActivity({ history }: RecentActivityProps) {
           {history.slice(0, 3).map((entry) => (
             <li key={entry.id}>
               <strong>{entry.reminderTitle}</strong>
-              <span>{formatHistoryAction(entry)}</span>
+              <span>
+                {formatReminderTime(entry.occurredAt)} ·{" "}
+                {formatHistoryAction(entry)}
+              </span>
               {entry.snoozedUntil ? (
                 <span>Until {formatReminderTime(entry.snoozedUntil)}</span>
               ) : null}
@@ -463,7 +471,13 @@ type SettingsScreenProps = {
   onSettingsChange?: (settings: AppSettings) => void;
 };
 
-type SettingsStatus = "idle" | "saved" | "reset" | "error";
+type SettingsStatus =
+  | "idle"
+  | "saved"
+  | "reset"
+  | "error"
+  | "custom-error"
+  | "custom-removed";
 
 export function SettingsScreen({
   service = settingsService,
@@ -478,6 +492,10 @@ export function SettingsScreen({
   const [customDraft, setCustomDraft] = useState<CustomReminderDraft>({
     ...defaultCustomReminderDraft,
   });
+  const [customDraftErrors, setCustomDraftErrors] =
+    useState<CustomReminderDraftErrors>({});
+  const [pendingDeleteCustomReminderId, setPendingDeleteCustomReminderId] =
+    useState<ReminderId | null>(null);
   const allReminders = getReminderListWithCustomReminders(
     reminderList,
     settings,
@@ -492,6 +510,7 @@ export function SettingsScreen({
       [key]: value,
     }));
     setStatus("idle");
+    setPendingDeleteCustomReminderId(null);
   }
 
   function toggleReminderCategory(reminderId: ReminderId) {
@@ -514,6 +533,7 @@ export function SettingsScreen({
       };
     });
     setStatus("idle");
+    setPendingDeleteCustomReminderId(null);
   }
 
   function updateCustomDraft<Key extends keyof CustomReminderDraft>(
@@ -524,20 +544,21 @@ export function SettingsScreen({
       ...currentDraft,
       [key]: value,
     }));
+    setCustomDraftErrors({});
     setStatus("idle");
   }
 
   function resetCustomDraft() {
     setCustomDraft({ ...defaultCustomReminderDraft });
+    setCustomDraftErrors({});
   }
 
   function saveCustomReminder() {
-    if (
-      !customDraft.title.trim() ||
-      !customDraft.description.trim() ||
-      customDraft.frequencyMinutes < 5
-    ) {
-      setStatus("error");
+    const validationResult = validateCustomReminderDraft(customDraft);
+
+    if (!validationResult.success) {
+      setCustomDraftErrors(validationResult.errors);
+      setStatus("custom-error");
       return;
     }
 
@@ -546,7 +567,7 @@ export function SettingsScreen({
         (reminder) => reminder.id === customDraft.id,
       );
       const reminder = createCustomReminderDefinition({
-        draft: customDraft,
+        draft: validationResult.draft,
         displayPriority:
           existingReminder?.displayPriority ??
           reminderList.length + currentSettings.customReminders.length + 1,
@@ -559,6 +580,7 @@ export function SettingsScreen({
       });
     });
     resetCustomDraft();
+    setPendingDeleteCustomReminderId(null);
     setStatus("idle");
   }
 
@@ -577,10 +599,17 @@ export function SettingsScreen({
         settings.preferredReminderCategories.includes(reminder.id),
       ),
     );
+    setCustomDraftErrors({});
+    setPendingDeleteCustomReminderId(null);
     setStatus("idle");
   }
 
   function deleteCustomReminder(reminderId: ReminderId) {
+    setPendingDeleteCustomReminderId(reminderId);
+    setStatus("idle");
+  }
+
+  function confirmDeleteCustomReminder(reminderId: ReminderId) {
     setSettings((currentSettings) =>
       deleteCustomReminderSettings(currentSettings, reminderId),
     );
@@ -589,6 +618,12 @@ export function SettingsScreen({
       resetCustomDraft();
     }
 
+    setPendingDeleteCustomReminderId(null);
+    setStatus("custom-removed");
+  }
+
+  function cancelDeleteCustomReminder() {
+    setPendingDeleteCustomReminderId(null);
     setStatus("idle");
   }
 
@@ -754,32 +789,80 @@ export function SettingsScreen({
               <span>Custom reminder title</span>
               <input
                 type="text"
+                maxLength={CUSTOM_REMINDER_TITLE_MAX_LENGTH}
                 value={customDraft.title}
                 onChange={(event) =>
                   updateCustomDraft("title", event.currentTarget.value)
                 }
+                aria-describedby={`custom-reminder-title-hint${
+                  customDraftErrors.title
+                    ? " custom-reminder-title-error"
+                    : ""
+                }`}
+                aria-invalid={Boolean(customDraftErrors.title)}
               />
+              <small id="custom-reminder-title-hint" className="field-hint">
+                {customDraft.title.length}/{CUSTOM_REMINDER_TITLE_MAX_LENGTH}
+              </small>
+              {customDraftErrors.title ? (
+                <small id="custom-reminder-title-error" className="field-error">
+                  {customDraftErrors.title}
+                </small>
+              ) : null}
             </label>
             <label className="field">
               <span>Custom reminder category</span>
               <input
                 type="text"
+                maxLength={CUSTOM_REMINDER_CATEGORY_MAX_LENGTH}
                 value={customDraft.category}
                 onChange={(event) =>
                   updateCustomDraft("category", event.currentTarget.value)
                 }
+                aria-describedby={`custom-reminder-category-hint${
+                  customDraftErrors.category
+                    ? " custom-reminder-category-error"
+                    : ""
+                }`}
+                aria-invalid={Boolean(customDraftErrors.category)}
               />
+              <small id="custom-reminder-category-hint" className="field-hint">
+                {customDraft.category.length}/{CUSTOM_REMINDER_CATEGORY_MAX_LENGTH}
+              </small>
+              {customDraftErrors.category ? (
+                <small
+                  id="custom-reminder-category-error"
+                  className="field-error"
+                >
+                  {customDraftErrors.category}
+                </small>
+              ) : null}
             </label>
           </div>
           <label className="field">
             <span>Custom reminder message</span>
             <input
               type="text"
+              maxLength={CUSTOM_REMINDER_MESSAGE_MAX_LENGTH}
               value={customDraft.description}
               onChange={(event) =>
                 updateCustomDraft("description", event.currentTarget.value)
               }
+              aria-describedby={`custom-reminder-message-hint${
+                customDraftErrors.description
+                  ? " custom-reminder-message-error"
+                  : ""
+              }`}
+              aria-invalid={Boolean(customDraftErrors.description)}
             />
+            <small id="custom-reminder-message-hint" className="field-hint">
+              {customDraft.description.length}/{CUSTOM_REMINDER_MESSAGE_MAX_LENGTH}
+            </small>
+            {customDraftErrors.description ? (
+              <small id="custom-reminder-message-error" className="field-error">
+                {customDraftErrors.description}
+              </small>
+            ) : null}
           </label>
           <div className="settings-columns">
             <label className="field">
@@ -788,6 +871,7 @@ export function SettingsScreen({
                 type="number"
                 min="5"
                 max="1440"
+                step="1"
                 value={customDraft.frequencyMinutes}
                 onChange={(event) =>
                   updateCustomDraft(
@@ -795,7 +879,24 @@ export function SettingsScreen({
                     Number(event.currentTarget.value),
                   )
                 }
+                aria-describedby={`custom-reminder-frequency-hint${
+                  customDraftErrors.frequencyMinutes
+                    ? " custom-reminder-frequency-error"
+                    : ""
+                }`}
+                aria-invalid={Boolean(customDraftErrors.frequencyMinutes)}
               />
+              <small id="custom-reminder-frequency-hint" className="field-hint">
+                Whole number, 5-1440 minutes.
+              </small>
+              {customDraftErrors.frequencyMinutes ? (
+                <small
+                  id="custom-reminder-frequency-error"
+                  className="field-error"
+                >
+                  {customDraftErrors.frequencyMinutes}
+                </small>
+              ) : null}
             </label>
             <label className="checkbox-row">
               <input
@@ -822,22 +923,42 @@ export function SettingsScreen({
             <ul className="custom-reminder-list" aria-label="Custom reminders">
               {settings.customReminders.map((reminder) => (
                 <li key={reminder.id}>
-                  <div>
-                    <strong>{reminder.title}</strong>
-                    <span>{reminder.customFrequencyMinutes} min</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => editCustomReminder(reminder.id)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteCustomReminder(reminder.id)}
-                  >
-                    Delete
-                  </button>
+                  {pendingDeleteCustomReminderId === reminder.id ? (
+                    <>
+                      <div>
+                        <strong>Delete {reminder.title}?</strong>
+                        <span>Save settings to apply.</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => confirmDeleteCustomReminder(reminder.id)}
+                      >
+                        Confirm delete
+                      </button>
+                      <button type="button" onClick={cancelDeleteCustomReminder}>
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <strong>{reminder.title}</strong>
+                        <span>{reminder.customFrequencyMinutes} min</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => editCustomReminder(reminder.id)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteCustomReminder(reminder.id)}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
@@ -866,6 +987,16 @@ export function SettingsScreen({
         {status === "error" && (
           <p className="settings-error" role="alert">
             Settings could not be saved. Check the values and try again.
+          </p>
+        )}
+        {status === "custom-error" && (
+          <p className="settings-error" role="alert">
+            Check the highlighted custom reminder fields and try again.
+          </p>
+        )}
+        {status === "custom-removed" && (
+          <p className="settings-status" role="status" aria-live="polite">
+            Custom reminder removed. Save settings to apply.
           </p>
         )}
       </form>

@@ -85,6 +85,36 @@ describe("ExtensionOptions", () => {
     expect(screen.getByRole("status").textContent).toContain("Settings saved.");
   });
 
+  it("shows field-specific custom reminder validation errors", async () => {
+    const storage = createStorageMock();
+
+    render(<ExtensionOptions storage={storage} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Proactive reminders are disabled.")).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
+
+    expect(screen.getByText("Enter a title.")).toBeTruthy();
+    expect(screen.getByText("Enter a message.")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
+      target: { value: "Desk reset" },
+    });
+    fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
+      target: { value: "Reset your desk and posture." },
+    });
+    fireEvent.change(screen.getByLabelText(/Custom reminder frequency minutes/), {
+      target: { value: "4.5" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
+
+    expect(screen.getByText("Use a whole number from 5 to 1440.")).toBeTruthy();
+    expect(screen.queryByLabelText("Desk reset")).toBeNull();
+    expect(storage.saveSettings).not.toHaveBeenCalled();
+  });
+
   it("creates, edits, deletes, and saves custom reminders", async () => {
     const storage = createStorageMock();
 
@@ -94,13 +124,13 @@ describe("ExtensionOptions", () => {
       expect(screen.getByText("Proactive reminders are disabled.")).toBeTruthy();
     });
 
-    fireEvent.change(screen.getByLabelText("Custom reminder title"), {
+    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
       target: { value: "Desk reset" },
     });
-    fireEvent.change(screen.getByLabelText("Custom reminder message"), {
+    fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
       target: { value: "Reset your desk and posture." },
     });
-    fireEvent.change(screen.getByLabelText("Custom reminder frequency minutes"), {
+    fireEvent.change(screen.getByLabelText(/Custom reminder frequency minutes/), {
       target: { value: "25" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
@@ -128,7 +158,7 @@ describe("ExtensionOptions", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Edit" }));
-    fireEvent.change(screen.getByLabelText("Custom reminder title"), {
+    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
       target: { value: "Desk walk" },
     });
     fireEvent.click(
@@ -138,7 +168,17 @@ describe("ExtensionOptions", () => {
     expect(screen.getByLabelText("Desk walk")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(screen.getByText("Delete Desk walk?")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByLabelText("Desk walk")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm delete" }));
     expect(screen.getByText("No custom reminders yet.")).toBeTruthy();
+    expect(
+      screen.getByText("Custom reminder removed. Save settings to apply."),
+    ).toBeTruthy();
   });
 
   it("resets settings to defaults", async () => {

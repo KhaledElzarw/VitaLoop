@@ -13,6 +13,31 @@ export type CustomReminderDraft = {
   enabled: boolean;
 };
 
+export const CUSTOM_REMINDER_TITLE_MAX_LENGTH = 48;
+export const CUSTOM_REMINDER_MESSAGE_MAX_LENGTH = 120;
+export const CUSTOM_REMINDER_CATEGORY_MAX_LENGTH = 32;
+
+export type CustomReminderDraftField =
+  | "title"
+  | "description"
+  | "category"
+  | "frequencyMinutes";
+
+export type CustomReminderDraftErrors = Partial<
+  Record<CustomReminderDraftField, string>
+>;
+
+export type CustomReminderDraftValidationResult =
+  | {
+      success: true;
+      draft: CustomReminderDraft;
+      errors: CustomReminderDraftErrors;
+    }
+  | {
+      success: false;
+      errors: CustomReminderDraftErrors;
+    };
+
 export const defaultCustomReminderDraft: CustomReminderDraft = {
   title: "",
   description: "",
@@ -44,6 +69,64 @@ export function getReminderListWithCustomReminders(
   );
 }
 
+export function normalizeCustomReminderDraft(
+  draft: CustomReminderDraft,
+): CustomReminderDraft {
+  return {
+    ...draft,
+    title: draft.title.trim(),
+    description: draft.description.trim(),
+    category: draft.category.trim() || "Custom",
+  };
+}
+
+export function validateCustomReminderDraft(
+  draft: CustomReminderDraft,
+): CustomReminderDraftValidationResult {
+  const normalizedDraft = normalizeCustomReminderDraft(draft);
+  const errors: CustomReminderDraftErrors = {};
+
+  if (!normalizedDraft.title) {
+    errors.title = "Enter a title.";
+  } else if (normalizedDraft.title.length > CUSTOM_REMINDER_TITLE_MAX_LENGTH) {
+    errors.title = `Keep the title to ${CUSTOM_REMINDER_TITLE_MAX_LENGTH} characters or fewer.`;
+  }
+
+  if (!normalizedDraft.description) {
+    errors.description = "Enter a message.";
+  } else if (
+    normalizedDraft.description.length > CUSTOM_REMINDER_MESSAGE_MAX_LENGTH
+  ) {
+    errors.description = `Keep the message to ${CUSTOM_REMINDER_MESSAGE_MAX_LENGTH} characters or fewer.`;
+  }
+
+  if (normalizedDraft.category.length > CUSTOM_REMINDER_CATEGORY_MAX_LENGTH) {
+    errors.category = `Keep the category to ${CUSTOM_REMINDER_CATEGORY_MAX_LENGTH} characters or fewer.`;
+  }
+
+  if (
+    !Number.isFinite(normalizedDraft.frequencyMinutes) ||
+    !Number.isInteger(normalizedDraft.frequencyMinutes) ||
+    normalizedDraft.frequencyMinutes < 5 ||
+    normalizedDraft.frequencyMinutes > 1440
+  ) {
+    errors.frequencyMinutes = "Use a whole number from 5 to 1440.";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return {
+      success: false,
+      errors,
+    };
+  }
+
+  return {
+    success: true,
+    draft: normalizedDraft,
+    errors: {},
+  };
+}
+
 export function createCustomReminderDefinition({
   draft,
   displayPriority,
@@ -51,20 +134,24 @@ export function createCustomReminderDefinition({
   draft: CustomReminderDraft;
   displayPriority: number;
 }): CustomReminderDefinition {
-  const title = draft.title.trim();
-  const description = draft.description.trim();
-  const category = draft.category.trim() || "Custom";
+  const validationResult = validateCustomReminderDraft(draft);
+
+  if (!validationResult.success) {
+    throw new Error("Invalid custom reminder draft.");
+  }
+
+  const normalizedDraft = validationResult.draft;
 
   return {
-    id: draft.id ?? createCustomReminderId(),
-    title,
-    category,
-    description,
-    suggestedFrequency: `Every ${draft.frequencyMinutes} minutes`,
-    enabledByDefault: draft.enabled,
-    wellnessIntent: description,
+    id: normalizedDraft.id ?? createCustomReminderId(),
+    title: normalizedDraft.title,
+    category: normalizedDraft.category,
+    description: normalizedDraft.description,
+    suggestedFrequency: `Every ${normalizedDraft.frequencyMinutes} minutes`,
+    enabledByDefault: normalizedDraft.enabled,
+    wellnessIntent: normalizedDraft.description,
     displayPriority,
-    customFrequencyMinutes: draft.frequencyMinutes,
+    customFrequencyMinutes: normalizedDraft.frequencyMinutes,
   };
 }
 
