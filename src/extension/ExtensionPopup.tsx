@@ -18,6 +18,7 @@ import {
   type BuiltinReminderId,
   type ReminderDefinition,
 } from "../domain/schemas";
+import { getActivityFunFact } from "./activityFunFacts";
 import {
   extensionSettingsStorage,
   getDefaultExtensionSettings,
@@ -253,6 +254,7 @@ export function ExtensionPopup({
     getDefaultExtensionSettings(),
   );
   const [now, setNow] = useState(() => currentDate ?? new Date());
+  const [activityFactSeed] = useState(() => Math.random());
   const [actionState, setActionState] = useState(createReminderActionState);
   const [actionStatus, setActionStatus] = useState("");
   const resolvedReminderList = getReminderListWithCustomReminders(
@@ -276,6 +278,9 @@ export function ExtensionPopup({
     : "";
   const nextReminderTime = nextSchedule
     ? formatReminderTime(nextSchedule.nextAt)
+    : "";
+  const nextReminderFact = nextSchedule
+    ? getActivityFunFact(nextSchedule.reminder, activityFactSeed)
     : "";
 
   useEffect(() => {
@@ -413,7 +418,7 @@ export function ExtensionPopup({
               <ActivityIcon reminder={nextSchedule.reminder} />
               <div className="extension-reminder-title-copy">
                 <h2>{nextSchedule.reminder.title}</h2>
-                <p>{nextSchedule.reminder.description}</p>
+                <p>{nextReminderFact}</p>
               </div>
             </div>
           </div>
