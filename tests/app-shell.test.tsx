@@ -168,7 +168,7 @@ describe("VitaLoop app shell", () => {
     const recentActivity = screen.getByLabelText("Recent activity");
 
     expect(recentActivity).toBeTruthy();
-    expect(within(recentActivity).getByText("Done")).toBeTruthy();
+    expect(within(recentActivity).getByText("10:00 AM · Done")).toBeTruthy();
     expect(historyService.saveReminderHistory).toHaveBeenCalledWith([
       expect.objectContaining({
         reminderId: "eye-strain",
@@ -188,7 +188,7 @@ describe("VitaLoop app shell", () => {
     expect(screen.getByRole("status").textContent).toContain(
       "snoozed until 11:00 AM",
     );
-    expect(screen.getByText("Snoozed")).toBeTruthy();
+    expect(screen.getByText("10:00 AM · Snoozed")).toBeTruthy();
     expect(screen.getByText("Until 11:00 AM")).toBeTruthy();
   });
 
@@ -280,18 +280,44 @@ describe("VitaLoop app shell", () => {
     expect(screen.getByRole("status").textContent).toContain("Settings saved.");
   });
 
+  it("shows field-specific custom reminder validation errors", () => {
+    const service = createTestSettingsService();
+
+    render(<SettingsScreen service={service} reminderList={reminders} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
+
+    expect(screen.getByText("Enter a title.")).toBeTruthy();
+    expect(screen.getByText("Enter a message.")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
+      target: { value: "Desk reset" },
+    });
+    fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
+      target: { value: "Reset your desk and posture." },
+    });
+    fireEvent.change(screen.getByLabelText(/Custom reminder frequency minutes/), {
+      target: { value: "4.5" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
+
+    expect(screen.getByText("Use a whole number from 5 to 1440.")).toBeTruthy();
+    expect(screen.queryByLabelText("Desk reset")).toBeNull();
+    expect(service.saveSettings).not.toHaveBeenCalled();
+  });
+
   it("creates, edits, and deletes a custom reminder in settings", () => {
     const service = createTestSettingsService();
 
     render(<SettingsScreen service={service} reminderList={reminders} />);
 
-    fireEvent.change(screen.getByLabelText("Custom reminder title"), {
+    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
       target: { value: "Desk reset" },
     });
-    fireEvent.change(screen.getByLabelText("Custom reminder message"), {
+    fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
       target: { value: "Reset your desk and posture." },
     });
-    fireEvent.change(screen.getByLabelText("Custom reminder frequency minutes"), {
+    fireEvent.change(screen.getByLabelText(/Custom reminder frequency minutes/), {
       target: { value: "25" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
@@ -315,7 +341,7 @@ describe("VitaLoop app shell", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Edit" }));
-    fireEvent.change(screen.getByLabelText("Custom reminder title"), {
+    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
       target: { value: "Desk walk" },
     });
     fireEvent.click(
@@ -325,7 +351,15 @@ describe("VitaLoop app shell", () => {
     expect(screen.getByLabelText("Desk walk")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(screen.getByText("Delete Desk walk?")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByLabelText("Desk walk")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm delete" }));
     expect(screen.getByText("No custom reminders yet.")).toBeTruthy();
+    expect(screen.getByText("Custom reminder removed. Save settings to apply.")).toBeTruthy();
   });
 
   it("resets settings to defaults", () => {

@@ -174,7 +174,10 @@ function ExtensionRecentActivity({
           {history.slice(0, 3).map((entry) => (
             <li key={entry.id}>
               <span>{entry.reminderTitle}</span>
-              <strong>{getHistoryActionLabel(entry)}</strong>
+              <strong>
+                {formatReminderTime(entry.occurredAt)} ·{" "}
+                {getHistoryActionLabel(entry)}
+              </strong>
               {entry.snoozedUntil ? (
                 <small>Until {formatReminderTime(entry.snoozedUntil)}</small>
               ) : null}

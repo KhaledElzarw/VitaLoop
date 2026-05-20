@@ -520,6 +520,20 @@ input {
   padding: 0.55rem 0.7rem;
 }
 
+.field-hint,
+.field-error {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.field-hint {
+  color: var(--color-muted);
+}
+
+.field-error {
+  color: #8f3f2d;
+}
+
 .settings-columns,
 .radio-grid,
 .category-grid {

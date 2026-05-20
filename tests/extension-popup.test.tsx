@@ -242,7 +242,7 @@ describe("ExtensionPopup", () => {
     const recentActivity = screen.getByLabelText("Recent activity");
 
     expect(recentActivity).toBeTruthy();
-    expect(within(recentActivity).getByText("Done")).toBeTruthy();
+    expect(within(recentActivity).getByText("10:00 AM · Done")).toBeTruthy();
     expect(storage.saveSettings).toHaveBeenCalledWith(
       expect.objectContaining({
         reminderHistory: [
@@ -286,7 +286,7 @@ describe("ExtensionPopup", () => {
     await waitFor(() => {
       expect(within(recentActivity).getByText("Hydration")).toBeTruthy();
     });
-    expect(within(recentActivity).getByText("Snoozed")).toBeTruthy();
+    expect(within(recentActivity).getByText("10:00 AM · Snoozed")).toBeTruthy();
     expect(within(recentActivity).getByText("Until 10:15 AM")).toBeTruthy();
   });
 
