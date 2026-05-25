@@ -5,15 +5,19 @@ import {
   applyReminderAction,
   createReminderActionState,
   getActionAwareNextReminder,
+  getActionAwareUpcomingReminders,
   getNextSnoozedReminderAvailability,
+  type ActionAwareUpcomingReminder,
   type ReminderActionType,
 } from "../domain/reminderActions";
 import {
   appendReminderHistoryEntry,
   createReminderHistoryEntry,
-  type ReminderHistoryEntry,
 } from "../domain/reminderHistory";
-import { formatReminderTime } from "../domain/scheduling";
+import {
+  formatReminderCountdown,
+  formatReminderTime,
+} from "../domain/scheduling";
 import {
   type BuiltinReminderId,
   type ReminderDefinition,
@@ -67,50 +71,6 @@ function getTimingStatus(
   return `Suggested around ${formatReminderTime(
     nextAt,
   )} on a ${frequencyMinutes} minute rhythm.`;
-}
-
-const minuteInMilliseconds = 60_000;
-
-function formatCountdownUnit(
-  value: number,
-  singularUnit: string,
-  pluralUnit = `${singularUnit}s`,
-) {
-  return `${value} ${value === 1 ? singularUnit : pluralUnit}`;
-}
-
-function formatReminderCountdown(nextAt: Date, currentDate: Date) {
-  const remainingMinutes = Math.max(
-    0,
-    Math.ceil((Number(nextAt) - Number(currentDate)) / minuteInMilliseconds),
-  );
-
-  if (remainingMinutes === 0) {
-    return "Due now";
-  }
-
-  if (remainingMinutes < 60) {
-    return formatCountdownUnit(remainingMinutes, "min", "min");
-  }
-
-  const remainingHours = Math.floor(remainingMinutes / 60);
-  const minutesAfterHours = remainingMinutes % 60;
-
-  if (remainingHours < 24) {
-    const hourText = formatCountdownUnit(remainingHours, "hr");
-
-    return minutesAfterHours > 0
-      ? `${hourText} ${formatCountdownUnit(minutesAfterHours, "min", "min")}`
-      : hourText;
-  }
-
-  const remainingDays = Math.floor(remainingHours / 24);
-  const hoursAfterDays = remainingHours % 24;
-  const dayText = formatCountdownUnit(remainingDays, "day");
-
-  return hoursAfterDays > 0
-    ? `${dayText} ${formatCountdownUnit(hoursAfterDays, "hr")}`
-    : dayText;
 }
 
 function getCountdownTimingLabel(countdown: string, reminderTime: string) {
@@ -200,45 +160,42 @@ function ActivityIcon({ reminder }: { reminder: ReminderDefinition }) {
   );
 }
 
-function getHistoryActionLabel(entry: ReminderHistoryEntry) {
-  if (entry.actionType === "done") {
-    return "Done";
-  }
+const minuteInMilliseconds = 60_000;
 
-  if (entry.actionType === "snooze") {
-    return "Snoozed";
-  }
-
-  return "Skipped";
-}
-
-function ExtensionRecentActivity({
-  history,
+function ExtensionHeadsUp({
+  upcomingReminders,
+  currentDate,
 }: {
-  history: ReminderHistoryEntry[];
+  upcomingReminders: ActionAwareUpcomingReminder[];
+  currentDate: Date;
 }) {
   return (
-    <section className="extension-panel extension-history-panel" aria-label="Recent activity">
+    <section
+      className="extension-panel extension-heads-up-panel"
+      aria-label="Head's up"
+    >
       <div className="extension-panel-heading">
-        <p className="extension-eyebrow">Recent activity</p>
+        <p className="extension-eyebrow">Head's up</p>
       </div>
-      {history.length > 0 ? (
-        <ul className="extension-history-list">
-          {history.slice(0, 3).map((entry) => (
-            <li key={entry.id}>
-              <span>{entry.reminderTitle}</span>
+      {upcomingReminders.length > 0 ? (
+        <ul className="extension-heads-up-list">
+          {upcomingReminders.slice(0, 3).map((schedule) => (
+            <li key={schedule.reminder.id}>
+              <span>{schedule.reminder.title}</span>
               <strong>
-                {formatReminderTime(entry.occurredAt)} ·{" "}
-                {getHistoryActionLabel(entry)}
+                {formatReminderCountdown(schedule.nextAt, currentDate)}
               </strong>
-              {entry.snoozedUntil ? (
-                <small>Until {formatReminderTime(entry.snoozedUntil)}</small>
-              ) : null}
+              <small>
+                {schedule.isSnoozed ? "Snoozed until " : "Scheduled for "}
+                {formatReminderTime(schedule.nextAt)}
+              </small>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="extension-history-empty">No reminder activity yet.</p>
+        <p className="extension-heads-up-empty">
+          No upcoming reminders right now.
+        </p>
       )}
     </section>
   );
@@ -268,6 +225,12 @@ export function ExtensionPopup({
     actionState,
   );
   const nextSnoozedReminder = getNextSnoozedReminderAvailability(
+    resolvedReminderList,
+    settings,
+    now,
+    actionState,
+  );
+  const upcomingReminders = getActionAwareUpcomingReminders(
     resolvedReminderList,
     settings,
     now,
@@ -475,7 +438,10 @@ export function ExtensionPopup({
           {actionStatus}
         </p>
       )}
-      <ExtensionRecentActivity history={settings.reminderHistory} />
+      <ExtensionHeadsUp
+        upcomingReminders={upcomingReminders}
+        currentDate={now}
+      />
     </main>
   );
 }

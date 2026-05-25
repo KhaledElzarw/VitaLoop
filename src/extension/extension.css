@@ -740,11 +740,11 @@ input:focus-visible {
   font-size: 0.88rem;
 }
 
-.extension-history-panel {
+.extension-heads-up-panel {
   margin-top: 10px;
 }
 
-.extension-history-list {
+.extension-heads-up-list {
   display: grid;
   gap: 8px;
   margin: 10px 0 0;
@@ -752,7 +752,7 @@ input:focus-visible {
   list-style: none;
 }
 
-.extension-history-list li {
+.extension-heads-up-list li {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 2px 8px;
@@ -763,13 +763,13 @@ input:focus-visible {
   padding: 8px;
 }
 
-.extension-history-list span {
+.extension-heads-up-list span {
   min-width: 0;
   color: var(--extension-text);
   font-weight: 750;
 }
 
-.extension-history-list strong {
+.extension-heads-up-list strong {
   border-radius: 999px;
   background: var(--extension-accent-soft);
   color: var(--extension-accent-strong);
@@ -777,12 +777,12 @@ input:focus-visible {
   padding: 3px 7px;
 }
 
-.extension-history-list small {
+.extension-heads-up-list small {
   grid-column: 1 / -1;
   color: var(--extension-muted);
 }
 
-.extension-history-empty {
+.extension-heads-up-empty {
   margin: 8px 0 0;
   color: var(--extension-muted);
   font-size: 0.88rem;
