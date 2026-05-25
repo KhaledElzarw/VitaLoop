@@ -18,6 +18,8 @@ import {
   applyReminderAction,
   createReminderActionState,
   getActionAwareNextReminder,
+  getActionAwareUpcomingReminders,
+  type ActionAwareUpcomingReminder,
   type ReminderActionType,
 } from "./domain/reminderActions";
 import {
@@ -27,6 +29,7 @@ import {
 } from "./domain/reminderHistory";
 import {
   formatReminderTime,
+  formatReminderCountdown,
   getEnabledReminders as getScheduledEnabledReminders,
   getReminderSchedule,
 } from "./domain/scheduling";
@@ -161,43 +164,32 @@ type ReminderScreenProps = {
   initialHistory?: ReminderHistoryEntry[];
 };
 
-type RecentActivityProps = {
-  history: ReminderHistoryEntry[];
+type HeadsUpProps = {
+  upcomingReminders: ActionAwareUpcomingReminder[];
+  currentDate: Date;
 };
 
-function formatHistoryAction(entry: ReminderHistoryEntry) {
-  if (entry.actionType === "done") {
-    return "Done";
-  }
-
-  if (entry.actionType === "snooze") {
-    return "Snoozed";
-  }
-
-  return "Skipped";
-}
-
-function RecentActivity({ history }: RecentActivityProps) {
+function HeadsUp({ upcomingReminders, currentDate }: HeadsUpProps) {
   return (
-    <section className="recent-activity" aria-label="Recent activity">
-      <h2>Recent activity</h2>
-      {history.length > 0 ? (
+    <section className="heads-up" aria-label="Head's up">
+      <h2>Head's up</h2>
+      {upcomingReminders.length > 0 ? (
         <ul>
-          {history.slice(0, 3).map((entry) => (
-            <li key={entry.id}>
-              <strong>{entry.reminderTitle}</strong>
+          {upcomingReminders.slice(0, 3).map((schedule) => (
+            <li key={schedule.reminder.id}>
+              <strong>{schedule.reminder.title}</strong>
               <span>
-                {formatReminderTime(entry.occurredAt)} ·{" "}
-                {formatHistoryAction(entry)}
+                {formatReminderCountdown(schedule.nextAt, currentDate)} ·{" "}
+                {formatReminderTime(schedule.nextAt)}
               </span>
-              {entry.snoozedUntil ? (
-                <span>Until {formatReminderTime(entry.snoozedUntil)}</span>
+              {schedule.isSnoozed ? (
+                <span>Snoozed</span>
               ) : null}
             </li>
           ))}
         </ul>
       ) : (
-        <p>No reminder activity yet.</p>
+        <p>No upcoming reminders right now.</p>
       )}
     </section>
   );
@@ -217,6 +209,12 @@ export function HomeScreen({
   );
   const enabledReminders = getScheduledEnabledReminders(reminders, settings);
   const nextSchedule = getActionAwareNextReminder(
+    reminders,
+    settings,
+    currentDate,
+    actionState,
+  );
+  const upcomingReminders = getActionAwareUpcomingReminders(
     reminders,
     settings,
     currentDate,
@@ -312,7 +310,10 @@ export function HomeScreen({
           {actionStatus}
         </p>
       )}
-      <RecentActivity history={history} />
+      <HeadsUp
+        upcomingReminders={upcomingReminders}
+        currentDate={currentDate}
+      />
       <p className="rhythm-summary">
         Current rhythm: {settings.reminderIntensity} reminders stay inside your
         workday window and pause during quiet hours.

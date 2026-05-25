@@ -165,10 +165,11 @@ describe("VitaLoop app shell", () => {
 
     expect(screen.getByRole("status").textContent).toContain("marked done");
     expect(screen.getByRole("heading", { name: "Stand/walk" })).toBeTruthy();
-    const recentActivity = screen.getByLabelText("Recent activity");
+    const headsUp = screen.getByLabelText("Head's up");
 
-    expect(recentActivity).toBeTruthy();
-    expect(within(recentActivity).getByText("10:00 AM · Done")).toBeTruthy();
+    expect(headsUp).toBeTruthy();
+    expect(within(headsUp).getByText("Stand/walk")).toBeTruthy();
+    expect(within(headsUp).getByText("1 hr · 11:00 AM")).toBeTruthy();
     expect(historyService.saveReminderHistory).toHaveBeenCalledWith([
       expect.objectContaining({
         reminderId: "eye-strain",
@@ -188,15 +189,38 @@ describe("VitaLoop app shell", () => {
     expect(screen.getByRole("status").textContent).toContain(
       "snoozed until 11:00 AM",
     );
-    expect(screen.getByText("10:00 AM · Snoozed")).toBeTruthy();
-    expect(screen.getByText("Until 11:00 AM")).toBeTruthy();
+    const headsUp = screen.getByLabelText("Head's up");
+
+    expect(within(headsUp).getByText("Eye strain")).toBeTruthy();
+    expect(within(headsUp).getAllByText("1 hr · 11:00 AM").length).toBeGreaterThan(
+      0,
+    );
+    expect(within(headsUp).getByText("Snoozed")).toBeTruthy();
   });
 
-  it("renders an empty recent activity state", () => {
+  it("renders upcoming reminders in the heads up panel", () => {
     render(<HomeScreen reminders={reminders} />);
 
-    expect(screen.getByLabelText("Recent activity")).toBeTruthy();
-    expect(screen.getByText("No reminder activity yet.")).toBeTruthy();
+    const headsUp = screen.getByLabelText("Head's up");
+
+    expect(within(headsUp).getByRole("heading", { name: "Head's up" })).toBeTruthy();
+    expect(within(headsUp).getByText("Eye strain")).toBeTruthy();
+    expect(within(headsUp).getByText("45 min · 10:45 AM")).toBeTruthy();
+  });
+
+  it("renders an empty heads up state", () => {
+    render(
+      <HomeScreen
+        reminders={reminders}
+        settings={{
+          ...getDefaultAppSettings(),
+          preferredReminderCategories: [],
+        }}
+      />,
+    );
+
+    expect(screen.getByLabelText("Head's up")).toBeTruthy();
+    expect(screen.getByText("No upcoming reminders right now.")).toBeTruthy();
   });
 
   it("updates visible status after Skip once", () => {

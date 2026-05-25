@@ -27,6 +27,8 @@ type ScheduledReminder = ReminderSchedule & {
   nextAt: Date;
 };
 
+const minuteInMilliseconds = 60_000;
+
 const reminderFrequencies: ReminderFrequencyMap = {
   hydration: {
     gentle: 120,
@@ -107,7 +109,7 @@ function startOfMinute(date: Date) {
 }
 
 function addMinutes(date: Date, minutes: number) {
-  return new Date(date.getTime() + minutes * 60_000);
+  return new Date(date.getTime() + minutes * minuteInMilliseconds);
 }
 
 function hasNextAt(schedule: ReminderSchedule): schedule is ScheduledReminder {
@@ -258,4 +260,46 @@ export function formatReminderTime(date: Date) {
     hour: "numeric",
     minute: "2-digit",
   }).format(date);
+}
+
+function formatCountdownUnit(
+  value: number,
+  singularUnit: string,
+  pluralUnit = `${singularUnit}s`,
+) {
+  return `${value} ${value === 1 ? singularUnit : pluralUnit}`;
+}
+
+export function formatReminderCountdown(nextAt: Date, currentDate: Date) {
+  const remainingMinutes = Math.max(
+    0,
+    Math.ceil((Number(nextAt) - Number(currentDate)) / minuteInMilliseconds),
+  );
+
+  if (remainingMinutes === 0) {
+    return "Due now";
+  }
+
+  if (remainingMinutes < 60) {
+    return formatCountdownUnit(remainingMinutes, "min", "min");
+  }
+
+  const remainingHours = Math.floor(remainingMinutes / 60);
+  const minutesAfterHours = remainingMinutes % 60;
+
+  if (remainingHours < 24) {
+    const hourText = formatCountdownUnit(remainingHours, "hr");
+
+    return minutesAfterHours > 0
+      ? `${hourText} ${formatCountdownUnit(minutesAfterHours, "min", "min")}`
+      : hourText;
+  }
+
+  const remainingDays = Math.floor(remainingHours / 24);
+  const hoursAfterDays = remainingHours % 24;
+  const dayText = formatCountdownUnit(remainingDays, "day");
+
+  return hoursAfterDays > 0
+    ? `${dayText} ${formatCountdownUnit(hoursAfterDays, "hr")}`
+    : dayText;
 }

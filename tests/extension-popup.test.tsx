@@ -298,10 +298,12 @@ describe("ExtensionPopup", () => {
 
     expect(screen.getByRole("status").textContent).toContain("marked done");
     expect(screen.getByRole("heading", { name: "Stand/walk" })).toBeTruthy();
-    const recentActivity = screen.getByLabelText("Recent activity");
+    const headsUp = screen.getByLabelText("Head's up");
 
-    expect(recentActivity).toBeTruthy();
-    expect(within(recentActivity).getByText("10:00 AM · Done")).toBeTruthy();
+    expect(headsUp).toBeTruthy();
+    expect(within(headsUp).getByText("Stand/walk")).toBeTruthy();
+    expect(within(headsUp).getByText("1 hr")).toBeTruthy();
+    expect(within(headsUp).getByText("Scheduled for 11:00 AM")).toBeTruthy();
     expect(storage.saveSettings).toHaveBeenCalledWith(
       expect.objectContaining({
         reminderHistory: [
@@ -319,7 +321,7 @@ describe("ExtensionPopup", () => {
     expect(screen.getByRole("status").textContent).toContain("skipped once");
   });
 
-  it("renders stored recent activity", async () => {
+  it("renders upcoming reminders instead of stored history", async () => {
     render(
       <ExtensionPopup
         storage={createStorageMock({
@@ -340,13 +342,14 @@ describe("ExtensionPopup", () => {
       />,
     );
 
-    const recentActivity = screen.getByLabelText("Recent activity");
+    const headsUp = screen.getByLabelText("Head's up");
 
     await waitFor(() => {
-      expect(within(recentActivity).getByText("Hydration")).toBeTruthy();
+      expect(within(headsUp).getByText("Eye strain")).toBeTruthy();
     });
-    expect(within(recentActivity).getByText("10:00 AM · Snoozed")).toBeTruthy();
-    expect(within(recentActivity).getByText("Until 10:15 AM")).toBeTruthy();
+    expect(within(headsUp).getByText("45 min")).toBeTruthy();
+    expect(within(headsUp).getByText("Scheduled for 10:45 AM")).toBeTruthy();
+    expect(within(headsUp).queryByText("10:00 AM · Snoozed")).toBeNull();
   });
 
   it("does not immediately reselect a snoozed reminder", async () => {
@@ -398,5 +401,10 @@ describe("ExtensionPopup", () => {
       ).toBeTruthy();
     });
     expect(screen.getByText("Next reminder: Eye strain at 11:00 AM.")).toBeTruthy();
+    const headsUp = screen.getByLabelText("Head's up");
+
+    expect(within(headsUp).getByText("Eye strain")).toBeTruthy();
+    expect(within(headsUp).getByText("1 hr")).toBeTruthy();
+    expect(within(headsUp).getByText("Snoozed until 11:00 AM")).toBeTruthy();
   });
 });

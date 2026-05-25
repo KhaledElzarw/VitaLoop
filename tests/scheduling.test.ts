@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { reminders } from "../src/data/reminders";
 import {
+  formatReminderCountdown,
   getNextReminderTime,
   getNextScheduledReminder,
   getReminderFrequencyMinutes,
@@ -114,6 +115,18 @@ describe("reminder scheduling", () => {
         new Date(2026, 0, 1, 10, 0),
       ),
     ).toEqual(new Date(2026, 0, 1, 11, 30));
+  });
+
+  it("formats reminder countdowns", () => {
+    const currentDate = new Date(2026, 0, 1, 10, 0);
+
+    expect(formatReminderCountdown(currentDate, currentDate)).toBe("Due now");
+    expect(
+      formatReminderCountdown(new Date(2026, 0, 1, 10, 45), currentDate),
+    ).toBe("45 min");
+    expect(
+      formatReminderCountdown(new Date(2026, 0, 1, 12, 15), currentDate),
+    ).toBe("2 hrs 15 min");
   });
 
   it("handles overnight quiet hours", () => {

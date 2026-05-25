@@ -4,6 +4,7 @@ import {
   applyReminderAction,
   createReminderActionState,
   getActionAwareNextReminder,
+  getActionAwareUpcomingReminders,
   getNextSnoozedReminderAvailability,
   SNOOZE_MINUTES,
   type ReminderActionState,
@@ -90,6 +91,35 @@ describe("simulated reminder actions", () => {
       getActionAwareNextReminder(reminders, settings, currentDate, result.state)
         ?.reminder.id,
     ).toBe("stand-walk");
+  });
+
+  it("includes snoozed reminders in upcoming reminders", () => {
+    const settings = createSettings();
+    const currentNudge = getCurrentNudge(settings);
+    const result = applyReminderAction(
+      "snooze",
+      currentNudge,
+      settings,
+      currentDate,
+      createReminderActionState(),
+    );
+    const upcomingReminders = getActionAwareUpcomingReminders(
+      reminders,
+      settings,
+      currentDate,
+      result.state,
+    );
+
+    expect(upcomingReminders[0]).toMatchObject({
+      reminder: { id: "eye-strain" },
+      nextAt: new Date(2026, 4, 15, 11, 0),
+      isSnoozed: true,
+    });
+    expect(upcomingReminders[1]).toMatchObject({
+      reminder: { id: "stand-walk" },
+      nextAt: new Date(2026, 4, 15, 11, 0),
+      isSnoozed: false,
+    });
   });
 
   it("selects a snoozed reminder after snoozedUntil", () => {

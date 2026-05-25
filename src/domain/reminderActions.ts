@@ -29,6 +29,10 @@ type ActionAwareSchedule = ReminderSchedule & {
   nextAt: Date;
 };
 
+export type ActionAwareUpcomingReminder = ActionAwareSchedule & {
+  isSnoozed: boolean;
+};
+
 export type SnoozedReminderAvailability = {
   reminder: ReminderDefinition;
   nextAt: Date;
@@ -147,6 +151,54 @@ export function getActionAwareNextReminder(
 
       return first.reminder.displayPriority - second.reminder.displayPriority;
     })[0];
+}
+
+export function getActionAwareUpcomingReminders(
+  reminderList: ReminderDefinition[],
+  settings: AppSettings,
+  currentDate: Date,
+  actionState: ReminderActionState,
+): ActionAwareUpcomingReminder[] {
+  const ignoredReminderIds = getIgnoredReminderIds(actionState);
+
+  return getEnabledReminders(reminderList, settings)
+    .filter((reminder) => !ignoredReminderIds.includes(reminder.id))
+    .map((reminder): ActionAwareUpcomingReminder | undefined => {
+      const snoozedUntil = actionState.snoozedUntilByReminderId[reminder.id];
+      const schedule = getReminderSchedule(reminder, settings, currentDate);
+
+      if (snoozedUntil && Number(snoozedUntil) > Number(currentDate)) {
+        return {
+          ...schedule,
+          nextAt: snoozedUntil,
+          isSnoozed: true,
+        };
+      }
+
+      if (!isScheduleAvailable(schedule)) {
+        return undefined;
+      }
+
+      return {
+        ...schedule,
+        nextAt: schedule.nextAt,
+        isSnoozed: false,
+      };
+    })
+    .filter(
+      (
+        schedule,
+      ): schedule is ActionAwareUpcomingReminder => schedule !== undefined,
+    )
+    .sort((first, second) => {
+      const timeDifference = Number(first.nextAt) - Number(second.nextAt);
+
+      if (timeDifference !== 0) {
+        return timeDifference;
+      }
+
+      return first.reminder.displayPriority - second.reminder.displayPriority;
+    });
 }
 
 export function applyReminderAction(
