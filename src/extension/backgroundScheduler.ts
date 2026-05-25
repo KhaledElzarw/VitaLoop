@@ -15,7 +15,7 @@ import {
   getNextAllowedTime,
   getNextScheduledReminder,
   getReminderFrequencyMinutes,
-  isReminderAllowed,
+  isReminderAllowedForReminder,
   type ReminderSchedule,
 } from "../domain/scheduling";
 import { type ReminderDefinition } from "../domain/schemas";
@@ -294,10 +294,7 @@ export function getNotificationReminderSchedule({
   currentDate,
   actionState,
 }: SchedulerOptions) {
-  if (
-    !settings.proactiveRemindersEnabled ||
-    !isReminderAllowed(settings, currentDate)
-  ) {
+  if (!settings.proactiveRemindersEnabled) {
     return null;
   }
 
@@ -309,6 +306,8 @@ export function getNotificationReminderSchedule({
       getSchedulerActionState(settings, actionState),
     ),
     settings,
+  ).filter((candidate) =>
+    isReminderAllowedForReminder(candidate, settings, currentDate),
   )[0];
 
   if (!reminder) {
@@ -395,12 +394,10 @@ export function handleBackgroundReminderAlarm({
     currentDate,
     actionState,
   });
-  const schedule = getNotificationReminderSchedule({
-    settings,
-    reminderList,
-    currentDate,
-    actionState,
-  });
+  const schedule =
+    alarmPlan.action === "create" && alarmPlan.schedule.isAllowedNow
+      ? alarmPlan.schedule
+      : null;
 
   if (!schedule) {
     return {

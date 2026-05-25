@@ -71,6 +71,15 @@ function cloneExtensionSettings(settings: ExtensionSettings): ExtensionSettings 
     preferredReminderCategories: [...settings.preferredReminderCategories],
     customReminders: settings.customReminders.map((reminder) => ({
       ...reminder,
+      schedule:
+        reminder.schedule.type === "weekdayInterval"
+          ? {
+              ...reminder.schedule,
+              weekdays: [...reminder.schedule.weekdays],
+            }
+          : {
+              ...reminder.schedule,
+            },
     })),
     snoozedUntilByReminderId: cloneSnoozedReminders(
       settings.snoozedUntilByReminderId,

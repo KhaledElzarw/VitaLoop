@@ -274,7 +274,11 @@ describe("background reminder scheduler", () => {
       enabledByDefault: true,
       wellnessIntent: "Reset your desk and posture.",
       displayPriority: 9,
-      customFrequencyMinutes: 25,
+      schedule: {
+        type: "interval",
+        intervalMinutes: 25,
+      },
+      respectReminderWindows: true,
     } as const;
 
     const result = handleBackgroundReminderAlarm({

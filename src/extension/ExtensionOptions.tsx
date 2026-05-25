@@ -5,16 +5,29 @@ import {
   CUSTOM_REMINDER_MESSAGE_MAX_LENGTH,
   CUSTOM_REMINDER_TITLE_MAX_LENGTH,
   createCustomReminderDefinition,
+  createDefaultCustomReminderSchedule,
   defaultCustomReminderDraft,
   deleteCustomReminderSettingsFor,
+  formatCustomReminderSchedule,
+  formatDateInputValue,
   getCustomReminderDraft,
+  getCustomReminderDraftFromRecommendation,
+  getCustomReminderCharacterLimitStatus,
+  getRecommendedCustomReminders,
   getReminderListWithCustomReminders,
   upsertCustomReminderSettingsFor,
   validateCustomReminderDraft,
+  weekdayLabels,
+  weekdayOrder,
   type CustomReminderDraft,
   type CustomReminderDraftErrors,
+  type CharacterLimitStatus,
 } from "../domain/customReminders";
-import { type ReminderDefinition } from "../domain/schemas";
+import {
+  type CustomReminderSchedule,
+  type ReminderDefinition,
+  type Weekday,
+} from "../domain/schemas";
 import {
   createReminderNotificationCopy,
   REMINDER_NOTIFICATION_BUTTONS,
@@ -31,6 +44,13 @@ const reminderIntensityOptions = [
   { value: "gentle", label: "Gentle" },
   { value: "balanced", label: "Balanced" },
   { value: "active", label: "Active" },
+] as const;
+
+const customReminderScheduleOptions = [
+  { value: "interval", label: "Time interval" },
+  { value: "dailyInterval", label: "Day interval" },
+  { value: "weekdayInterval", label: "Weekdays" },
+  { value: "oneTime", label: "Date and time" },
 ] as const;
 
 type ReminderId = ExtensionSettings["preferredReminderCategories"][number];
@@ -131,6 +151,12 @@ function getTestReminder(reminderList: ReminderDefinition[]) {
   );
 }
 
+function getCharacterLimitHintClassName(status: CharacterLimitStatus) {
+  return status.tone === "near-limit"
+    ? "extension-character-limit-hint extension-character-limit-hint-danger"
+    : "extension-character-limit-hint";
+}
+
 export function ExtensionOptions({
   storage = extensionSettingsStorage,
   reminderList = defaultReminders,
@@ -143,6 +169,11 @@ export function ExtensionOptions({
   const [customDraft, setCustomDraft] = useState<CustomReminderDraft>({
     ...defaultCustomReminderDraft,
   });
+  const [isCustomRemindersExpanded, setIsCustomRemindersExpanded] =
+    useState(false);
+  const [customRecommendations, setCustomRecommendations] = useState(() =>
+    getRecommendedCustomReminders(),
+  );
   const [customDraftErrors, setCustomDraftErrors] =
     useState<CustomReminderDraftErrors>({});
   const [pendingDeleteCustomReminderId, setPendingDeleteCustomReminderId] =
@@ -153,6 +184,38 @@ export function ExtensionOptions({
     reminderList,
     settings,
   );
+  const titleLimitStatus = getCustomReminderCharacterLimitStatus(
+    customDraft.title,
+    CUSTOM_REMINDER_TITLE_MAX_LENGTH,
+  );
+  const categoryLimitStatus = getCustomReminderCharacterLimitStatus(
+    customDraft.category,
+    CUSTOM_REMINDER_CATEGORY_MAX_LENGTH,
+  );
+  const messageLimitStatus = getCustomReminderCharacterLimitStatus(
+    customDraft.description,
+    CUSTOM_REMINDER_MESSAGE_MAX_LENGTH,
+  );
+  const titleDescriptionIds = [
+    titleLimitStatus ? "extension-custom-reminder-title-limit" : "",
+    customDraftErrors.title ? "extension-custom-reminder-title-error" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const categoryDescriptionIds = [
+    categoryLimitStatus ? "extension-custom-reminder-category-limit" : "",
+    customDraftErrors.category ? "extension-custom-reminder-category-error" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const messageDescriptionIds = [
+    messageLimitStatus ? "extension-custom-reminder-message-limit" : "",
+    customDraftErrors.description
+      ? "extension-custom-reminder-message-error"
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   useEffect(() => {
     let isMounted = true;
@@ -218,8 +281,117 @@ export function ExtensionOptions({
     setTestNotificationMessage("");
   }
 
+  function updateCustomSchedule(schedule: CustomReminderSchedule) {
+    setCustomDraft((currentDraft) => ({
+      ...currentDraft,
+      schedule,
+    }));
+    setCustomDraftErrors({});
+    setStatus("idle");
+    setTestNotificationMessage("");
+  }
+
+  function updateCustomScheduleType(type: CustomReminderSchedule["type"]) {
+    updateCustomSchedule(createDefaultCustomReminderSchedule(type));
+  }
+
+  function updateCustomIntervalMinutes(intervalMinutes: number) {
+    updateCustomSchedule({
+      type: "interval",
+      intervalMinutes,
+    });
+  }
+
+  function updateCustomDayInterval(dayIntervalDays: number) {
+    if (customDraft.schedule.type !== "dailyInterval") {
+      return;
+    }
+
+    updateCustomSchedule({
+      ...customDraft.schedule,
+      dayIntervalDays,
+    });
+  }
+
+  function updateCustomDailyTime(timeOfDay: string) {
+    if (customDraft.schedule.type !== "dailyInterval") {
+      return;
+    }
+
+    updateCustomSchedule({
+      ...customDraft.schedule,
+      timeOfDay,
+    });
+  }
+
+  function updateCustomWeekdayTime(timeOfDay: string) {
+    if (customDraft.schedule.type !== "weekdayInterval") {
+      return;
+    }
+
+    updateCustomSchedule({
+      ...customDraft.schedule,
+      timeOfDay,
+    });
+  }
+
+  function updateCustomOneTimeDate(date: string) {
+    if (customDraft.schedule.type !== "oneTime") {
+      return;
+    }
+
+    updateCustomSchedule({
+      ...customDraft.schedule,
+      date,
+    });
+  }
+
+  function updateCustomOneTimeTime(timeOfDay: string) {
+    if (customDraft.schedule.type !== "oneTime") {
+      return;
+    }
+
+    updateCustomSchedule({
+      ...customDraft.schedule,
+      timeOfDay,
+    });
+  }
+
+  function isCustomWeekdaySelected(weekday: Weekday) {
+    return (
+      customDraft.schedule.type === "weekdayInterval" &&
+      customDraft.schedule.weekdays.includes(weekday)
+    );
+  }
+
+  function toggleCustomWeekday(weekday: Weekday) {
+    if (customDraft.schedule.type !== "weekdayInterval") {
+      return;
+    }
+
+    const weekdays = customDraft.schedule.weekdays.includes(weekday)
+      ? customDraft.schedule.weekdays.filter((candidate) => candidate !== weekday)
+      : [...customDraft.schedule.weekdays, weekday];
+
+    updateCustomSchedule({
+      ...customDraft.schedule,
+      weekdays,
+    });
+  }
+
+  function applyCustomRecommendation(
+    recommendation: (typeof customRecommendations)[number],
+  ) {
+    setCustomDraft(getCustomReminderDraftFromRecommendation(recommendation));
+    setCustomDraftErrors({});
+    setPendingDeleteCustomReminderId(null);
+    setStatus("idle");
+    setTestNotificationMessage("");
+  }
+
   function resetCustomDraft() {
     setCustomDraft({ ...defaultCustomReminderDraft });
+    setCustomRecommendations(getRecommendedCustomReminders());
     setCustomDraftErrors({});
   }
 
@@ -776,8 +948,39 @@ export function ExtensionOptions({
           </div>
         </fieldset>
 
-        <fieldset className="extension-group">
-          <legend>Custom reminders</legend>
+        <fieldset className="extension-group extension-custom-reminders-section">
+          <legend>
+            <label className="extension-collapsible-legend-control">
+              <span>Custom reminders</span>
+              <input
+                type="checkbox"
+                checked={isCustomRemindersExpanded}
+                aria-controls="extension-custom-reminders-panel"
+                onChange={(event) =>
+                  setIsCustomRemindersExpanded(event.currentTarget.checked)
+                }
+              />
+            </label>
+          </legend>
+          {isCustomRemindersExpanded ? (
+            <div id="extension-custom-reminders-panel">
+              <div
+                className="extension-recommendation-grid"
+                aria-label="Recommended custom reminders"
+              >
+            {customRecommendations.map((recommendation) => (
+              <button
+                key={recommendation.id}
+                type="button"
+                className="extension-recommendation-card"
+                onClick={() => applyCustomRecommendation(recommendation)}
+              >
+                <strong>{recommendation.title}</strong>
+                <span>{formatCustomReminderSchedule(recommendation.schedule)}</span>
+                <small>{recommendation.description}</small>
+              </button>
+            ))}
+              </div>
           <div className="extension-field-grid">
             <label className="extension-setting-row extension-field">
               <span>Custom reminder title</span>
@@ -788,19 +991,17 @@ export function ExtensionOptions({
                 onChange={(event) =>
                   updateCustomDraft("title", event.currentTarget.value)
                 }
-                aria-describedby={`extension-custom-reminder-title-hint${
-                  customDraftErrors.title
-                    ? " extension-custom-reminder-title-error"
-                    : ""
-                }`}
+                aria-describedby={titleDescriptionIds || undefined}
                 aria-invalid={Boolean(customDraftErrors.title)}
               />
-              <small
-                id="extension-custom-reminder-title-hint"
-                className="extension-field-hint"
-              >
-                {customDraft.title.length}/{CUSTOM_REMINDER_TITLE_MAX_LENGTH}
-              </small>
+              {titleLimitStatus ? (
+                <small
+                  id="extension-custom-reminder-title-limit"
+                  className={getCharacterLimitHintClassName(titleLimitStatus)}
+                >
+                  {titleLimitStatus.message}
+                </small>
+              ) : null}
               {customDraftErrors.title ? (
                 <small
                   id="extension-custom-reminder-title-error"
@@ -819,19 +1020,17 @@ export function ExtensionOptions({
                 onChange={(event) =>
                   updateCustomDraft("category", event.currentTarget.value)
                 }
-                aria-describedby={`extension-custom-reminder-category-hint${
-                  customDraftErrors.category
-                    ? " extension-custom-reminder-category-error"
-                    : ""
-                }`}
+                aria-describedby={categoryDescriptionIds || undefined}
                 aria-invalid={Boolean(customDraftErrors.category)}
               />
-              <small
-                id="extension-custom-reminder-category-hint"
-                className="extension-field-hint"
-              >
-                {customDraft.category.length}/{CUSTOM_REMINDER_CATEGORY_MAX_LENGTH}
-              </small>
+              {categoryLimitStatus ? (
+                <small
+                  id="extension-custom-reminder-category-limit"
+                  className={getCharacterLimitHintClassName(categoryLimitStatus)}
+                >
+                  {categoryLimitStatus.message}
+                </small>
+              ) : null}
               {customDraftErrors.category ? (
                 <small
                   id="extension-custom-reminder-category-error"
@@ -851,19 +1050,17 @@ export function ExtensionOptions({
               onChange={(event) =>
                 updateCustomDraft("description", event.currentTarget.value)
               }
-              aria-describedby={`extension-custom-reminder-message-hint${
-                customDraftErrors.description
-                  ? " extension-custom-reminder-message-error"
-                  : ""
-              }`}
+              aria-describedby={messageDescriptionIds || undefined}
               aria-invalid={Boolean(customDraftErrors.description)}
             />
-            <small
-              id="extension-custom-reminder-message-hint"
-              className="extension-field-hint"
-            >
-              {customDraft.description.length}/{CUSTOM_REMINDER_MESSAGE_MAX_LENGTH}
-            </small>
+            {messageLimitStatus ? (
+              <small
+                id="extension-custom-reminder-message-limit"
+                className={getCharacterLimitHintClassName(messageLimitStatus)}
+              >
+                {messageLimitStatus.message}
+              </small>
+            ) : null}
             {customDraftErrors.description ? (
               <small
                 id="extension-custom-reminder-message-error"
@@ -873,42 +1070,189 @@ export function ExtensionOptions({
               </small>
             ) : null}
           </label>
-          <div className="extension-field-grid">
+          <fieldset className="extension-nested-group">
+            <legend>Custom recurrence</legend>
+            <div className="extension-segmented-options">
+              {customReminderScheduleOptions.map((option) => (
+                <label key={option.value} className="extension-radio-pill">
+                  <input
+                    type="radio"
+                    name="extensionCustomReminderScheduleType"
+                    checked={customDraft.schedule.type === option.value}
+                    onChange={() => updateCustomScheduleType(option.value)}
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          {customDraft.schedule.type === "interval" ? (
             <label className="extension-setting-row extension-field">
-              <span>Custom reminder frequency minutes</span>
+              <span>Custom reminder interval minutes</span>
               <input
                 type="number"
                 min="5"
                 max="1440"
                 step="1"
-                value={customDraft.frequencyMinutes}
+                value={customDraft.schedule.intervalMinutes}
                 onChange={(event) =>
-                  updateCustomDraft(
-                    "frequencyMinutes",
-                    Number(event.currentTarget.value),
-                  )
+                  updateCustomIntervalMinutes(Number(event.currentTarget.value))
                 }
-                aria-describedby={`extension-custom-reminder-frequency-hint${
-                  customDraftErrors.frequencyMinutes
-                    ? " extension-custom-reminder-frequency-error"
+                aria-describedby={`extension-custom-reminder-interval-hint${
+                  customDraftErrors.intervalMinutes
+                    ? " extension-custom-reminder-interval-error"
                     : ""
                 }`}
-                aria-invalid={Boolean(customDraftErrors.frequencyMinutes)}
+                aria-invalid={Boolean(customDraftErrors.intervalMinutes)}
               />
               <small
-                id="extension-custom-reminder-frequency-hint"
+                id="extension-custom-reminder-interval-hint"
                 className="extension-field-hint"
               >
                 Whole number, 5-1440 minutes.
               </small>
-              {customDraftErrors.frequencyMinutes ? (
+              {customDraftErrors.intervalMinutes ? (
                 <small
-                  id="extension-custom-reminder-frequency-error"
+                  id="extension-custom-reminder-interval-error"
                   className="extension-field-error"
                 >
-                  {customDraftErrors.frequencyMinutes}
+                  {customDraftErrors.intervalMinutes}
                 </small>
               ) : null}
+            </label>
+          ) : null}
+          {customDraft.schedule.type === "dailyInterval" ? (
+            <div className="extension-field-grid">
+              <label className="extension-setting-row extension-field">
+                <span>Repeat every days</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="365"
+                  step="1"
+                  value={customDraft.schedule.dayIntervalDays}
+                  onChange={(event) =>
+                    updateCustomDayInterval(Number(event.currentTarget.value))
+                  }
+                  aria-invalid={Boolean(customDraftErrors.dayIntervalDays)}
+                />
+                {customDraftErrors.dayIntervalDays ? (
+                  <small className="extension-field-error">
+                    {customDraftErrors.dayIntervalDays}
+                  </small>
+                ) : null}
+              </label>
+              <label className="extension-setting-row extension-field">
+                <span>Reminder time</span>
+                <input
+                  type="time"
+                  value={customDraft.schedule.timeOfDay}
+                  onChange={(event) =>
+                    updateCustomDailyTime(event.currentTarget.value)
+                  }
+                  aria-invalid={Boolean(customDraftErrors.timeOfDay)}
+                />
+                {customDraftErrors.timeOfDay ? (
+                  <small className="extension-field-error">
+                    {customDraftErrors.timeOfDay}
+                  </small>
+                ) : null}
+              </label>
+            </div>
+          ) : null}
+          {customDraft.schedule.type === "weekdayInterval" ? (
+            <>
+              <fieldset className="extension-nested-group">
+                <legend>Reminder weekdays</legend>
+                <div className="extension-weekday-grid">
+                  {weekdayOrder.map((weekday) => (
+                    <label
+                      key={weekday}
+                      className="extension-setting-row extension-check-row"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isCustomWeekdaySelected(weekday)}
+                        onChange={() => toggleCustomWeekday(weekday)}
+                      />
+                      <span>{weekdayLabels[weekday]}</span>
+                    </label>
+                  ))}
+                </div>
+                {customDraftErrors.weekdays ? (
+                  <small className="extension-field-error">
+                    {customDraftErrors.weekdays}
+                  </small>
+                ) : null}
+              </fieldset>
+              <label className="extension-setting-row extension-field">
+                <span>Reminder time</span>
+                <input
+                  type="time"
+                  value={customDraft.schedule.timeOfDay}
+                  onChange={(event) =>
+                    updateCustomWeekdayTime(event.currentTarget.value)
+                  }
+                  aria-invalid={Boolean(customDraftErrors.timeOfDay)}
+                />
+                {customDraftErrors.timeOfDay ? (
+                  <small className="extension-field-error">
+                    {customDraftErrors.timeOfDay}
+                  </small>
+                ) : null}
+              </label>
+            </>
+          ) : null}
+          {customDraft.schedule.type === "oneTime" ? (
+            <div className="extension-field-grid">
+              <label className="extension-setting-row extension-field">
+                <span>Reminder date</span>
+                <input
+                  type="date"
+                  min={formatDateInputValue(new Date())}
+                  value={customDraft.schedule.date}
+                  onChange={(event) =>
+                    updateCustomOneTimeDate(event.currentTarget.value)
+                  }
+                  aria-invalid={Boolean(customDraftErrors.date)}
+                />
+                {customDraftErrors.date ? (
+                  <small className="extension-field-error">
+                    {customDraftErrors.date}
+                  </small>
+                ) : null}
+              </label>
+              <label className="extension-setting-row extension-field">
+                <span>Reminder time</span>
+                <input
+                  type="time"
+                  value={customDraft.schedule.timeOfDay}
+                  onChange={(event) =>
+                    updateCustomOneTimeTime(event.currentTarget.value)
+                  }
+                  aria-invalid={Boolean(customDraftErrors.timeOfDay)}
+                />
+                {customDraftErrors.timeOfDay ? (
+                  <small className="extension-field-error">
+                    {customDraftErrors.timeOfDay}
+                  </small>
+                ) : null}
+              </label>
+            </div>
+          ) : null}
+          <div className="extension-field-grid">
+            <label className="extension-setting-row extension-check-row">
+              <input
+                type="checkbox"
+                checked={customDraft.respectReminderWindows}
+                onChange={(event) =>
+                  updateCustomDraft(
+                    "respectReminderWindows",
+                    event.currentTarget.checked,
+                  )
+                }
+              />
+              <span>Respect quiet hours and workday</span>
             </label>
             <label className="extension-setting-row extension-check-row">
               <input
@@ -921,7 +1265,7 @@ export function ExtensionOptions({
               <span>Enable custom reminder</span>
             </label>
           </div>
-          <div className="extension-save-row">
+          <div className="extension-save-row extension-custom-reminder-actions">
             <button type="button" onClick={saveCustomReminder}>
               {customDraft.id ? "Update custom reminder" : "Add custom reminder"}
             </button>
@@ -931,54 +1275,59 @@ export function ExtensionOptions({
               </button>
             ) : null}
           </div>
-          {settings.customReminders.length > 0 ? (
-            <ul className="extension-custom-list" aria-label="Custom reminders">
-              {settings.customReminders.map((reminder) => (
-                <li key={reminder.id}>
-                  {pendingDeleteCustomReminderId === reminder.id ? (
-                    <>
-                      <div>
-                        <strong>Delete {reminder.title}?</strong>
-                        <span>Save settings to apply.</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => confirmDeleteCustomReminder(reminder.id)}
-                      >
-                        Confirm delete
-                      </button>
-                      <button type="button" onClick={cancelDeleteCustomReminder}>
-                        Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <strong>{reminder.title}</strong>
-                        <span>{reminder.customFrequencyMinutes} min</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => editCustomReminder(reminder.id)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteCustomReminder(reminder.id)}
-                      >
-                        Delete
-                      </button>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="extension-options-footnote">
-              No custom reminders yet.
-            </p>
-          )}
+          <fieldset className="extension-nested-group extension-custom-reminder-management">
+            <legend>Manage Custom Reminders</legend>
+            {settings.customReminders.length > 0 ? (
+              <ul className="extension-custom-list" aria-label="Custom reminders">
+                {settings.customReminders.map((reminder) => (
+                  <li key={reminder.id}>
+                    {pendingDeleteCustomReminderId === reminder.id ? (
+                      <>
+                        <div>
+                          <strong>Delete {reminder.title}?</strong>
+                          <span>Save settings to apply.</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => confirmDeleteCustomReminder(reminder.id)}
+                        >
+                          Confirm delete
+                        </button>
+                        <button type="button" onClick={cancelDeleteCustomReminder}>
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <strong>{reminder.title}</strong>
+                          <span>{formatCustomReminderSchedule(reminder.schedule)}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => editCustomReminder(reminder.id)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteCustomReminder(reminder.id)}
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="extension-options-footnote">
+                No custom reminders yet.
+              </p>
+            )}
+          </fieldset>
+            </div>
+          ) : null}
         </fieldset>
 
         <div className="extension-save-row">
