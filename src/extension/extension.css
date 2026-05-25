@@ -541,6 +541,10 @@ input:focus-visible {
   margin-top: 14px;
 }
 
+.extension-custom-reminder-actions {
+  justify-content: flex-end;
+}
+
 .extension-actions button,
 .extension-save-row button {
   min-height: 38px;
@@ -631,9 +635,34 @@ input:focus-visible {
   padding: 0 4px;
 }
 
+.extension-custom-reminders-section > legend {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.extension-collapsible-legend-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  color: var(--extension-accent-strong);
+  font-weight: 850;
+}
+
+.extension-collapsible-legend-control input {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--extension-accent);
+}
+
 .extension-field-grid,
 .extension-choice-grid,
-.extension-category-grid {
+.extension-category-grid,
+.extension-recommendation-grid,
+.extension-segmented-options,
+.extension-weekday-grid {
   display: grid;
   gap: 8px;
   margin-top: 10px;
@@ -649,6 +678,58 @@ input:focus-visible {
 
 .extension-category-grid {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.extension-recommendation-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.extension-recommendation-card {
+  display: grid;
+  gap: 4px;
+  min-height: 100px;
+  border: 1px solid rgba(103, 83, 190, 0.12);
+  border-radius: var(--extension-radius);
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--extension-text);
+  cursor: pointer;
+  font: inherit;
+  padding: 10px;
+  text-align: left;
+}
+
+.extension-recommendation-card span,
+.extension-recommendation-card small {
+  color: var(--extension-muted);
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.extension-nested-group {
+  margin: 10px 0 0;
+  border: 1px solid rgba(103, 83, 190, 0.12);
+  border-radius: var(--extension-radius);
+  padding: 10px;
+}
+
+.extension-nested-group legend {
+  color: var(--extension-muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.extension-radio-pill {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  border: 1px solid rgba(103, 83, 190, 0.12);
+  border-radius: var(--extension-radius);
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--extension-text);
+  font-weight: 750;
+  padding: 8px;
 }
 
 .extension-field,
@@ -709,14 +790,20 @@ input:focus-visible {
 }
 
 .extension-field-hint,
+.extension-character-limit-hint,
 .extension-field-error {
   grid-column: 1 / -1;
   font-size: 0.76rem;
   font-weight: 750;
 }
 
-.extension-field-hint {
+.extension-field-hint,
+.extension-character-limit-hint {
   color: var(--extension-muted);
+}
+
+.extension-character-limit-hint-danger {
+  color: #9d244c;
 }
 
 .extension-field-error {
@@ -724,7 +811,8 @@ input:focus-visible {
 }
 
 .extension-check-row input,
-.extension-radio-card input {
+.extension-radio-card input,
+.extension-radio-pill input {
   width: 18px;
   height: 18px;
   accent-color: var(--extension-accent);

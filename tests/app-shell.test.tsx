@@ -50,6 +50,10 @@ function createTestHistoryService(
   };
 }
 
+function expandCustomReminders() {
+  fireEvent.click(screen.getByRole("checkbox", { name: "Custom reminders" }));
+}
+
 describe("VitaLoop app shell", () => {
   it("renders VitaLoop branding", () => {
     render(<App />);
@@ -285,6 +289,69 @@ describe("VitaLoop app shell", () => {
     expect(screen.getByLabelText("Hydration")).toBeTruthy();
   });
 
+  it("prefills a custom reminder from a recommendation", () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+
+    render(
+      <SettingsScreen
+        service={createTestSettingsService()}
+        reminderList={reminders}
+      />,
+    );
+
+    expandCustomReminders();
+    fireEvent.click(screen.getByRole("button", { name: /Review calendar/ }));
+
+    expect(screen.getByLabelText(/Custom reminder title/)).toHaveProperty(
+      "value",
+      "Review calendar",
+    );
+    expect(screen.getByLabelText(/Custom reminder message/)).toHaveProperty(
+      "value",
+      "Look over upcoming meetings and plans.",
+    );
+
+    randomSpy.mockRestore();
+  });
+
+  it("shows custom reminder character limits only near the maximum", () => {
+    const service = createTestSettingsService();
+
+    render(<SettingsScreen service={service} reminderList={reminders} />);
+
+    expect(screen.queryByLabelText(/Custom reminder title/)).toBeNull();
+    expandCustomReminders();
+    expect(screen.queryByText("0/48")).toBeNull();
+    expect(
+      screen.queryByText("Maximum limit of characters is 32/48"),
+    ).toBeNull();
+
+    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
+      target: { value: "A".repeat(33) },
+    });
+    const warningLimit = screen.getByText(
+      "Maximum limit of characters is 33/48",
+    );
+
+    expect(warningLimit.className).not.toContain(
+      "character-limit-hint-danger",
+    );
+
+    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
+      target: { value: "A".repeat(38) },
+    });
+    const nearLimit = screen.getByText("Maximum limit of characters is 38/48");
+
+    expect(nearLimit.className).toContain("character-limit-hint-danger");
+
+    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
+      target: { value: "A".repeat(32) },
+    });
+    expect(
+      screen.queryByText("Maximum limit of characters is 32/48"),
+    ).toBeNull();
+  });
+
   it("saves updated settings", () => {
     const service = createTestSettingsService();
 
@@ -309,6 +376,7 @@ describe("VitaLoop app shell", () => {
 
     render(<SettingsScreen service={service} reminderList={reminders} />);
 
+    expandCustomReminders();
     fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
 
     expect(screen.getByText("Enter a title.")).toBeTruthy();
@@ -320,7 +388,7 @@ describe("VitaLoop app shell", () => {
     fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
       target: { value: "Reset your desk and posture." },
     });
-    fireEvent.change(screen.getByLabelText(/Custom reminder frequency minutes/), {
+    fireEvent.change(screen.getByLabelText(/Custom reminder interval minutes/), {
       target: { value: "4.5" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
@@ -335,13 +403,17 @@ describe("VitaLoop app shell", () => {
 
     render(<SettingsScreen service={service} reminderList={reminders} />);
 
+    expandCustomReminders();
+    expect(
+      screen.getByRole("group", { name: "Manage Custom Reminders" }),
+    ).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
       target: { value: "Desk reset" },
     });
     fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
       target: { value: "Reset your desk and posture." },
     });
-    fireEvent.change(screen.getByLabelText(/Custom reminder frequency minutes/), {
+    fireEvent.change(screen.getByLabelText(/Custom reminder interval minutes/), {
       target: { value: "25" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
@@ -357,7 +429,11 @@ describe("VitaLoop app shell", () => {
         id: expect.stringMatching(/^custom-/),
         title: "Desk reset",
         description: "Reset your desk and posture.",
-        customFrequencyMinutes: 25,
+        schedule: {
+          type: "interval",
+          intervalMinutes: 25,
+        },
+        respectReminderWindows: true,
       }),
     ]);
     expect(savedSettings.preferredReminderCategories).toContain(
@@ -384,6 +460,37 @@ describe("VitaLoop app shell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Confirm delete" }));
     expect(screen.getByText("No custom reminders yet.")).toBeTruthy();
     expect(screen.getByText("Custom reminder removed. Save settings to apply.")).toBeTruthy();
+  });
+
+  it("creates a weekday custom reminder in settings", () => {
+    const service = createTestSettingsService();
+
+    render(<SettingsScreen service={service} reminderList={reminders} />);
+
+    expandCustomReminders();
+    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
+      target: { value: "Water plants" },
+    });
+    fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
+      target: { value: "Check plant soil." },
+    });
+    fireEvent.click(screen.getByRole("radio", { name: "Weekdays" }));
+    fireEvent.change(screen.getByLabelText("Reminder time"), {
+      target: { value: "08:30" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save settings" }));
+
+    const savedSettings = service.saveSettings.mock.calls[0][0];
+
+    expect(savedSettings.customReminders[0]).toMatchObject({
+      title: "Water plants",
+      schedule: {
+        type: "weekdayInterval",
+        weekdays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+        timeOfDay: "08:30",
+      },
+    });
   });
 
   it("resets settings to defaults", () => {

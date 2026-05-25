@@ -219,7 +219,11 @@ describe("reminder scheduling", () => {
       enabledByDefault: true,
       wellnessIntent: "Reset your desk and posture.",
       displayPriority: 9,
-      customFrequencyMinutes: 25,
+      schedule: {
+        type: "interval",
+        intervalMinutes: 25,
+      },
+      respectReminderWindows: true,
     } as const;
     const settings = createSettings({
       quietHoursEnabled: false,
@@ -237,6 +241,90 @@ describe("reminder scheduling", () => {
     expect(nextSchedule?.reminder.id).toBe(customReminder.id);
     expect(nextSchedule?.frequencyMinutes).toBe(25);
     expect(nextSchedule?.nextAt).toEqual(new Date(2026, 0, 1, 10, 25));
+  });
+
+  it("schedules custom day interval reminders from their start date", () => {
+    const customReminder = {
+      id: "custom-123e4567-e89b-42d3-a456-426614174000",
+      title: "Pay bills",
+      category: "Life admin",
+      description: "Review upcoming bills and payments.",
+      suggestedFrequency: "Every 2 days at 9:00 AM",
+      enabledByDefault: true,
+      wellnessIntent: "Review upcoming bills and payments.",
+      displayPriority: 9,
+      schedule: {
+        type: "dailyInterval",
+        dayIntervalDays: 2,
+        timeOfDay: "09:00",
+        startDate: "2026-01-01",
+      },
+      respectReminderWindows: true,
+    } as const;
+    const settings = createSettings({
+      quietHoursEnabled: false,
+      workdayStart: "00:00",
+      workdayEnd: "23:59",
+      preferredReminderCategories: [customReminder.id],
+      customReminders: [customReminder],
+    });
+
+    expect(
+      getNextReminderTime(customReminder, settings, new Date(2026, 0, 2, 10, 0)),
+    ).toEqual(new Date(2026, 0, 3, 9, 0));
+  });
+
+  it("schedules custom weekday and one-time reminders", () => {
+    const weekdayReminder = {
+      id: "custom-123e4567-e89b-42d3-a456-426614174000",
+      title: "Water plants",
+      category: "Home",
+      description: "Check plant soil.",
+      suggestedFrequency: "Monday at 8:30 AM",
+      enabledByDefault: true,
+      wellnessIntent: "Check plant soil.",
+      displayPriority: 9,
+      schedule: {
+        type: "weekdayInterval" as const,
+        weekdays: ["monday" as const],
+        timeOfDay: "08:30",
+      },
+      respectReminderWindows: false,
+    };
+    const oneTimeReminder = {
+      ...weekdayReminder,
+      id: "custom-123e4567-e89b-42d3-a456-426614174001",
+      title: "Appointment prep",
+      schedule: {
+        type: "oneTime" as const,
+        date: "2026-01-05",
+        timeOfDay: "07:30",
+      },
+    };
+    const settings = createSettings({
+      quietHoursEnabled: true,
+      quietHoursStart: "21:00",
+      quietHoursEnd: "08:00",
+      workdayStart: "09:00",
+      workdayEnd: "17:00",
+      preferredReminderCategories: [weekdayReminder.id, oneTimeReminder.id],
+      customReminders: [weekdayReminder, oneTimeReminder],
+    });
+
+    expect(
+      getNextReminderTime(
+        weekdayReminder,
+        settings,
+        new Date(2026, 0, 2, 10, 0),
+      ),
+    ).toEqual(new Date(2026, 0, 5, 8, 30));
+    expect(
+      getNextReminderTime(
+        oneTimeReminder,
+        settings,
+        new Date(2026, 0, 2, 10, 0),
+      ),
+    ).toEqual(new Date(2026, 0, 5, 7, 30));
   });
 
   it("does not depend on live timers", () => {

@@ -1,7 +1,9 @@
 import {
   type AppSettings,
   type BuiltinReminderId,
+  type CustomReminderSchedule,
   type ReminderDefinition,
+  type Weekday,
 } from "./schemas";
 
 type ReminderId = AppSettings["preferredReminderCategories"][number];
@@ -28,6 +30,7 @@ type ScheduledReminder = ReminderSchedule & {
 };
 
 const minuteInMilliseconds = 60_000;
+const dayInMilliseconds = 24 * 60 * minuteInMilliseconds;
 
 const reminderFrequencies: ReminderFrequencyMap = {
   hydration: {
@@ -112,6 +115,43 @@ function addMinutes(date: Date, minutes: number) {
   return new Date(date.getTime() + minutes * minuteInMilliseconds);
 }
 
+function addDays(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+
+  return nextDate;
+}
+
+function getDateOnly(date: Date) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function createDateTime(date: string, timeOfDay: string) {
+  const [year, month, day] = date.split("-").map(Number);
+  const [hours, minutes] = timeOfDay.split(":").map(Number);
+
+  return new Date(year, month - 1, day, hours, minutes);
+}
+
+function createDateTimeForDate(date: Date, timeOfDay: string) {
+  return createDateTime(getDateOnly(date), timeOfDay);
+}
+
+function getStartOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function getDaysBetween(firstDate: Date, secondDate: Date) {
+  return Math.floor(
+    (Number(getStartOfDay(secondDate)) - Number(getStartOfDay(firstDate))) /
+      dayInMilliseconds,
+  );
+}
+
 function hasNextAt(schedule: ReminderSchedule): schedule is ScheduledReminder {
   return schedule.nextAt !== null;
 }
@@ -146,6 +186,18 @@ export function isReminderAllowed(settings: AppSettings, currentDate: Date) {
   );
 }
 
+export function isReminderAllowedForReminder(
+  reminder: ReminderDefinition,
+  settings: AppSettings,
+  currentDate: Date,
+) {
+  if (reminder.schedule && reminder.respectReminderWindows === false) {
+    return true;
+  }
+
+  return isReminderAllowed(settings, currentDate);
+}
+
 export function getReminderFrequencyMinutes(
   reminderOrId: ReminderDefinition | ReminderId,
   reminderIntensity: ReminderIntensity,
@@ -153,8 +205,16 @@ export function getReminderFrequencyMinutes(
   const reminderId =
     typeof reminderOrId === "string" ? reminderOrId : reminderOrId.id;
 
-  if (typeof reminderOrId !== "string" && reminderOrId.customFrequencyMinutes) {
-    return reminderOrId.customFrequencyMinutes;
+  if (typeof reminderOrId !== "string" && reminderOrId.schedule) {
+    if (reminderOrId.schedule.type === "interval") {
+      return reminderOrId.schedule.intervalMinutes;
+    }
+
+    if (reminderOrId.schedule.type === "dailyInterval") {
+      return reminderOrId.schedule.dayIntervalDays * 24 * 60;
+    }
+
+    return 24 * 60;
   }
 
   if (isBuiltinReminderId(reminderId)) {
@@ -203,7 +263,11 @@ export function getNextReminderTime(
     return null;
   }
 
-  if (!isReminderAllowed(settings, currentDate)) {
+  if (reminder.schedule) {
+    return getNextCustomReminderTime(reminder, settings, currentDate);
+  }
+
+  if (!isReminderAllowedForReminder(reminder, settings, currentDate)) {
     return getNextAllowedTime(settings, currentDate);
   }
 
@@ -218,6 +282,116 @@ export function getNextReminderTime(
   );
 }
 
+function getNextWeekdayTime(
+  weekdays: Weekday[],
+  timeOfDay: string,
+  currentDate: Date,
+) {
+  const targetWeekdays = new Set(
+    weekdays.map((weekday) =>
+      [
+        "sunday",
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+      ].indexOf(weekday),
+    ),
+  );
+
+  for (let dayOffset = 0; dayOffset <= 7; dayOffset += 1) {
+    const candidateDate = addDays(currentDate, dayOffset);
+
+    if (!targetWeekdays.has(candidateDate.getDay())) {
+      continue;
+    }
+
+    const candidateTime = createDateTimeForDate(candidateDate, timeOfDay);
+
+    if (Number(candidateTime) > Number(currentDate)) {
+      return candidateTime;
+    }
+  }
+
+  return null;
+}
+
+function getNextDailyIntervalTime(
+  schedule: Extract<CustomReminderSchedule, { type: "dailyInterval" }>,
+  currentDate: Date,
+) {
+  const startDate = createDateTime(schedule.startDate, schedule.timeOfDay);
+
+  if (Number(startDate) > Number(currentDate)) {
+    return startDate;
+  }
+
+  const elapsedDays = Math.max(0, getDaysBetween(startDate, currentDate));
+  const remainder = elapsedDays % schedule.dayIntervalDays;
+  const dayOffset = remainder === 0 ? 0 : schedule.dayIntervalDays - remainder;
+  const candidateDate = addDays(currentDate, dayOffset);
+  const candidateTime = createDateTimeForDate(candidateDate, schedule.timeOfDay);
+
+  if (Number(candidateTime) > Number(currentDate)) {
+    return candidateTime;
+  }
+
+  return createDateTimeForDate(
+    addDays(candidateDate, schedule.dayIntervalDays),
+    schedule.timeOfDay,
+  );
+}
+
+function getNextExactCustomReminderTime(
+  schedule: CustomReminderSchedule,
+  currentDate: Date,
+) {
+  if (schedule.type === "interval") {
+    return addMinutes(startOfMinute(currentDate), schedule.intervalMinutes);
+  }
+
+  if (schedule.type === "dailyInterval") {
+    return getNextDailyIntervalTime(schedule, currentDate);
+  }
+
+  if (schedule.type === "weekdayInterval") {
+    return getNextWeekdayTime(schedule.weekdays, schedule.timeOfDay, currentDate);
+  }
+
+  const oneTimeReminderTime = createDateTime(schedule.date, schedule.timeOfDay);
+
+  return Number(oneTimeReminderTime) >= Number(startOfMinute(currentDate))
+    ? oneTimeReminderTime
+    : null;
+}
+
+export function getNextCustomReminderTime(
+  reminder: ReminderDefinition,
+  settings: AppSettings,
+  currentDate: Date,
+) {
+  if (!reminder.schedule) {
+    return null;
+  }
+
+  const exactNextAt = getNextExactCustomReminderTime(
+    reminder.schedule,
+    currentDate,
+  );
+
+  if (!exactNextAt) {
+    return null;
+  }
+
+  if (reminder.respectReminderWindows === false) {
+    return exactNextAt;
+  }
+
+  return getNextAllowedTime(settings, exactNextAt);
+}
+
 export function getReminderSchedule(
   reminder: ReminderDefinition,
   settings: AppSettings,
@@ -229,7 +403,7 @@ export function getReminderSchedule(
       reminder,
       settings.reminderIntensity,
     ),
-    isAllowedNow: isReminderAllowed(settings, currentDate),
+    isAllowedNow: isReminderAllowedForReminder(reminder, settings, currentDate),
     nextAt: getNextReminderTime(reminder, settings, currentDate),
   };
 }

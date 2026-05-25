@@ -164,7 +164,11 @@ describe("extension settings storage", () => {
       enabledByDefault: true,
       wellnessIntent: "Reset your desk and posture.",
       displayPriority: 9,
-      customFrequencyMinutes: 25,
+      schedule: {
+        type: "interval",
+        intervalMinutes: 25,
+      },
+      respectReminderWindows: true,
     } as const;
 
     settings.preferredReminderCategories = [customReminder.id];
