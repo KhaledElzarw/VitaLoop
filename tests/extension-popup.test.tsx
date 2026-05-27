@@ -93,7 +93,7 @@ describe("ExtensionPopup", () => {
     expect(within(nextNudge).getByText("45 min")).toBeTruthy();
     expect(within(nextNudge).getByText("10:45 AM")).toBeTruthy();
     expect(
-      within(nextNudge).getByLabelText("Next reminder in 45 min at 10:45 AM"),
+      within(nextNudge).getByLabelText("Next loop in 45 min at 10:45 AM"),
     ).toBeTruthy();
     expect(within(nextNudge).getByText(firstEyeStrainFact)).toBeTruthy();
 
@@ -187,7 +187,7 @@ describe("ExtensionPopup", () => {
     );
   });
 
-  it("renders custom reminders with the fallback activity icon", async () => {
+  it("renders custom loops with the fallback activity icon", async () => {
     const customReminder = {
       id: "custom-123e4567-e89b-42d3-a456-426614174000",
       title: "Desk reset",
@@ -249,7 +249,7 @@ describe("ExtensionPopup", () => {
       />,
     );
 
-    const actions = screen.getByLabelText("Reminder actions");
+    const actions = screen.getByLabelText("Loop actions");
 
     expect(within(actions).getByRole("button", { name: "Done" })).toBeTruthy();
     expect(within(actions).getByRole("button", { name: "Snooze" })).toBeTruthy();
@@ -267,14 +267,14 @@ describe("ExtensionPopup", () => {
       />,
     );
 
-    const statusPanel = screen.getByLabelText("Proactive reminder status");
+    const statusPanel = screen.getByLabelText("Proactive loop status");
 
     await waitFor(() => {
       expect(within(statusPanel).getByText("Disabled")).toBeTruthy();
     });
     expect(
       within(statusPanel).getByText(
-        "Enable proactive reminders in Options to use local browser notifications.",
+        "Enable proactive loops in Options to use local browser notifications.",
       ),
     ).toBeTruthy();
   });
@@ -317,7 +317,7 @@ describe("ExtensionPopup", () => {
     expect(screen.getByRole("status").textContent).toContain("skipped once");
   });
 
-  it("renders upcoming reminders instead of stored history", async () => {
+  it("renders upcoming loops instead of stored history", async () => {
     render(
       <ExtensionPopup
         storage={createStorageMock({
@@ -393,10 +393,10 @@ describe("ExtensionPopup", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("heading", { name: "No reminders due right now." }),
+        screen.getByRole("heading", { name: "No loops due right now." }),
       ).toBeTruthy();
     });
-    expect(screen.getByText("Next reminder: Eye strain at 11:00 AM.")).toBeTruthy();
+    expect(screen.getByText("Next loop: Eye strain at 11:00 AM.")).toBeTruthy();
     const headsUp = screen.getByLabelText("Head's up");
 
     expect(within(headsUp).getByText("Eye strain")).toBeTruthy();

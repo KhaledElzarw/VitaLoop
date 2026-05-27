@@ -40,8 +40,8 @@ afterEach(() => {
 });
 
 function expandCustomReminders() {
-  fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
-  const customRemindersSummary = screen.getByText("Custom reminders");
+  fireEvent.click(screen.getByRole("button", { name: "Loop" }));
+  const customRemindersSummary = screen.getByText("Custom loops");
   const customRemindersDetails = customRemindersSummary.closest("details");
 
   if (customRemindersDetails && !customRemindersDetails.hasAttribute("open")) {
@@ -51,27 +51,27 @@ function expandCustomReminders() {
 
 function openCustomReminderWizard() {
   expandCustomReminders();
-  fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
+  fireEvent.click(screen.getByRole("button", { name: "Add custom loop" }));
 }
 
 function saveCustomReminderFromWizard() {
-  fireEvent.click(screen.getByRole("button", { name: "Add Reminder" }));
+  fireEvent.click(screen.getByRole("button", { name: "Add Loop" }));
 }
 
 describe("ExtensionOptions", () => {
   it("renders key settings controls by accessible label", () => {
     render(<ExtensionOptions storage={createStorageMock()} />);
 
-    expect(screen.queryByLabelText("Enable proactive reminders")).toBeNull();
-    expect(screen.queryByLabelText("Reminder intensity")).toBeNull();
+    expect(screen.queryByLabelText("Enable proactive loops")).toBeNull();
+    expect(screen.queryByLabelText("Loop intensity")).toBeNull();
     expect(screen.queryByRole("button", { name: "About" })).toBeNull();
     expect(screen.queryByText("👨🏻‍💻 Working Hours")).toBeNull();
     expect(screen.queryByRole("button", { name: "Schedule" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Notifications" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Appearance" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Data & privacy" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Custom reminders" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
+    expect(screen.queryByRole("button", { name: "Custom loops" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Loop" }));
     expect(
       screen.getByRole("heading", { name: "Manage Your VitaLoops" }),
     ).toBeTruthy();
@@ -81,20 +81,20 @@ describe("ExtensionOptions", () => {
     expect(screen.queryByLabelText("Sleep routine")).toBeNull();
     expect(screen.queryByLabelText("Mood/energy check-in")).toBeNull();
     expect(screen.queryByLabelText("Saved")).toBeNull();
-    expect(screen.getByLabelText("Enable proactive reminders")).toBeTruthy();
+    expect(screen.getByLabelText("Enable proactive loops")).toBeTruthy();
     expect(
-      (screen.getByLabelText("Reminder intensity") as HTMLSelectElement).value,
+      (screen.getByLabelText("Loop intensity") as HTMLSelectElement).value,
     ).toBe("balanced");
-    const customRemindersSummary = screen.getByText("Custom reminders");
+    const customRemindersSummary = screen.getByText("Custom loops");
     const customRemindersDetails = customRemindersSummary.closest("details");
     expect(
       customRemindersDetails?.hasAttribute("open"),
     ).toBe(false);
     const proactiveReminderControl = screen
-      .getByLabelText("Enable proactive reminders")
+      .getByLabelText("Enable proactive loops")
       .closest("label");
     const reminderIntensityControl = screen
-      .getByLabelText("Reminder intensity")
+      .getByLabelText("Loop intensity")
       .closest("label");
     const hydrationRow = hydrationControl.closest("label");
     expect(
@@ -134,8 +134,8 @@ describe("ExtensionOptions", () => {
     expect(customRemindersDetails?.hasAttribute("open")).toBe(true);
     expect(screen.getByRole("heading", { name: "Recommended for you" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "General" }));
-    expect(screen.queryByLabelText("Enable proactive reminders")).toBeNull();
-    expect(screen.queryByLabelText("Reminder intensity")).toBeNull();
+    expect(screen.queryByLabelText("Enable proactive loops")).toBeNull();
+    expect(screen.queryByLabelText("Loop intensity")).toBeNull();
     expect(
       screen.getByRole("button", { name: "Send test notification" }),
     ).toBeTruthy();
@@ -148,9 +148,9 @@ describe("ExtensionOptions", () => {
 
     render(<ExtensionOptions storage={storage} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
-    fireEvent.click(screen.getByLabelText("Enable proactive reminders"));
-    fireEvent.change(screen.getByLabelText("Reminder intensity"), {
+    fireEvent.click(screen.getByRole("button", { name: "Loop" }));
+    fireEvent.click(screen.getByLabelText("Enable proactive loops"));
+    fireEvent.change(screen.getByLabelText("Loop intensity"), {
       target: { value: "active" },
     });
     fireEvent.click(screen.getByText("👨🏻‍💻 Working Hours"));
@@ -170,7 +170,7 @@ describe("ExtensionOptions", () => {
     expect(screen.getByRole("status").textContent).toContain("Settings saved.");
   });
 
-  it("shows field-specific custom reminder validation errors", async () => {
+  it("shows field-specific custom loop validation errors", async () => {
     const storage = createStorageMock();
 
     render(<ExtensionOptions storage={storage} />);
@@ -181,7 +181,7 @@ describe("ExtensionOptions", () => {
 
     openCustomReminderWizard();
     fireEvent.click(
-      screen.getByRole("button", { name: "Add Reminder" }),
+      screen.getByRole("button", { name: "Add Loop" }),
     );
 
     expect(screen.getByText("Enter a title.")).toBeTruthy();
@@ -196,7 +196,7 @@ describe("ExtensionOptions", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Micro Loops" }));
     expect(screen.queryByText("Whole number, 5-1440 minutes.")).toBeNull();
     const intervalAmount = screen.getByLabelText(
-      "Custom reminder interval amount",
+      "Custom loop interval amount",
     ) as HTMLInputElement;
     expect(fireEvent.keyDown(intervalAmount, { key: "." })).toBe(false);
     fireEvent.change(intervalAmount, {
@@ -213,7 +213,7 @@ describe("ExtensionOptions", () => {
     expect(storage.saveSettings).not.toHaveBeenCalled();
   });
 
-  it("shows custom reminder character limits only near the maximum", async () => {
+  it("shows custom loop character limits only near the maximum", async () => {
     const storage = createStorageMock();
 
     render(<ExtensionOptions storage={storage} />);
@@ -254,7 +254,7 @@ describe("ExtensionOptions", () => {
     ).toBeNull();
   });
 
-  it("creates, edits, deletes, and saves custom reminders", async () => {
+  it("creates, edits, deletes, and saves custom loops", async () => {
     const storage = createStorageMock();
 
     render(<ExtensionOptions storage={storage} />);
@@ -265,20 +265,20 @@ describe("ExtensionOptions", () => {
 
     expandCustomReminders();
     expect(
-      screen.queryByRole("region", { name: "New custom reminder" }),
+      screen.queryByRole("region", { name: "New custom loop" }),
     ).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add custom loop" }));
     expect(
       screen.getByRole("button", { name: "Cancel" }).getAttribute("aria-expanded"),
     ).toBe("true");
     expect(
-      screen.getByRole("group", { name: "Manage Custom Reminders" }),
+      screen.getByRole("group", { name: "Manage Custom Loops" }),
     ).toBeTruthy();
     const wizard = screen.getByRole("region", {
-      name: "New custom reminder",
+      name: "New custom loop",
     });
     expect(within(wizard).getByRole("heading", { name: "Details" })).toBeTruthy();
-    expect(within(wizard).getByRole("button", { name: "Add Reminder" })).toBeTruthy();
+    expect(within(wizard).getByRole("button", { name: "Add Loop" })).toBeTruthy();
     expect(within(wizard).queryByRole("button", { name: "Back" })).toBeNull();
     expect(within(wizard).queryByRole("button", { name: "Next" })).toBeNull();
     expect(within(wizard).queryByRole("button", { name: "Review" })).toBeNull();
@@ -318,16 +318,16 @@ describe("ExtensionOptions", () => {
     ).toBeTruthy();
     expect(
       within(wizard).getByText(
-        "Set reminders on daily, weekly or monthly intervals... keep up with your car recurring maintenance or dental cleaning",
+        "Set loops on daily, weekly or monthly intervals... keep up with your car recurring maintenance or dental cleaning",
       ),
     ).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(
-      screen.queryByRole("region", { name: "New custom reminder" }),
+      screen.queryByRole("region", { name: "New custom loop" }),
     ).toBeNull();
     openCustomReminderWizard();
     const reopenedWizard = screen.getByRole("region", {
-      name: "New custom reminder",
+      name: "New custom loop",
     });
     fireEvent.click(
       within(reopenedWizard).getByRole("radio", { name: "Weekday Routines" }),
@@ -352,11 +352,11 @@ describe("ExtensionOptions", () => {
     expect(within(reopenedWizard).getByText("Every")).toBeTruthy();
     expect(
       (within(reopenedWizard).getByLabelText(
-        "Custom reminder daily interval amount",
+        "Custom loop daily interval amount",
       ) as HTMLInputElement).value,
     ).toBe("1");
     expect(
-      within(reopenedWizard).getByLabelText("Custom reminder daily interval unit"),
+      within(reopenedWizard).getByLabelText("Custom loop daily interval unit"),
     ).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/Title/), {
       target: { value: "Desk reset" },
@@ -365,14 +365,14 @@ describe("ExtensionOptions", () => {
       target: { value: "Reset your desk and posture." },
     });
     fireEvent.click(within(reopenedWizard).getByRole("radio", { name: "Micro Loops" }));
-    fireEvent.change(screen.getByLabelText("Custom reminder interval unit"), {
+    fireEvent.change(screen.getByLabelText("Custom loop interval unit"), {
       target: { value: "hours" },
     });
     expect(
-      (screen.getByLabelText("Custom reminder interval amount") as HTMLInputElement)
+      (screen.getByLabelText("Custom loop interval amount") as HTMLInputElement)
         .value,
     ).toBe("1");
-    fireEvent.change(screen.getByLabelText("Custom reminder interval amount"), {
+    fireEvent.change(screen.getByLabelText("Custom loop interval amount"), {
       target: { value: "2" },
     });
     saveCustomReminderFromWizard();
@@ -419,13 +419,13 @@ describe("ExtensionOptions", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Delete Desk walk" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm delete" }));
-    expect(screen.getByText("No custom reminders yet.")).toBeTruthy();
+    expect(screen.getByText("No custom loops yet.")).toBeTruthy();
     expect(
-      screen.getByText("Custom reminder removed. Save settings to apply."),
+      screen.getByText("Custom loop removed. Save settings to apply."),
     ).toBeTruthy();
   });
 
-  it("creates and saves a one-time custom reminder", async () => {
+  it("creates and saves a one-time custom loop", async () => {
     const storage = createStorageMock();
 
     render(<ExtensionOptions storage={storage} />);
@@ -467,7 +467,7 @@ describe("ExtensionOptions", () => {
     });
   });
 
-  it("creates and saves a daily-ish custom reminder", async () => {
+  it("creates and saves a daily-ish custom loop", async () => {
     const storage = createStorageMock();
 
     render(<ExtensionOptions storage={storage} />);
@@ -484,16 +484,16 @@ describe("ExtensionOptions", () => {
       target: { value: "Review the next plan cycle." },
     });
     fireEvent.click(screen.getByRole("radio", { name: "Daily-ish" }));
-    fireEvent.change(screen.getByLabelText("Custom reminder daily interval unit"), {
+    fireEvent.change(screen.getByLabelText("Custom loop daily interval unit"), {
       target: { value: "weeks" },
     });
     expect(
       (screen.getByLabelText(
-        "Custom reminder daily interval amount",
+        "Custom loop daily interval amount",
       ) as HTMLInputElement).value,
     ).toBe("1");
     fireEvent.change(
-      screen.getByLabelText("Custom reminder daily interval amount"),
+      screen.getByLabelText("Custom loop daily interval amount"),
       {
         target: { value: "2" },
       },
@@ -525,11 +525,11 @@ describe("ExtensionOptions", () => {
 
     render(<ExtensionOptions storage={storage} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
+    fireEvent.click(screen.getByRole("button", { name: "Loop" }));
 
     await waitFor(() => {
       expect(
-        (screen.getByLabelText("Reminder intensity") as HTMLSelectElement)
+        (screen.getByLabelText("Loop intensity") as HTMLSelectElement)
           .value,
       ).toBe("active");
     });
@@ -542,7 +542,7 @@ describe("ExtensionOptions", () => {
       );
     });
     expect(
-      (screen.getByLabelText("Reminder intensity") as HTMLSelectElement).value,
+      (screen.getByLabelText("Loop intensity") as HTMLSelectElement).value,
     ).toBe("balanced");
     expect(screen.getByRole("status").textContent).toContain(
       "Defaults restored.",
@@ -581,11 +581,11 @@ describe("ExtensionOptions", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
+    fireEvent.click(screen.getByRole("button", { name: "Loop" }));
 
     await waitFor(() => {
       expect(
-        (screen.getByLabelText("Enable proactive reminders") as HTMLInputElement)
+        (screen.getByLabelText("Enable proactive loops") as HTMLInputElement)
           .checked,
       ).toBe(true);
     });
@@ -648,7 +648,7 @@ describe("ExtensionOptions", () => {
           type: "basic",
           title: "VitaLoop: Eye strain",
           message: "Look away from the screen and soften your focus.",
-          contextMessage: "Local browser reminder",
+          contextMessage: "Local browser loop",
           iconUrl:
             "chrome-extension://vitaloop/assets/app-icons/vitaloop-notification-logo.png",
           requireInteraction: true,
