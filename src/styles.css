@@ -1217,7 +1217,10 @@ input {
 }
 
 .custom-wizard {
+  display: flex;
+  flex-direction: column;
   width: min(100%, 1080px);
+  max-height: calc(100vh - 48px);
   overflow: hidden;
   border: 1px solid #d8ded8;
   border-radius: 10px;
@@ -1242,8 +1245,10 @@ input {
 
 .custom-wizard-body {
   display: grid;
+  flex: 1 1 auto;
   grid-template-columns: 240px minmax(0, 1fr);
-  min-height: 470px;
+  min-height: min(470px, 58vh);
+  overflow: auto;
 }
 
 .custom-wizard-steps {
@@ -1295,6 +1300,22 @@ input {
 }
 
 .custom-wizard-panel > p {
+  margin: 4px 0 18px;
+  color: #66736b;
+}
+
+.custom-wizard-subsection {
+  margin-top: 24px;
+  border-top: 1px solid #e4e9e4;
+  padding-top: 22px;
+}
+
+.custom-wizard-subsection h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.custom-wizard-subsection > p {
   margin: 4px 0 18px;
   color: #66736b;
 }

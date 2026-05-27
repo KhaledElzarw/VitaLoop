@@ -90,7 +90,7 @@ type SettingsPanelId =
   | "quiet-hours"
   | "categories"
   | "advanced";
-type CustomReminderWizardStep = "details" | "recurrence" | "review";
+type CustomReminderWizardStep = "details" | "review";
 
 const defaultPreviewDate = new Date(2026, 4, 15, 10, 0);
 
@@ -547,7 +547,7 @@ export function SettingsScreen({
   const [isCustomReminderWizardOpen, setIsCustomReminderWizardOpen] =
     useState(false);
   const [customReminderWizardStep, setCustomReminderWizardStep] =
-    useState<CustomReminderWizardStep>("recurrence");
+    useState<CustomReminderWizardStep>("details");
   const [customRecommendations, setCustomRecommendations] = useState(() =>
     getRecommendedCustomReminders(),
   );
@@ -738,7 +738,7 @@ export function SettingsScreen({
     setCustomDraftErrors({});
     setPendingDeleteCustomReminderId(null);
     setStatus("idle");
-    setCustomReminderWizardStep("recurrence");
+    setCustomReminderWizardStep("details");
     setIsCustomReminderWizardOpen(true);
   }
 
@@ -752,7 +752,7 @@ export function SettingsScreen({
     resetCustomDraft();
     setPendingDeleteCustomReminderId(null);
     setStatus("idle");
-    setCustomReminderWizardStep("recurrence");
+    setCustomReminderWizardStep("details");
     setIsCustomReminderWizardOpen(true);
   }
 
@@ -767,13 +767,7 @@ export function SettingsScreen({
     if (!validationResult.success) {
       setCustomDraftErrors(validationResult.errors);
       setStatus("custom-error");
-      setCustomReminderWizardStep(
-        validationResult.errors.title ||
-          validationResult.errors.category ||
-          validationResult.errors.description
-          ? "details"
-          : "recurrence",
-      );
+      setCustomReminderWizardStep("details");
       return;
     }
 
@@ -818,7 +812,7 @@ export function SettingsScreen({
     setCustomDraftErrors({});
     setPendingDeleteCustomReminderId(null);
     setStatus("idle");
-    setCustomReminderWizardStep("recurrence");
+    setCustomReminderWizardStep("details");
     setIsCustomReminderWizardOpen(true);
   }
 
@@ -1563,26 +1557,16 @@ export function SettingsScreen({
             </header>
             <div className="custom-wizard-body">
               <nav className="custom-wizard-steps" aria-label="Custom reminder steps">
-                {(["details", "recurrence", "review"] as const).map((step, index) => (
+                {(["details", "review"] as const).map((step, index) => (
                   <button
                     key={step}
                     type="button"
-                    aria-label={
-                      step === "details"
-                        ? "Details"
-                        : step === "recurrence"
-                          ? "Recurrence"
-                          : "Review"
-                    }
+                    aria-label={step === "details" ? "Details" : "Review"}
                     className={customReminderWizardStep === step ? "is-active" : ""}
                     onClick={() => setCustomReminderWizardStep(step)}
                   >
                     <span aria-hidden="true">{index + 1}</span>
-                    {step === "details"
-                      ? "Details"
-                      : step === "recurrence"
-                        ? "Recurrence"
-                        : "Review"}
+                    {step === "details" ? "Details" : "Review"}
                   </button>
                 ))}
               </nav>
@@ -1591,13 +1575,11 @@ export function SettingsScreen({
                   <>
                     <h3>Details</h3>
                     {customReminderForm}
-                  </>
-                ) : null}
-                {customReminderWizardStep === "recurrence" ? (
-                  <>
-                    <h3>Recurrence</h3>
-                    <p>Choose how often this reminder repeats.</p>
-                    {recurrenceControls}
+                    <div className="custom-wizard-subsection">
+                      <h4>Recurrence</h4>
+                      <p>Choose how often this reminder repeats.</p>
+                      {recurrenceControls}
+                    </div>
                   </>
                 ) : null}
                 {customReminderWizardStep === "review" ? (
@@ -1633,11 +1615,7 @@ export function SettingsScreen({
             <footer className="custom-wizard-footer">
               <button
                 type="button"
-                onClick={() =>
-                  setCustomReminderWizardStep(
-                    customReminderWizardStep === "review" ? "recurrence" : "details",
-                  )
-                }
+                onClick={() => setCustomReminderWizardStep("details")}
               >
                 Back
               </button>
@@ -1649,9 +1627,7 @@ export function SettingsScreen({
                     return;
                   }
 
-                  setCustomReminderWizardStep(
-                    customReminderWizardStep === "details" ? "recurrence" : "review",
-                  );
+                  setCustomReminderWizardStep("review");
                 }}
               >
                 {customReminderWizardStep === "review" ? "Save custom reminder" : "Next"}
