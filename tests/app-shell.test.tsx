@@ -295,7 +295,8 @@ describe("VitaLoop app shell", () => {
     );
 
     expect(screen.getByRole("heading", { name: "General" })).toBeTruthy();
-    expect(screen.getByRole("radio", { name: "Balanced" })).toBeTruthy();
+    expect(screen.queryByLabelText("Enable proactive reminders")).toBeNull();
+    expect(screen.queryByRole("radio", { name: "Balanced" })).toBeNull();
     expect(screen.queryByRole("button", { name: "About" })).toBeNull();
     expect(screen.queryByText("👨🏻‍💻 Working Hours")).toBeNull();
     expect(screen.queryByRole("button", { name: "Schedule" })).toBeNull();
@@ -307,15 +308,45 @@ describe("VitaLoop app shell", () => {
     expect(screen.getByLabelText("Quiet hours start")).toBeTruthy();
     expect(screen.getByLabelText("Quiet hours end")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Reminder categories" }));
-    expect(screen.getByLabelText("Hydration")).toBeTruthy();
+    const hydrationControl = screen.getByLabelText("Hydration");
+    expect(hydrationControl).toBeTruthy();
     expect(screen.queryByLabelText("Sleep routine")).toBeNull();
     expect(screen.queryByLabelText("Mood/energy check-in")).toBeNull();
     expect(screen.queryByLabelText("Saved")).toBeNull();
+    expect(screen.getByLabelText("Enable proactive reminders")).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Balanced" })).toBeTruthy();
     const customRemindersSummary = screen.getByText("Custom reminders");
     const customRemindersDetails = customRemindersSummary.closest("details");
     expect(
       customRemindersDetails?.hasAttribute("open"),
     ).toBe(false);
+    const hydrationRow = hydrationControl.closest("label");
+    const proactiveReminderControl = screen
+      .getByLabelText("Enable proactive reminders")
+      .closest("label");
+    const reminderIntensityControl = screen
+      .getByText("Reminder intensity")
+      .closest("fieldset");
+    expect(
+      hydrationRow && proactiveReminderControl
+        ? hydrationRow.compareDocumentPosition(proactiveReminderControl) &
+            Node.DOCUMENT_POSITION_FOLLOWING
+        : 0,
+    ).toBeTruthy();
+    expect(
+      proactiveReminderControl && reminderIntensityControl
+        ? proactiveReminderControl.compareDocumentPosition(
+            reminderIntensityControl,
+          ) & Node.DOCUMENT_POSITION_FOLLOWING
+        : 0,
+    ).toBeTruthy();
+    expect(
+      reminderIntensityControl && customRemindersDetails
+        ? reminderIntensityControl.compareDocumentPosition(
+            customRemindersDetails,
+          ) & Node.DOCUMENT_POSITION_FOLLOWING
+        : 0,
+    ).toBeTruthy();
     const workingHoursSummary = screen.getByText("👨🏻‍💻 Working Hours");
     const workingHoursDetails = workingHoursSummary.closest("details");
     expect(
@@ -402,8 +433,8 @@ describe("VitaLoop app shell", () => {
 
     render(<SettingsScreen service={service} reminderList={reminders} />);
 
-    fireEvent.click(screen.getByRole("radio", { name: "Active" }));
     fireEvent.click(screen.getByRole("button", { name: "Reminder categories" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Active" }));
     fireEvent.click(screen.getByText("👨🏻‍💻 Working Hours"));
     fireEvent.change(screen.getByLabelText("Workday start"), {
       target: { value: "09:00" },
@@ -699,6 +730,7 @@ describe("VitaLoop app shell", () => {
     render(<SettingsScreen service={service} reminderList={reminders} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Reset to defaults" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reminder categories" }));
 
     const balancedOption = screen.getByRole("radio", {
       name: "Balanced",

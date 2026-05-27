@@ -1338,6 +1338,53 @@ export function SettingsScreen({
     </label>
   );
 
+  const proactiveReminderControls = (
+    <section
+      className="settings-reminder-preferences"
+      aria-label="Proactive reminder preferences"
+    >
+      <label className="settings-switch-row">
+        <span>
+          <strong>Proactive reminders</strong>
+          <small>Enable local proactive reminders.</small>
+        </span>
+        <input
+          type="checkbox"
+          aria-label="Enable proactive reminders"
+          checked
+          readOnly
+        />
+      </label>
+      <fieldset className="settings-inline-fieldset">
+        <legend>Reminder intensity</legend>
+        {reminderIntensityOptions.map((option) => (
+          <label key={option.value} className="settings-radio-row">
+            <input
+              type="radio"
+              aria-label={option.label}
+              name="reminderIntensity"
+              value={option.value}
+              checked={settings.reminderIntensity === option.value}
+              onChange={() =>
+                updateSetting("reminderIntensity", option.value)
+              }
+            />
+            <span>
+              <strong>{option.label}</strong>
+              <small>
+                {option.value === "balanced"
+                  ? "Recommended"
+                  : option.value === "gentle"
+                    ? "Fewer reminders"
+                    : "More frequent reminders"}
+              </small>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+    </section>
+  );
+
   const workingHoursSection = (
     <details className="settings-schedule-subsection settings-reminders-subsection">
       <summary>
@@ -1562,45 +1609,6 @@ export function SettingsScreen({
                 <h2>General</h2>
                 <label className="settings-switch-row">
                   <span>
-                    <strong>Proactive reminders</strong>
-                    <small>Enable local proactive reminders.</small>
-                  </span>
-                  <input
-                        type="checkbox"
-                        aria-label="Enable proactive reminders"
-                        checked
-                        readOnly
-                      />
-                </label>
-                <fieldset className="settings-inline-fieldset">
-                  <legend>Reminder intensity</legend>
-                  {reminderIntensityOptions.map((option) => (
-                    <label key={option.value} className="settings-radio-row">
-                      <input
-                          type="radio"
-                          aria-label={option.label}
-                          name="reminderIntensity"
-                          value={option.value}
-                          checked={settings.reminderIntensity === option.value}
-                        onChange={() =>
-                          updateSetting("reminderIntensity", option.value)
-                        }
-                      />
-                      <span>
-                        <strong>{option.label}</strong>
-                        <small>
-                          {option.value === "balanced"
-                            ? "Recommended"
-                            : option.value === "gentle"
-                              ? "Fewer reminders"
-                              : "More frequent reminders"}
-                        </small>
-                      </span>
-                    </label>
-                  ))}
-                </fieldset>
-                <label className="settings-switch-row">
-                  <span>
                     <strong>Daily summary</strong>
                     <small>Show a summary of your day.</small>
                   </span>
@@ -1695,6 +1703,7 @@ export function SettingsScreen({
                         );
                       })}
                     </div>
+                    {proactiveReminderControls}
                     {customRemindersSection}
                     {workingHoursSection}
                   </>

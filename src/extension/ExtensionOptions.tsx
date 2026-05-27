@@ -1285,6 +1285,53 @@ export function ExtensionOptions({
     </label>
   );
 
+  const proactiveReminderControls = (
+    <section
+      className="extension-reminder-preferences"
+      aria-label="Proactive reminder preferences"
+    >
+      <label className="extension-switch-row">
+        <span>
+          <strong>Proactive reminders</strong>
+          <small>
+            Enable local proactive reminders throughout your day.
+          </small>
+        </span>
+        <input
+          type="checkbox"
+          aria-label="Enable proactive reminders"
+          checked={settings.proactiveRemindersEnabled}
+          onChange={(event) =>
+            updateSetting(
+              "proactiveRemindersEnabled",
+              event.currentTarget.checked,
+            )
+          }
+        />
+      </label>
+      <label className="extension-setting-row extension-field">
+        <span>Reminder intensity</span>
+        <select
+          aria-label="Reminder intensity"
+          value={settings.reminderIntensity}
+          onChange={(event) =>
+            updateSetting(
+              "reminderIntensity",
+              event.currentTarget
+                .value as ExtensionSettings["reminderIntensity"],
+            )
+          }
+        >
+          {reminderIntensityOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    </section>
+  );
+
   const workingHoursSection = (
     <details className="extension-schedule-subsection extension-custom-subsection">
       <summary>
@@ -1508,45 +1555,6 @@ export function ExtensionOptions({
               <section className="extension-card">
                 <label className="extension-switch-row">
                   <span>
-                    <strong>Proactive reminders</strong>
-                    <small>
-                      Enable local proactive reminders throughout your day.
-                    </small>
-                  </span>
-                  <input
-                    type="checkbox"
-                    aria-label="Enable proactive reminders"
-                    checked={settings.proactiveRemindersEnabled}
-                    onChange={(event) =>
-                      updateSetting(
-                        "proactiveRemindersEnabled",
-                        event.currentTarget.checked,
-                      )
-                    }
-                  />
-                </label>
-                <label className="extension-setting-row extension-field">
-                  <span>Reminder intensity</span>
-                  <select
-                    aria-label="Reminder intensity"
-                    value={settings.reminderIntensity}
-                    onChange={(event) =>
-                      updateSetting(
-                        "reminderIntensity",
-                        event.currentTarget
-                          .value as ExtensionSettings["reminderIntensity"],
-                      )
-                    }
-                  >
-                    {reminderIntensityOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="extension-switch-row">
-                  <span>
                     <strong>Daily summary</strong>
                     <small>Show a summary of your day in the popup.</small>
                   </span>
@@ -1613,6 +1621,7 @@ export function ExtensionOptions({
                   );
                 })}
               </div>
+              {proactiveReminderControls}
               {customRemindersSection}
               {workingHoursSection}
             </section>

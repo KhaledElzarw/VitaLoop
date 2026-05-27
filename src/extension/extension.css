@@ -683,6 +683,23 @@ textarea:focus-visible {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
+.extension-reminder-preferences {
+  display: grid;
+  gap: 0;
+  margin-top: 14px;
+  border: 1px solid #dce4de;
+  border-radius: var(--extension-radius);
+  background:
+    linear-gradient(180deg, #fbfdfb 0%, #ffffff 100%),
+    #ffffff;
+  padding: 14px;
+}
+
+.extension-reminder-preferences .extension-switch-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
 .extension-recommendation-grid {
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
