@@ -62,10 +62,8 @@ describe("ExtensionOptions", () => {
   it("renders key settings controls by accessible label", () => {
     render(<ExtensionOptions storage={createStorageMock()} />);
 
-    expect(screen.getByLabelText("Enable proactive reminders")).toBeTruthy();
-    expect(
-      (screen.getByLabelText("Reminder intensity") as HTMLSelectElement).value,
-    ).toBe("balanced");
+    expect(screen.queryByLabelText("Enable proactive reminders")).toBeNull();
+    expect(screen.queryByLabelText("Reminder intensity")).toBeNull();
     expect(screen.queryByRole("button", { name: "About" })).toBeNull();
     expect(screen.queryByText("👨🏻‍💻 Working Hours")).toBeNull();
     expect(screen.queryByRole("button", { name: "Schedule" })).toBeNull();
@@ -74,16 +72,48 @@ describe("ExtensionOptions", () => {
     expect(screen.queryByRole("button", { name: "Data & privacy" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Custom reminders" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
-    expect(screen.getByLabelText("Hydration")).toBeTruthy();
+    const hydrationControl = screen.getByLabelText("Hydration");
+    expect(hydrationControl).toBeTruthy();
     expect(screen.getByLabelText("Eye strain")).toBeTruthy();
     expect(screen.queryByLabelText("Sleep routine")).toBeNull();
     expect(screen.queryByLabelText("Mood/energy check-in")).toBeNull();
     expect(screen.queryByLabelText("Saved")).toBeNull();
+    expect(screen.getByLabelText("Enable proactive reminders")).toBeTruthy();
+    expect(
+      (screen.getByLabelText("Reminder intensity") as HTMLSelectElement).value,
+    ).toBe("balanced");
     const customRemindersSummary = screen.getByText("Custom reminders");
     const customRemindersDetails = customRemindersSummary.closest("details");
     expect(
       customRemindersDetails?.hasAttribute("open"),
     ).toBe(false);
+    const proactiveReminderControl = screen
+      .getByLabelText("Enable proactive reminders")
+      .closest("label");
+    const reminderIntensityControl = screen
+      .getByLabelText("Reminder intensity")
+      .closest("label");
+    const hydrationRow = hydrationControl.closest("label");
+    expect(
+      hydrationRow && proactiveReminderControl
+        ? hydrationRow.compareDocumentPosition(proactiveReminderControl) &
+            Node.DOCUMENT_POSITION_FOLLOWING
+        : 0,
+    ).toBeTruthy();
+    expect(
+      proactiveReminderControl && reminderIntensityControl
+        ? proactiveReminderControl.compareDocumentPosition(
+            reminderIntensityControl,
+          ) & Node.DOCUMENT_POSITION_FOLLOWING
+        : 0,
+    ).toBeTruthy();
+    expect(
+      reminderIntensityControl && customRemindersDetails
+        ? reminderIntensityControl.compareDocumentPosition(
+            customRemindersDetails,
+          ) & Node.DOCUMENT_POSITION_FOLLOWING
+        : 0,
+    ).toBeTruthy();
     const workingHoursSummary = screen.getByText("👨🏻‍💻 Working Hours");
     const workingHoursDetails = workingHoursSummary.closest("details");
     expect(
@@ -101,9 +131,8 @@ describe("ExtensionOptions", () => {
     expect(customRemindersDetails?.hasAttribute("open")).toBe(true);
     expect(screen.getByRole("heading", { name: "Recommended for you" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "General" }));
-    expect(
-      (screen.getByLabelText("Reminder intensity") as HTMLSelectElement).value,
-    ).toBe("balanced");
+    expect(screen.queryByLabelText("Enable proactive reminders")).toBeNull();
+    expect(screen.queryByLabelText("Reminder intensity")).toBeNull();
     expect(
       screen.getByRole("button", { name: "Send test notification" }),
     ).toBeTruthy();
@@ -116,11 +145,11 @@ describe("ExtensionOptions", () => {
 
     render(<ExtensionOptions storage={storage} />);
 
+    fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
     fireEvent.click(screen.getByLabelText("Enable proactive reminders"));
     fireEvent.change(screen.getByLabelText("Reminder intensity"), {
       target: { value: "active" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
     fireEvent.click(screen.getByText("👨🏻‍💻 Working Hours"));
     fireEvent.change(screen.getByLabelText("Workday start"), {
       target: { value: "09:00" },
@@ -493,6 +522,8 @@ describe("ExtensionOptions", () => {
 
     render(<ExtensionOptions storage={storage} />);
 
+    fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
+
     await waitFor(() => {
       expect(
         (screen.getByLabelText("Reminder intensity") as HTMLSelectElement)
@@ -547,12 +578,16 @@ describe("ExtensionOptions", () => {
       />,
     );
 
+    fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
+
     await waitFor(() => {
       expect(
         (screen.getByLabelText("Enable proactive reminders") as HTMLInputElement)
           .checked,
       ).toBe(true);
     });
+
+    fireEvent.click(screen.getByRole("button", { name: "General" }));
 
     fireEvent.click(
       screen.getByRole("button", { name: "Reset today's progress" }),
