@@ -530,8 +530,19 @@ describe("VitaLoop app shell", () => {
     fireEvent.click(within(reopenedWizard).getByRole("radio", { name: "Daily-ish" }));
     expect(within(reopenedWizard).queryByLabelText("Date")).toBeNull();
     expect(within(reopenedWizard).queryByLabelText("Time")).toBeNull();
-    expect(within(reopenedWizard).getByLabelText("Repeat every days")).toBeTruthy();
-    expect(within(reopenedWizard).getByLabelText("Time of day")).toBeTruthy();
+    expect(
+      within(reopenedWizard).queryByLabelText("Repeat every days"),
+    ).toBeNull();
+    expect(within(reopenedWizard).queryByLabelText("Time of day")).toBeNull();
+    expect(within(reopenedWizard).getByText("Every")).toBeTruthy();
+    expect(
+      (within(reopenedWizard).getByLabelText(
+        "Custom reminder daily interval amount",
+      ) as HTMLInputElement).value,
+    ).toBe("1");
+    expect(
+      within(reopenedWizard).getByLabelText("Custom reminder daily interval unit"),
+    ).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/Title/), {
       target: { value: "Desk reset" },
     });
@@ -620,6 +631,48 @@ describe("VitaLoop app shell", () => {
         type: "weekdayInterval",
         weekdays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
         timeOfDay: "08:30",
+      },
+    });
+  });
+
+  it("creates a daily-ish custom reminder in settings", () => {
+    const service = createTestSettingsService();
+
+    render(<SettingsScreen service={service} reminderList={reminders} />);
+
+    openCustomReminderWizard();
+    fireEvent.change(screen.getByLabelText(/Title/), {
+      target: { value: "Plan review" },
+    });
+    fireEvent.change(screen.getByLabelText(/Message/), {
+      target: { value: "Review the next plan cycle." },
+    });
+    fireEvent.click(screen.getByRole("radio", { name: "Daily-ish" }));
+    fireEvent.change(screen.getByLabelText("Custom reminder daily interval unit"), {
+      target: { value: "weeks" },
+    });
+    expect(
+      (screen.getByLabelText(
+        "Custom reminder daily interval amount",
+      ) as HTMLInputElement).value,
+    ).toBe("1");
+    fireEvent.change(
+      screen.getByLabelText("Custom reminder daily interval amount"),
+      {
+        target: { value: "2" },
+      },
+    );
+    saveCustomReminderFromWizard();
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    const savedSettings = service.saveSettings.mock.calls[0][0];
+
+    expect(savedSettings.customReminders[0]).toMatchObject({
+      title: "Plan review",
+      schedule: {
+        type: "dailyInterval",
+        dayIntervalDays: 14,
+        timeOfDay: "09:00",
       },
     });
   });

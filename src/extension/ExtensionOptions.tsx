@@ -52,6 +52,13 @@ const customIntervalUnitOptions = [
   { value: "hours", label: "hours" },
 ] as const;
 
+const customDayIntervalUnitOptions = [
+  { value: "days", label: "day(s)", days: 1, maxAmount: 365 },
+  { value: "weeks", label: "week(s)", days: 7, maxAmount: 52 },
+  { value: "months", label: "month(s)", days: 30, maxAmount: 12 },
+  { value: "years", label: "year(s)", days: 365, maxAmount: 1 },
+] as const;
+
 const customReminderScheduleOptions = [
   {
     value: "oneTime",
@@ -88,6 +95,8 @@ type OneTimeCustomReminderSchedule = Extract<
   { type: "oneTime" }
 >;
 type CustomIntervalUnit = (typeof customIntervalUnitOptions)[number]["value"];
+type CustomDayIntervalUnit =
+  (typeof customDayIntervalUnitOptions)[number]["value"];
 type OptionsStatus =
   | "idle"
   | "saved"
@@ -142,6 +151,26 @@ function getCustomIntervalMinutes(
   intervalUnit: CustomIntervalUnit,
 ) {
   return intervalUnit === "hours" ? amount * 60 : amount;
+}
+
+function getCustomDayIntervalUnitOption(intervalUnit: CustomDayIntervalUnit) {
+  return customDayIntervalUnitOptions.find(
+    (option) => option.value === intervalUnit,
+  ) ?? customDayIntervalUnitOptions[0];
+}
+
+function getCustomDayIntervalAmount(
+  dayIntervalDays: number,
+  intervalUnit: CustomDayIntervalUnit,
+) {
+  return dayIntervalDays / getCustomDayIntervalUnitOption(intervalUnit).days;
+}
+
+function getCustomDayIntervalDays(
+  amount: number,
+  intervalUnit: CustomDayIntervalUnit,
+) {
+  return amount * getCustomDayIntervalUnitOption(intervalUnit).days;
 }
 
 type ChromeOptionsApi = {
@@ -247,6 +276,8 @@ export function ExtensionOptions({
     useState(false);
   const [customIntervalUnit, setCustomIntervalUnit] =
     useState<CustomIntervalUnit>("minutes");
+  const [customDayIntervalUnit, setCustomDayIntervalUnit] =
+    useState<CustomDayIntervalUnit>("days");
   const [customRecommendations, setCustomRecommendations] = useState(() =>
     getRecommendedCustomReminders(),
   );
@@ -373,6 +404,10 @@ export function ExtensionOptions({
       setCustomIntervalUnit("minutes");
     }
 
+    if (type === "dailyInterval") {
+      setCustomDayIntervalUnit("days");
+    }
+
     updateCustomSchedule(createDefaultCustomReminderSchedule(type));
   }
 
@@ -423,15 +458,32 @@ export function ExtensionOptions({
     });
   }
 
-  function updateCustomDailyTime(timeOfDay: string) {
+  function updateCustomDayIntervalAmount(value: string) {
+    updateCustomDayInterval(
+      getCustomDayIntervalDays(
+        parseIntegerInputValue(value),
+        customDayIntervalUnit,
+      ),
+    );
+  }
+
+  function updateCustomDayIntervalUnit(intervalUnit: CustomDayIntervalUnit) {
+    setCustomDayIntervalUnit(intervalUnit);
+
     if (customDraft.schedule.type !== "dailyInterval") {
       return;
     }
 
-    updateCustomSchedule({
-      ...customDraft.schedule,
-      timeOfDay,
-    });
+    const intervalUnitOption = getCustomDayIntervalUnitOption(intervalUnit);
+    const intervalAmount = Math.min(
+      intervalUnitOption.maxAmount,
+      Math.max(
+        1,
+        Math.round(customDraft.schedule.dayIntervalDays / intervalUnitOption.days),
+      ),
+    );
+
+    updateCustomDayInterval(intervalAmount * intervalUnitOption.days);
   }
 
   function updateCustomWeekdayTime(timeOfDay: string) {
@@ -500,6 +552,7 @@ export function ExtensionOptions({
   ) {
     setCustomDraft(getCustomReminderDraftFromRecommendation(recommendation));
     setCustomIntervalUnit("minutes");
+    setCustomDayIntervalUnit("days");
     setCustomDraftErrors({});
     setPendingDeleteCustomReminderId(null);
     setStatus("idle");
@@ -510,6 +563,7 @@ export function ExtensionOptions({
   function resetCustomDraft() {
     setCustomDraft({ ...defaultCustomReminderDraft });
     setCustomIntervalUnit("minutes");
+    setCustomDayIntervalUnit("days");
     setCustomRecommendations(getRecommendedCustomReminders());
     setCustomDraftErrors({});
   }
@@ -576,6 +630,7 @@ export function ExtensionOptions({
       ),
     );
     setCustomIntervalUnit("minutes");
+    setCustomDayIntervalUnit("days");
     setCustomDraftErrors({});
     setPendingDeleteCustomReminderId(null);
     setStatus("idle");
@@ -1089,37 +1144,57 @@ export function ExtensionOptions({
         </div>
       ) : null}
       {customDraft.schedule.type === "dailyInterval" ? (
-        <div className="extension-field-grid">
-          <label className="extension-setting-row extension-field">
-            <span>Repeat every days</span>
+        <div className="extension-setting-row extension-field extension-custom-interval-field">
+          <span>Every</span>
+          <div className="extension-custom-interval-row">
             <input
               type="number"
+              aria-label="Custom reminder daily interval amount"
               min="1"
-              max="365"
+              max={getCustomDayIntervalUnitOption(
+                customDayIntervalUnit,
+              ).maxAmount}
               step="1"
-              value={customDraft.schedule.dayIntervalDays}
+              inputMode="numeric"
+              value={getCustomDayIntervalAmount(
+                customDraft.schedule.dayIntervalDays,
+                customDayIntervalUnit,
+              )}
+              onKeyDown={preventNonIntegerNumberInput}
               onChange={(event) =>
-                updateCustomDayInterval(Number(event.currentTarget.value))
+                updateCustomDayIntervalAmount(event.currentTarget.value)
+              }
+              aria-describedby={
+                customDraftErrors.dayIntervalDays
+                  ? "extension-custom-reminder-day-interval-error"
+                  : undefined
               }
               aria-invalid={Boolean(customDraftErrors.dayIntervalDays)}
             />
-            {customDraftErrors.dayIntervalDays ? (
-              <small className="extension-field-error">
-                {customDraftErrors.dayIntervalDays}
-              </small>
-            ) : null}
-          </label>
-          <label className="extension-setting-row extension-field">
-            <span>Time of day</span>
-            <input
-              type="time"
-              value={customDraft.schedule.timeOfDay}
+            <select
+              aria-label="Custom reminder daily interval unit"
+              value={customDayIntervalUnit}
               onChange={(event) =>
-                updateCustomDailyTime(event.currentTarget.value)
+                updateCustomDayIntervalUnit(
+                  event.currentTarget.value as CustomDayIntervalUnit,
+                )
               }
-              aria-invalid={Boolean(customDraftErrors.timeOfDay)}
-            />
-          </label>
+            >
+              {customDayIntervalUnitOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {customDraftErrors.dayIntervalDays ? (
+            <small
+              id="extension-custom-reminder-day-interval-error"
+              className="extension-field-error"
+            >
+              {customDraftErrors.dayIntervalDays}
+            </small>
+          ) : null}
         </div>
       ) : null}
       {customDraft.schedule.type === "weekdayInterval" ? (
