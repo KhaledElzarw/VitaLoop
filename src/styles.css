@@ -748,7 +748,8 @@ input {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skip-link {
+  .skip-link,
+  .custom-reminder-collapsible {
     transition: none;
   }
 }
@@ -1093,19 +1094,6 @@ input {
   gap: 16px;
 }
 
-.icon-button {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border: 0;
-  border-radius: 6px;
-  background: #347a4d;
-  color: #ffffff;
-  cursor: pointer;
-  font-weight: 850;
-}
-
 .custom-recommendation-header {
   margin-top: 24px;
 }
@@ -1210,26 +1198,50 @@ input {
   margin-top: 6px;
 }
 
-.custom-wizard-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
+.custom-reminder-collapsible {
   display: grid;
-  place-items: center;
-  background: rgba(10, 16, 13, 0.18);
-  padding: 24px;
+  grid-template-rows: 0fr;
+  margin-top: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    grid-template-rows 340ms cubic-bezier(0.22, 1, 0.36, 1),
+    margin-top 340ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms ease,
+    transform 340ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s linear 340ms;
+  visibility: hidden;
+}
+
+.custom-reminder-collapsible[data-expanded="true"] {
+  grid-template-rows: 1fr;
+  margin-top: 16px;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    grid-template-rows 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    margin-top 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 260ms ease,
+    transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s;
+  visibility: visible;
+}
+
+.custom-reminder-collapsible-inner {
+  min-height: 0;
+  overflow: hidden;
 }
 
 .custom-wizard {
   display: flex;
   flex-direction: column;
-  width: min(100%, 1080px);
-  max-height: calc(100vh - 48px);
+  width: 100%;
+  max-height: none;
   overflow: hidden;
   border: 1px solid #d8ded8;
   border-radius: 10px;
   background: #ffffff;
-  box-shadow: 0 22px 52px rgba(20, 30, 24, 0.22);
+  box-shadow: 0 18px 40px rgba(20, 30, 24, 0.1);
 }
 
 .custom-wizard-header,
@@ -1251,8 +1263,8 @@ input {
   display: grid;
   flex: 1 1 auto;
   grid-template-columns: minmax(0, 1fr);
-  min-height: min(470px, 58vh);
-  overflow: auto;
+  min-height: 0;
+  overflow: visible;
 }
 
 .custom-wizard-panel {
