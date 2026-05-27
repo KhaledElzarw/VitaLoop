@@ -297,17 +297,8 @@ describe("VitaLoop app shell", () => {
     expect(screen.getByRole("heading", { name: "General" })).toBeTruthy();
     expect(screen.getByRole("radio", { name: "Balanced" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "About" })).toBeNull();
-    expect(screen.getByText("👨🏻‍💻 Working Hours")).toBeTruthy();
-    expect(
-      screen.getByText("👨🏻‍💻 Working Hours").closest("details")?.hasAttribute("open"),
-    ).toBe(false);
+    expect(screen.queryByText("👨🏻‍💻 Working Hours")).toBeNull();
     expect(screen.queryByRole("button", { name: "Schedule" })).toBeNull();
-    fireEvent.click(screen.getByText("👨🏻‍💻 Working Hours"));
-    expect(
-      screen.getByText("👨🏻‍💻 Working Hours").closest("details")?.hasAttribute("open"),
-    ).toBe(true);
-    expect(screen.getByLabelText("Workday start")).toBeTruthy();
-    expect(screen.getByLabelText("Workday end")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Notifications" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Appearance" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Data & privacy" })).toBeNull();
@@ -323,6 +314,19 @@ describe("VitaLoop app shell", () => {
     expect(
       customRemindersDetails?.hasAttribute("open"),
     ).toBe(false);
+    const workingHoursSummary = screen.getByText("👨🏻‍💻 Working Hours");
+    const workingHoursDetails = workingHoursSummary.closest("details");
+    expect(
+      customRemindersDetails && workingHoursDetails
+        ? customRemindersDetails.compareDocumentPosition(workingHoursDetails) &
+            Node.DOCUMENT_POSITION_FOLLOWING
+        : 0,
+    ).toBeTruthy();
+    expect(workingHoursDetails?.hasAttribute("open")).toBe(false);
+    fireEvent.click(workingHoursSummary);
+    expect(workingHoursDetails?.hasAttribute("open")).toBe(true);
+    expect(screen.getByLabelText("Workday start")).toBeTruthy();
+    expect(screen.getByLabelText("Workday end")).toBeTruthy();
     fireEvent.click(customRemindersSummary);
     expect(customRemindersDetails?.hasAttribute("open")).toBe(true);
     expect(screen.getByRole("heading", { name: "Recommended for you" })).toBeTruthy();
@@ -397,6 +401,7 @@ describe("VitaLoop app shell", () => {
     render(<SettingsScreen service={service} reminderList={reminders} />);
 
     fireEvent.click(screen.getByRole("radio", { name: "Active" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reminder categories" }));
     fireEvent.click(screen.getByText("👨🏻‍💻 Working Hours"));
     fireEvent.change(screen.getByLabelText("Workday start"), {
       target: { value: "09:00" },

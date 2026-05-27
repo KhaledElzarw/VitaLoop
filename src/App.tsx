@@ -1172,6 +1172,37 @@ export function SettingsScreen({
     </label>
   );
 
+  const workingHoursSection = (
+    <details className="settings-schedule-subsection settings-reminders-subsection">
+      <summary>
+        <span>👨🏻‍💻 Working Hours</span>
+        <small>Set the workday window for reminders.</small>
+      </summary>
+      <div className="settings-columns">
+        <label className="field">
+          <span>Workday start</span>
+          <input
+            type="time"
+            value={settings.workdayStart}
+            onChange={(event) =>
+              updateSetting("workdayStart", event.currentTarget.value)
+            }
+          />
+        </label>
+        <label className="field">
+          <span>Workday end</span>
+          <input
+            type="time"
+            value={settings.workdayEnd}
+            onChange={(event) =>
+              updateSetting("workdayEnd", event.currentTarget.value)
+            }
+          />
+        </label>
+      </div>
+    </details>
+  );
+
   const customRemindersSection = (
     <details className="settings-schedule-subsection settings-custom-screen settings-reminders-subsection">
       <summary>
@@ -1416,34 +1447,6 @@ export function SettingsScreen({
                   </span>
                   <input type="checkbox" disabled />
                 </label>
-                <details className="settings-schedule-subsection">
-                  <summary>
-                    <span>👨🏻‍💻 Working Hours</span>
-                    <small>Set the workday window for reminders.</small>
-                  </summary>
-                  <div className="settings-columns">
-                    <label className="field">
-                      <span>Workday start</span>
-                      <input
-                        type="time"
-                        value={settings.workdayStart}
-                        onChange={(event) =>
-                          updateSetting("workdayStart", event.currentTarget.value)
-                        }
-                      />
-                    </label>
-                    <label className="field">
-                      <span>Workday end</span>
-                      <input
-                        type="time"
-                        value={settings.workdayEnd}
-                        onChange={(event) =>
-                          updateSetting("workdayEnd", event.currentTarget.value)
-                        }
-                      />
-                    </label>
-                  </div>
-                </details>
               </section>
             ) : null}
 
@@ -1527,6 +1530,7 @@ export function SettingsScreen({
                       })}
                     </div>
                     {customRemindersSection}
+                    {workingHoursSection}
                   </>
                 ) : null}
                 {activeSettingsPanel === "advanced" ? (
