@@ -499,12 +499,24 @@ describe("VitaLoop app shell", () => {
     expect(
       screen.getByRole("button", { name: "Cancel" }).getAttribute("aria-expanded"),
     ).toBe("true");
-    expect(
-      screen.getByRole("group", { name: "Manage Custom Reminders" }),
-    ).toBeTruthy();
+    const cancelCustomReminderButton = screen.getByRole("button", {
+      name: "Cancel",
+    });
+    const customReminderManagement = screen.getByRole("group", {
+      name: "Manage Custom Reminders",
+    });
+    expect(customReminderManagement).toBeTruthy();
     const wizard = screen.getByRole("region", {
       name: "New custom reminder",
     });
+    expect(
+      cancelCustomReminderButton.compareDocumentPosition(wizard) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      wizard.compareDocumentPosition(customReminderManagement) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     const emojiSelect = within(wizard).getByLabelText(
       "Custom reminder emoji",
     ) as HTMLSelectElement;
@@ -618,7 +630,20 @@ describe("VitaLoop app shell", () => {
     });
     saveCustomReminderFromWizard();
 
-    expect(screen.getByLabelText("🛒 Desk reset")).toBeTruthy();
+    const savedCustomReminderRow = screen.getByLabelText("🛒 Desk reset");
+
+    expect(savedCustomReminderRow).toBeTruthy();
+    expect(within(savedCustomReminderRow).getByText("Every 120 minutes")).toBeTruthy();
+    expect(
+      within(savedCustomReminderRow).getByRole("button", {
+        name: "Edit 🛒 Desk reset",
+      }),
+    ).toBeTruthy();
+    expect(
+      within(savedCustomReminderRow).getByRole("button", {
+        name: "Delete 🛒 Desk reset",
+      }),
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
