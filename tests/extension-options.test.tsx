@@ -72,6 +72,9 @@ describe("ExtensionOptions", () => {
     expect(screen.queryByRole("button", { name: "Data & privacy" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Custom reminders" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
+    expect(
+      screen.getByRole("heading", { name: "Manage Your VitaLoops" }),
+    ).toBeTruthy();
     const hydrationControl = screen.getByLabelText("Hydration");
     expect(hydrationControl).toBeTruthy();
     expect(screen.getByLabelText("Eye strain")).toBeTruthy();

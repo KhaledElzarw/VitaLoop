@@ -1593,10 +1593,7 @@ export function ExtensionOptions({
 
           {activeOptionsPanel === "reminders" ? (
             <section className="extension-card">
-              <h2>
-                {optionsNavItems.find((item) => item.id === activeOptionsPanel)
-                  ?.label}
-              </h2>
+              <h2>Manage Your VitaLoops</h2>
               <div className="extension-category-grid">
                 {reminderCategories.map((reminder) => {
                   const isPreferred =
