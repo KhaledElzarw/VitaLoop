@@ -51,7 +51,7 @@ function createTestHistoryService(
 }
 
 function expandCustomReminders() {
-  fireEvent.click(screen.getByRole("button", { name: "Custom reminders" }));
+  fireEvent.click(screen.getByRole("button", { name: "Reminder categories" }));
 }
 
 function openCustomReminderWizard(step: "Details" | "Recurrence" | "Review") {
@@ -315,6 +315,10 @@ describe("VitaLoop app shell", () => {
     expect(screen.getByLabelText("Quiet hours end")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Reminder categories" }));
     expect(screen.getByLabelText("Hydration")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Custom reminders" })).toBeNull();
+    expect(
+      screen.getByRole("heading", { name: "Custom reminders" }),
+    ).toBeTruthy();
   });
 
   it("prefills a custom reminder from a recommendation", () => {
@@ -435,7 +439,6 @@ describe("VitaLoop app shell", () => {
     render(<SettingsScreen service={service} reminderList={reminders} />);
 
     openCustomReminderWizard("Details");
-    fireEvent.click(screen.getByRole("button", { name: "Custom reminders" }));
     expect(
       screen.getByRole("group", { name: "Manage Custom Reminders" }),
     ).toBeTruthy();

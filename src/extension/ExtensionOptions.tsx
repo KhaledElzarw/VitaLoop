@@ -57,8 +57,7 @@ const customReminderScheduleOptions = [
 type ReminderId = ExtensionSettings["preferredReminderCategories"][number];
 type OptionsPanelId =
   | "general"
-  | "reminders"
-  | "custom-reminders";
+  | "reminders";
 type CustomReminderWizardStep = "details" | "recurrence" | "review";
 type OptionsStatus =
   | "idle"
@@ -205,6 +204,7 @@ export function ExtensionOptions({
     reminderList,
     settings,
   );
+  const reminderCategories = reminderList;
   const titleLimitStatus = getCustomReminderCharacterLimitStatus(
     customDraft.title,
     CUSTOM_REMINDER_TITLE_MAX_LENGTH,
@@ -811,7 +811,6 @@ export function ExtensionOptions({
   const optionsNavItems: Array<{ id: OptionsPanelId; label: string }> = [
     { id: "general", label: "General" },
     { id: "reminders", label: "Reminders" },
-    { id: "custom-reminders", label: "Custom reminders" },
   ];
 
   const customReminderForm = (
@@ -1100,6 +1099,110 @@ export function ExtensionOptions({
     </div>
   );
 
+  const customRemindersSection = (
+    <section
+      className="extension-custom-panel extension-custom-subsection"
+      aria-labelledby="extension-custom-reminders-heading"
+    >
+      <div className="extension-custom-section-heading">
+        <h2 id="extension-custom-reminders-heading">Custom reminders</h2>
+        <span className="extension-saved-indicator" aria-label="Saved">
+          ✓
+        </span>
+      </div>
+      <div className="extension-custom-header">
+        <h3>Recommended for you</h3>
+        <button
+          type="button"
+          onClick={() => setCustomRecommendations(getRecommendedCustomReminders())}
+        >
+          Refresh
+        </button>
+      </div>
+      <div
+        className="extension-recommendation-grid"
+        aria-label="Recommended custom reminders"
+      >
+        {customRecommendations.map((recommendation) => (
+          <button
+            key={recommendation.id}
+            type="button"
+            className="extension-recommendation-card"
+            onClick={() => applyCustomRecommendation(recommendation)}
+          >
+            <span className="extension-recommendation-icon">◇</span>
+            <strong>{recommendation.title}</strong>
+            <small>{recommendation.description}</small>
+            <span>{formatCustomReminderSchedule(recommendation.schedule)}</span>
+            <em>Use</em>
+          </button>
+        ))}
+      </div>
+      <div className="extension-save-row extension-custom-reminder-actions">
+        <button
+          type="button"
+          aria-label="Add custom reminder"
+          onClick={openNewCustomReminderWizard}
+        >
+          + Add custom reminder
+        </button>
+      </div>
+      <fieldset className="extension-nested-group extension-custom-reminder-management">
+        <legend>Manage Custom Reminders</legend>
+        {settings.customReminders.length > 0 ? (
+          <ul className="extension-custom-list" aria-label="Custom reminders">
+            {settings.customReminders.map((reminder) => (
+              <li key={reminder.id} aria-label={reminder.title}>
+                {pendingDeleteCustomReminderId === reminder.id ? (
+                  <>
+                    <div>
+                      <strong>Delete {reminder.title}?</strong>
+                      <span>Save settings to apply.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => confirmDeleteCustomReminder(reminder.id)}
+                    >
+                      Confirm delete
+                    </button>
+                    <button type="button" onClick={cancelDeleteCustomReminder}>
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <strong>{reminder.title}</strong>
+                      <span>
+                        {formatCustomReminderSchedule(reminder.schedule)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={`Edit ${reminder.title}`}
+                      onClick={() => editCustomReminder(reminder.id)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Delete ${reminder.title}`}
+                      onClick={() => deleteCustomReminder(reminder.id)}
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="extension-options-footnote">No custom reminders yet.</p>
+        )}
+      </fieldset>
+    </section>
+  );
+
   return (
     <main
       className="extension-shell extension-options extension-options-mockup"
@@ -1138,16 +1241,7 @@ export function ExtensionOptions({
 
         <section className="extension-options-main">
           <header className="extension-options-heading">
-            <h1 id="options-title">
-              {activeOptionsPanel === "custom-reminders"
-                ? "Custom reminders"
-                : "Options"}
-            </h1>
-            {activeOptionsPanel === "custom-reminders" ? (
-              <span className="extension-saved-indicator" aria-label="Saved">
-                ✓
-              </span>
-            ) : null}
+            <h1 id="options-title">Options</h1>
           </header>
 
           {activeOptionsPanel === "general" ? (
@@ -1282,107 +1376,6 @@ export function ExtensionOptions({
             </div>
           ) : null}
 
-          {activeOptionsPanel === "custom-reminders" ? (
-            <section className="extension-custom-panel">
-              <div className="extension-custom-header">
-                <h2>Recommended for you</h2>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCustomRecommendations(getRecommendedCustomReminders())
-                  }
-                >
-                  Refresh
-                </button>
-              </div>
-              <div
-                className="extension-recommendation-grid"
-                aria-label="Recommended custom reminders"
-              >
-                {customRecommendations.map((recommendation) => (
-                  <button
-                    key={recommendation.id}
-                    type="button"
-                    className="extension-recommendation-card"
-                    onClick={() => applyCustomRecommendation(recommendation)}
-                  >
-                    <span className="extension-recommendation-icon">◇</span>
-                    <strong>{recommendation.title}</strong>
-                    <small>{recommendation.description}</small>
-                    <span>{formatCustomReminderSchedule(recommendation.schedule)}</span>
-                    <em>Use</em>
-                  </button>
-                ))}
-              </div>
-              <div className="extension-save-row extension-custom-reminder-actions">
-                <button
-                  type="button"
-                  aria-label="Add custom reminder"
-                  onClick={openNewCustomReminderWizard}
-                >
-                  + Add custom reminder
-                </button>
-              </div>
-              <fieldset className="extension-nested-group extension-custom-reminder-management">
-                <legend>Manage Custom Reminders</legend>
-                {settings.customReminders.length > 0 ? (
-                  <ul className="extension-custom-list" aria-label="Custom reminders">
-                    {settings.customReminders.map((reminder) => (
-                        <li key={reminder.id} aria-label={reminder.title}>
-                        {pendingDeleteCustomReminderId === reminder.id ? (
-                          <>
-                            <div>
-                              <strong>Delete {reminder.title}?</strong>
-                              <span>Save settings to apply.</span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                confirmDeleteCustomReminder(reminder.id)
-                              }
-                            >
-                              Confirm delete
-                            </button>
-                            <button type="button" onClick={cancelDeleteCustomReminder}>
-                              Cancel
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <div>
-                              <strong>{reminder.title}</strong>
-                              <span>
-                                {formatCustomReminderSchedule(reminder.schedule)}
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              aria-label={`Edit ${reminder.title}`}
-                              onClick={() => editCustomReminder(reminder.id)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              aria-label={`Delete ${reminder.title}`}
-                              onClick={() => deleteCustomReminder(reminder.id)}
-                            >
-                              Delete
-                            </button>
-                          </>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="extension-options-footnote">
-                    No custom reminders yet.
-                  </p>
-                )}
-              </fieldset>
-            </section>
-          ) : null}
-
           {activeOptionsPanel === "reminders" ? (
             <section className="extension-card">
               <h2>
@@ -1390,7 +1383,7 @@ export function ExtensionOptions({
                   ?.label}
               </h2>
               <div className="extension-category-grid">
-                {allReminders.map((reminder) => {
+                {reminderCategories.map((reminder) => {
                   const isPreferred =
                     settings.preferredReminderCategories.includes(reminder.id);
                   const isOnlyPreferred =
@@ -1413,6 +1406,7 @@ export function ExtensionOptions({
                   );
                 })}
               </div>
+              {customRemindersSection}
             </section>
           ) : null}
 

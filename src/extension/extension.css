@@ -1526,6 +1526,29 @@ body {
   align-items: center;
 }
 
+.extension-custom-subsection {
+  margin-top: 26px;
+  border-top: 1px solid #e4e9e4;
+  padding-top: 24px;
+}
+
+.extension-custom-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.extension-custom-header {
+  margin-top: 24px;
+}
+
+.extension-custom-header h3 {
+  margin: 0;
+  color: #121a16;
+  font-size: 0.9rem;
+}
+
 .extension-custom-header button {
   border: 0;
   background: transparent;
