@@ -1283,33 +1283,26 @@ export function ExtensionOptions({
                     }
                   />
                 </label>
-                <fieldset className="extension-inline-fieldset">
-                  <legend>Reminder intensity</legend>
-                  {reminderIntensityOptions.map((option) => (
-                    <label key={option.value} className="extension-radio-row">
-                      <input
-                        type="radio"
-                        aria-label={option.label}
-                        name="reminderIntensity"
-                        value={option.value}
-                        checked={settings.reminderIntensity === option.value}
-                        onChange={() =>
-                          updateSetting("reminderIntensity", option.value)
-                        }
-                      />
-                      <span>
-                        <strong>{option.label}</strong>
-                        <small>
-                          {option.value === "balanced"
-                            ? "Recommended"
-                            : option.value === "gentle"
-                              ? "Fewer reminders"
-                              : "More frequent reminders"}
-                        </small>
-                      </span>
-                    </label>
-                  ))}
-                </fieldset>
+                <label className="extension-setting-row extension-field">
+                  <span>Reminder intensity</span>
+                  <select
+                    aria-label="Reminder intensity"
+                    value={settings.reminderIntensity}
+                    onChange={(event) =>
+                      updateSetting(
+                        "reminderIntensity",
+                        event.currentTarget
+                          .value as ExtensionSettings["reminderIntensity"],
+                      )
+                    }
+                  >
+                    {reminderIntensityOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <label className="extension-switch-row">
                   <span>
                     <strong>Daily summary</strong>
@@ -1354,23 +1347,6 @@ export function ExtensionOptions({
                 </details>
               </section>
               <aside className="extension-options-rail">
-                <section className="extension-card">
-                  <h2>Local status</h2>
-                  <dl className="extension-status-list">
-                    <div>
-                      <dt>Alarms</dt>
-                      <dd>Active</dd>
-                    </div>
-                    <div>
-                      <dt>Notifications</dt>
-                      <dd>Enabled</dd>
-                    </div>
-                    <div>
-                      <dt>Storage</dt>
-                      <dd>Local only</dd>
-                    </div>
-                  </dl>
-                </section>
                 <section className="extension-card">
                   <h2>Quick actions</h2>
                   <button
