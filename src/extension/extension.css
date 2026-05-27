@@ -1293,17 +1293,6 @@ body {
   font-size: 1.25rem;
 }
 
-.extension-saved-indicator {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 5px;
-  background: #347a4d;
-  color: #ffffff;
-  font-weight: 850;
-}
-
 .extension-options-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 260px;
@@ -1528,15 +1517,6 @@ body {
 
 .extension-custom-subsection {
   margin-top: 26px;
-  border-top: 1px solid #e4e9e4;
-  padding-top: 24px;
-}
-
-.extension-custom-section-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
 }
 
 .extension-custom-header {

@@ -1094,16 +1094,11 @@ export function ExtensionOptions({
   );
 
   const customRemindersSection = (
-    <section
-      className="extension-custom-panel extension-custom-subsection"
-      aria-labelledby="extension-custom-reminders-heading"
-    >
-      <div className="extension-custom-section-heading">
-        <h2 id="extension-custom-reminders-heading">Custom reminders</h2>
-        <span className="extension-saved-indicator" aria-label="Saved">
-          ✓
-        </span>
-      </div>
+    <details className="extension-schedule-subsection extension-custom-panel extension-custom-subsection">
+      <summary>
+        <span>Custom reminders</span>
+        <small>Create and manage your own reminders.</small>
+      </summary>
       <div className="extension-custom-header">
         <h3>Recommended for you</h3>
         <button
@@ -1194,7 +1189,7 @@ export function ExtensionOptions({
           <p className="extension-options-footnote">No custom reminders yet.</p>
         )}
       </fieldset>
-    </section>
+    </details>
   );
 
   return (

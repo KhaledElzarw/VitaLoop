@@ -52,6 +52,12 @@ function createTestHistoryService(
 
 function expandCustomReminders() {
   fireEvent.click(screen.getByRole("button", { name: "Reminder categories" }));
+  const customRemindersSummary = screen.getByText("Custom reminders");
+  const customRemindersDetails = customRemindersSummary.closest("details");
+
+  if (customRemindersDetails && !customRemindersDetails.hasAttribute("open")) {
+    fireEvent.click(customRemindersSummary);
+  }
 }
 
 function openCustomReminderWizard(step: "Details" | "Review") {
@@ -315,10 +321,15 @@ describe("VitaLoop app shell", () => {
     expect(screen.getByLabelText("Quiet hours end")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Reminder categories" }));
     expect(screen.getByLabelText("Hydration")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Custom reminders" })).toBeNull();
+    expect(screen.queryByLabelText("Saved")).toBeNull();
+    const customRemindersSummary = screen.getByText("Custom reminders");
+    const customRemindersDetails = customRemindersSummary.closest("details");
     expect(
-      screen.getByRole("heading", { name: "Custom reminders" }),
-    ).toBeTruthy();
+      customRemindersDetails?.hasAttribute("open"),
+    ).toBe(false);
+    fireEvent.click(customRemindersSummary);
+    expect(customRemindersDetails?.hasAttribute("open")).toBe(true);
+    expect(screen.getByRole("heading", { name: "Recommended for you" })).toBeTruthy();
   });
 
   it("prefills a custom reminder from a recommendation", () => {

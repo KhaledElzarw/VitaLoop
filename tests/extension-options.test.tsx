@@ -40,6 +40,12 @@ afterEach(() => {
 
 function expandCustomReminders() {
   fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
+  const customRemindersSummary = screen.getByText("Custom reminders");
+  const customRemindersDetails = customRemindersSummary.closest("details");
+
+  if (customRemindersDetails && !customRemindersDetails.hasAttribute("open")) {
+    fireEvent.click(customRemindersSummary);
+  }
 }
 
 function openCustomReminderWizard(step: "Details" | "Review") {
@@ -80,9 +86,15 @@ describe("ExtensionOptions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
     expect(screen.getByLabelText("Hydration")).toBeTruthy();
     expect(screen.getByLabelText("Eye strain")).toBeTruthy();
+    expect(screen.queryByLabelText("Saved")).toBeNull();
+    const customRemindersSummary = screen.getByText("Custom reminders");
+    const customRemindersDetails = customRemindersSummary.closest("details");
     expect(
-      screen.getByRole("heading", { name: "Custom reminders" }),
-    ).toBeTruthy();
+      customRemindersDetails?.hasAttribute("open"),
+    ).toBe(false);
+    fireEvent.click(customRemindersSummary);
+    expect(customRemindersDetails?.hasAttribute("open")).toBe(true);
+    expect(screen.getByRole("heading", { name: "Recommended for you" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "General" }));
     expect(
       screen.getByRole("button", { name: "Send test notification" }),

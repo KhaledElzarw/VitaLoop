@@ -1145,16 +1145,11 @@ export function SettingsScreen({
   );
 
   const customRemindersSection = (
-    <section
-      className="settings-custom-screen settings-reminders-subsection"
-      aria-labelledby="custom-reminders-heading"
-    >
-      <div className="settings-section-heading">
-        <h2 id="custom-reminders-heading">Custom reminders</h2>
-        <button type="button" className="icon-button" aria-label="Saved">
-          ✓
-        </button>
-      </div>
+    <details className="settings-schedule-subsection settings-custom-screen settings-reminders-subsection">
+      <summary>
+        <span>Custom reminders</span>
+        <small>Create and manage your own reminders.</small>
+      </summary>
       <div className="custom-recommendation-header">
         <h3>Recommended for you</h3>
         <button
@@ -1245,7 +1240,7 @@ export function SettingsScreen({
           <p>No custom reminders yet.</p>
         )}
       </fieldset>
-    </section>
+    </details>
   );
 
   return (
