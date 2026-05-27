@@ -506,6 +506,16 @@ describe("VitaLoop app shell", () => {
       expect.stringContaining("Daily-ish"),
     ]);
     expect(recurrenceLabels[1]).toContain("🔥 Popular");
+    expect(
+      within(wizard).getByText(
+        "Schedule fast check-in to stay on top of things throughout the day",
+      ),
+    ).toBeTruthy();
+    expect(
+      within(wizard).getByText(
+        "Set reminders on daily, weekly or monthly intervals... keep up with your car recurring maintenance or dental cleaning",
+      ),
+    ).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(
       screen.queryByRole("region", { name: "New custom reminder" }),
