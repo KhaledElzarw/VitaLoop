@@ -1121,6 +1121,37 @@ export function ExtensionOptions({
     </label>
   );
 
+  const workingHoursSection = (
+    <details className="extension-schedule-subsection extension-custom-subsection">
+      <summary>
+        <span>👨🏻‍💻 Working Hours</span>
+        <small>Set the workday window for reminders.</small>
+      </summary>
+      <div className="extension-field-grid">
+        <label className="extension-setting-row extension-field">
+          <span>Workday start</span>
+          <input
+            type="time"
+            value={settings.workdayStart}
+            onChange={(event) =>
+              updateSetting("workdayStart", event.currentTarget.value)
+            }
+          />
+        </label>
+        <label className="extension-setting-row extension-field">
+          <span>Workday end</span>
+          <input
+            type="time"
+            value={settings.workdayEnd}
+            onChange={(event) =>
+              updateSetting("workdayEnd", event.currentTarget.value)
+            }
+          />
+        </label>
+      </div>
+    </details>
+  );
+
   const customRemindersSection = (
     <details className="extension-schedule-subsection extension-custom-panel extension-custom-subsection">
       <summary>
@@ -1364,34 +1395,6 @@ export function ExtensionOptions({
                   </span>
                   <input type="checkbox" disabled />
                 </label>
-                <details className="extension-schedule-subsection">
-                  <summary>
-                    <span>👨🏻‍💻 Working Hours</span>
-                    <small>Set the workday window for reminders.</small>
-                  </summary>
-                  <div className="extension-field-grid">
-                    <label className="extension-setting-row extension-field">
-                      <span>Workday start</span>
-                      <input
-                        type="time"
-                        value={settings.workdayStart}
-                        onChange={(event) =>
-                          updateSetting("workdayStart", event.currentTarget.value)
-                        }
-                      />
-                    </label>
-                    <label className="extension-setting-row extension-field">
-                      <span>Workday end</span>
-                      <input
-                        type="time"
-                        value={settings.workdayEnd}
-                        onChange={(event) =>
-                          updateSetting("workdayEnd", event.currentTarget.value)
-                        }
-                      />
-                    </label>
-                  </div>
-                </details>
               </section>
               <aside className="extension-options-rail">
                 <section className="extension-card">
@@ -1447,6 +1450,7 @@ export function ExtensionOptions({
                 })}
               </div>
               {customRemindersSection}
+              {workingHoursSection}
             </section>
           ) : null}
 
