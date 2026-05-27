@@ -76,6 +76,8 @@ describe("ExtensionOptions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
     expect(screen.getByLabelText("Hydration")).toBeTruthy();
     expect(screen.getByLabelText("Eye strain")).toBeTruthy();
+    expect(screen.queryByLabelText("Sleep routine")).toBeNull();
+    expect(screen.queryByLabelText("Mood/energy check-in")).toBeNull();
     expect(screen.queryByLabelText("Saved")).toBeNull();
     const customRemindersSummary = screen.getByText("Custom reminders");
     const customRemindersDetails = customRemindersSummary.closest("details");

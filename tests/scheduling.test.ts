@@ -193,7 +193,7 @@ describe("reminder scheduling", () => {
       quietHoursEnabled: false,
       workdayStart: "09:00",
       workdayEnd: "18:00",
-      preferredReminderCategories: ["mood-energy"],
+      preferredReminderCategories: ["breathing-reset"],
     });
     const currentDate = new Date(2026, 0, 1, 10, 0);
     const nextSchedule = getNextScheduledReminder(
@@ -205,8 +205,8 @@ describe("reminder scheduling", () => {
     expect(
       getNextReminderTime(findReminder("hydration"), settings, currentDate),
     ).toBeNull();
-    expect(nextSchedule?.reminder.id).toBe("mood-energy");
-    expect(nextSchedule?.nextAt).toEqual(new Date(2026, 0, 1, 14, 0));
+    expect(nextSchedule?.reminder.id).toBe("breathing-reset");
+    expect(nextSchedule?.nextAt).toEqual(new Date(2026, 0, 1, 13, 0));
   });
 
   it("uses custom reminder frequency without applying intensity", () => {
