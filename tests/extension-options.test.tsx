@@ -271,12 +271,24 @@ describe("ExtensionOptions", () => {
     expect(
       screen.getByRole("button", { name: "Cancel" }).getAttribute("aria-expanded"),
     ).toBe("true");
-    expect(
-      screen.getByRole("group", { name: "Manage Custom Loops" }),
-    ).toBeTruthy();
+    const cancelCustomLoopButton = screen.getByRole("button", {
+      name: "Cancel",
+    });
+    const customLoopManagement = screen.getByRole("group", {
+      name: "Manage Custom Loops",
+    });
+    expect(customLoopManagement).toBeTruthy();
     const wizard = screen.getByRole("region", {
       name: "New custom loop",
     });
+    expect(
+      cancelCustomLoopButton.compareDocumentPosition(wizard) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      wizard.compareDocumentPosition(customLoopManagement) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     const emojiSelect = within(wizard).getByLabelText(
       "Custom loop emoji",
     ) as HTMLSelectElement;
@@ -390,7 +402,20 @@ describe("ExtensionOptions", () => {
     });
     saveCustomReminderFromWizard();
 
-    expect(screen.getByLabelText("🛒 Desk reset")).toBeTruthy();
+    const savedCustomLoopRow = screen.getByLabelText("🛒 Desk reset");
+
+    expect(savedCustomLoopRow).toBeTruthy();
+    expect(within(savedCustomLoopRow).getByText("Every 120 minutes")).toBeTruthy();
+    expect(
+      within(savedCustomLoopRow).getByRole("button", {
+        name: "Edit 🛒 Desk reset",
+      }),
+    ).toBeTruthy();
+    expect(
+      within(savedCustomLoopRow).getByRole("button", {
+        name: "Delete 🛒 Desk reset",
+      }),
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 

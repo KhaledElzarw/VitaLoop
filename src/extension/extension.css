@@ -799,7 +799,8 @@ textarea:focus-visible {
 }
 
 .extension-custom-title-field {
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: max-content auto minmax(7rem, 1fr);
+  column-gap: 10px;
 }
 
 .extension-custom-title-field > label {
@@ -870,6 +871,10 @@ textarea:focus-visible {
 .extension-custom-reminder-message-field {
   grid-template-columns: 1fr;
   align-items: stretch;
+}
+
+.extension-custom-reminder-message-field textarea {
+  min-height: 140px;
 }
 
 .extension-field-hint,
@@ -1630,8 +1635,63 @@ body {
   padding: 18px 0 0;
 }
 
+.extension-custom-list {
+  gap: 10px;
+  margin-top: 14px;
+}
+
 .extension-custom-list li {
   background: #ffffff;
+}
+
+.extension-custom-list .extension-custom-list-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border-color: #dfe6e1;
+  box-shadow: 0 8px 18px rgba(38, 50, 42, 0.04);
+  padding: 10px 12px;
+}
+
+.extension-custom-list .extension-custom-list-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.extension-custom-list .extension-custom-list-copy strong {
+  overflow-wrap: anywhere;
+  font-size: 0.86rem;
+}
+
+.extension-custom-list .extension-custom-list-copy span {
+  color: #657169;
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.extension-custom-list .extension-custom-list-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.extension-custom-list .extension-custom-list-actions button {
+  min-height: 32px;
+  border: 1px solid #b8d1bf;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #24613d;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 5px 10px;
+}
+
+.extension-custom-list .extension-custom-list-actions .extension-custom-danger-action {
+  border-color: #f0aaaa;
+  color: #c01d1d;
 }
 
 .extension-options-footer {
@@ -1686,9 +1746,9 @@ body {
   max-height: none;
   overflow: hidden;
   border: 1px solid #d8ded8;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #ffffff;
-  box-shadow: 0 18px 40px rgba(20, 30, 24, 0.1);
+  box-shadow: 0 14px 30px rgba(20, 30, 24, 0.08);
 }
 
 .extension-custom-wizard-header,
@@ -1698,7 +1758,7 @@ body {
   align-items: center;
   gap: 16px;
   border-bottom: 1px solid #e4e9e4;
-  padding: 20px 28px;
+  padding: 18px 24px;
 }
 
 .extension-custom-wizard-header h2 {
@@ -1715,12 +1775,12 @@ body {
 }
 
 .extension-custom-wizard-panel {
-  padding: 28px 32px;
+  padding: 24px;
 }
 
 .extension-custom-wizard-panel h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.06rem;
 }
 
 .extension-custom-wizard-panel > p {
@@ -1729,9 +1789,9 @@ body {
 }
 
 .extension-custom-wizard-subsection {
-  margin-top: 24px;
+  margin-top: 22px;
   border-top: 1px solid #e4e9e4;
-  padding-top: 22px;
+  padding-top: 20px;
 }
 
 .extension-custom-wizard-subsection h4 {
@@ -1756,6 +1816,7 @@ body {
   align-items: center;
   border: 1px solid #e0e6e1;
   border-radius: 8px;
+  background: #ffffff;
   padding: 14px;
 }
 
@@ -1814,6 +1875,7 @@ body {
   justify-content: flex-end;
   border-top: 1px solid #e4e9e4;
   border-bottom: 0;
+  padding: 18px 24px;
 }
 
 .extension-custom-wizard-footer button {
@@ -1842,5 +1904,31 @@ body {
   .extension-options-sidebar {
     border-right: 0;
     border-bottom: 1px solid #e5e9e5;
+  }
+}
+
+@media (max-width: 640px) {
+  .extension-custom-panel .extension-recommendation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .extension-custom-wizard-header,
+  .extension-custom-wizard-footer,
+  .extension-custom-wizard-panel {
+    padding-inline: 16px;
+  }
+
+  .extension-custom-list .extension-custom-list-item {
+    grid-template-columns: 1fr;
+  }
+
+  .extension-custom-list .extension-custom-list-actions,
+  .extension-custom-wizard-footer {
+    justify-content: stretch;
+  }
+
+  .extension-custom-list .extension-custom-list-actions button,
+  .extension-custom-wizard-footer button {
+    flex: 1 1 8rem;
   }
 }

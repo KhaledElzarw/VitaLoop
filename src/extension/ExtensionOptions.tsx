@@ -1512,45 +1512,55 @@ export function ExtensionOptions({
         {settings.customReminders.length > 0 ? (
           <ul className="extension-custom-list" aria-label="Custom loops">
             {settings.customReminders.map((reminder) => (
-              <li key={reminder.id} aria-label={reminder.title}>
+              <li
+                key={reminder.id}
+                className="extension-custom-list-item"
+                aria-label={reminder.title}
+              >
                 {pendingDeleteCustomReminderId === reminder.id ? (
                   <>
-                    <div>
+                    <div className="extension-custom-list-copy">
                       <strong>Delete {reminder.title}?</strong>
                       <span>Save settings to apply.</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => confirmDeleteCustomReminder(reminder.id)}
-                    >
-                      Confirm delete
-                    </button>
-                    <button type="button" onClick={cancelDeleteCustomReminder}>
-                      Cancel
-                    </button>
+                    <div className="extension-custom-list-actions">
+                      <button
+                        type="button"
+                        className="extension-custom-danger-action"
+                        onClick={() => confirmDeleteCustomReminder(reminder.id)}
+                      >
+                        Confirm delete
+                      </button>
+                      <button type="button" onClick={cancelDeleteCustomReminder}>
+                        Cancel
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <>
-                    <div>
+                    <div className="extension-custom-list-copy">
                       <strong>{reminder.title}</strong>
                       <span>
                         {formatCustomReminderSchedule(reminder.schedule)}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      aria-label={`Edit ${reminder.title}`}
-                      onClick={() => editCustomReminder(reminder.id)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Delete ${reminder.title}`}
-                      onClick={() => deleteCustomReminder(reminder.id)}
-                    >
-                      Delete
-                    </button>
+                    <div className="extension-custom-list-actions">
+                      <button
+                        type="button"
+                        aria-label={`Edit ${reminder.title}`}
+                        onClick={() => editCustomReminder(reminder.id)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="extension-custom-danger-action"
+                        aria-label={`Delete ${reminder.title}`}
+                        onClick={() => deleteCustomReminder(reminder.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </>
                 )}
               </li>
