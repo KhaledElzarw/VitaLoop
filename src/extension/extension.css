@@ -46,7 +46,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -56,7 +57,8 @@ button {
 }
 
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+textarea:focus-visible {
   outline: 3px solid var(--extension-focus-ring);
   outline-offset: 2px;
 }
@@ -777,7 +779,8 @@ input:focus-visible {
   font-weight: 750;
 }
 
-.extension-field input {
+.extension-field input,
+.extension-field textarea {
   min-height: 34px;
   width: 100%;
   min-width: 118px;
@@ -786,6 +789,16 @@ input:focus-visible {
   background: rgba(255, 255, 255, 0.82);
   color: var(--extension-text);
   padding: 6px 8px;
+}
+
+.extension-field textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.extension-custom-reminder-message-field {
+  grid-template-columns: 1fr;
+  align-items: stretch;
 }
 
 .extension-field-hint,
@@ -1644,47 +1657,9 @@ body {
 .extension-custom-wizard-body {
   display: grid;
   flex: 1 1 auto;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   min-height: min(470px, 58vh);
   overflow: auto;
-}
-
-.extension-custom-wizard-steps {
-  display: grid;
-  align-content: start;
-  gap: 8px;
-  border-right: 1px solid #e4e9e4;
-  padding: 28px;
-}
-
-.extension-custom-wizard-steps button {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 42px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  font-weight: 800;
-  text-align: left;
-}
-
-.extension-custom-wizard-steps button.is-active {
-  background: #e9f1eb;
-}
-
-.extension-custom-wizard-steps span {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border: 1px solid #9fb3a6;
-  border-radius: 999px;
-}
-
-.extension-custom-wizard-steps button.is-active span {
-  background: #2f7047;
-  color: #ffffff;
 }
 
 .extension-custom-wizard-panel {
@@ -1717,14 +1692,7 @@ body {
   color: #657169;
 }
 
-.extension-wizard-recurrence-grid {
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 22px;
-}
-
-.extension-wizard-recurrence-options,
-.extension-wizard-recurrence-detail {
+.extension-wizard-recurrence-options {
   display: grid;
   gap: 10px;
 }
@@ -1741,6 +1709,20 @@ body {
 
 .extension-wizard-recurrence-card:has(input:checked) {
   background: #eaf2ec;
+}
+
+.extension-wizard-recurrence-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.extension-wizard-popular-tag {
+  color: #c85b00;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 850;
 }
 
 .extension-wizard-recurrence-card small {
@@ -1801,8 +1783,7 @@ body {
 @media (max-width: 860px) {
   .extension-options-frame,
   .extension-options-grid,
-  .extension-custom-wizard-body,
-  .extension-wizard-recurrence-grid {
+  .extension-custom-wizard-body {
     grid-template-columns: 1fr;
   }
 

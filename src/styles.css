@@ -572,7 +572,8 @@ input {
   font-size: 0.9rem;
 }
 
-.field input {
+.field input,
+.field textarea {
   width: 100%;
   min-height: 2.75rem;
   border: 1px solid #d8d2c4;
@@ -581,6 +582,11 @@ input {
   color: var(--color-ink);
   font: inherit;
   padding: 0.55rem 0.7rem;
+}
+
+.field textarea {
+  min-height: 7rem;
+  resize: vertical;
 }
 
 .field-hint,
@@ -666,6 +672,7 @@ input {
 
 .settings-actions button:focus-visible,
 .field input:focus-visible,
+.field textarea:focus-visible,
 .checkbox-row input:focus-visible,
 .choice-card input:focus-visible {
   outline: 3px solid var(--color-focus);
@@ -1243,48 +1250,9 @@ input {
 .custom-wizard-body {
   display: grid;
   flex: 1 1 auto;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   min-height: min(470px, 58vh);
   overflow: auto;
-}
-
-.custom-wizard-steps {
-  display: grid;
-  align-content: start;
-  gap: 8px;
-  border-right: 1px solid #e4e9e4;
-  padding: 28px;
-}
-
-.custom-wizard-steps button {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 42px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  cursor: pointer;
-  font-weight: 800;
-  text-align: left;
-}
-
-.custom-wizard-steps button.is-active {
-  background: #e9f1eb;
-}
-
-.custom-wizard-steps span {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  border: 1px solid #9fb3a6;
-}
-
-.custom-wizard-steps button.is-active span {
-  background: #2f7047;
-  color: #ffffff;
 }
 
 .custom-wizard-panel {
@@ -1317,14 +1285,7 @@ input {
   color: #66736b;
 }
 
-.wizard-recurrence-grid {
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 22px;
-}
-
-.wizard-recurrence-options,
-.wizard-recurrence-detail {
+.wizard-recurrence-options {
   display: grid;
   gap: 10px;
 }
@@ -1341,6 +1302,20 @@ input {
 
 .wizard-recurrence-card:has(input:checked) {
   background: #eaf2ec;
+}
+
+.wizard-recurrence-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.wizard-popular-tag {
+  color: #c85b00;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 850;
 }
 
 .wizard-recurrence-card small {
@@ -1407,8 +1382,7 @@ input {
 @media (max-width: 980px) {
   .web-settings-shell,
   .settings-workspace,
-  .custom-wizard-body,
-  .wizard-recurrence-grid {
+  .custom-wizard-body {
     grid-template-columns: 1fr;
   }
 
