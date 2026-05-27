@@ -1,14 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
   CUSTOM_REMINDER_CATEGORY_MAX_LENGTH,
+  CUSTOM_REMINDER_EMOJI_OPTIONS,
   CUSTOM_REMINDER_MESSAGE_MAX_LENGTH,
   CUSTOM_REMINDER_TITLE_MAX_LENGTH,
   createDefaultCustomReminderSchedule,
   customReminderRecommendations,
+  DEFAULT_CUSTOM_REMINDER_EMOJI,
   defaultCustomReminderDraft,
+  formatCustomReminderTitleWithEmoji,
   formatCustomReminderSchedule,
   getCustomReminderCharacterLimitStatus,
+  getCustomReminderTitleEmoji,
   getRecommendedCustomReminders,
+  stripCustomReminderTitleEmoji,
   validateCustomReminderDraft,
 } from "../src/domain/customReminders";
 
@@ -118,6 +123,29 @@ describe("custom reminder draft validation", () => {
       message: "Maximum limit of characters is 38/48",
       tone: "near-limit",
     });
+  });
+
+  it("formats custom reminder titles with a selected emoji prefix", () => {
+    expect(CUSTOM_REMINDER_EMOJI_OPTIONS).toContain(
+      DEFAULT_CUSTOM_REMINDER_EMOJI,
+    );
+    expect(formatCustomReminderTitleWithEmoji("🛒", "Grocery list")).toBe(
+      "🛒 Grocery list",
+    );
+    expect(formatCustomReminderTitleWithEmoji("🛒", "📝 Grocery list")).toBe(
+      "🛒 Grocery list",
+    );
+    expect(formatCustomReminderTitleWithEmoji("not-an-emoji", "Plan")).toBe(
+      `${DEFAULT_CUSTOM_REMINDER_EMOJI} Plan`,
+    );
+    expect(formatCustomReminderTitleWithEmoji("🛒", " ")).toBe("");
+    expect(stripCustomReminderTitleEmoji("🛒 Grocery list")).toBe(
+      "Grocery list",
+    );
+    expect(getCustomReminderTitleEmoji("🛒 Grocery list")).toBe("🛒");
+    expect(getCustomReminderTitleEmoji("Grocery list")).toBe(
+      DEFAULT_CUSTOM_REMINDER_EMOJI,
+    );
   });
 
   it("returns a trimmed normalized draft for valid input", () => {

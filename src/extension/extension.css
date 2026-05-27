@@ -798,6 +798,15 @@ textarea:focus-visible {
   font-weight: 750;
 }
 
+.extension-custom-title-field {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+
+.extension-custom-title-field > label {
+  color: var(--extension-text);
+  font-weight: 750;
+}
+
 .extension-field input,
 .extension-field select,
 .extension-field textarea {
@@ -813,6 +822,17 @@ textarea:focus-visible {
 
 .extension-field select {
   cursor: pointer;
+}
+
+.extension-custom-title-field .extension-custom-emoji-select {
+  width: auto;
+  min-width: 54px;
+  padding-inline: 6px;
+  text-align: center;
+}
+
+.extension-custom-title-field > small {
+  grid-column: 1 / -1;
 }
 
 .extension-custom-interval-field {
@@ -991,6 +1011,14 @@ textarea:focus-visible {
 
   .extension-field {
     grid-template-columns: 1fr;
+  }
+
+  .extension-custom-title-field {
+    grid-template-columns: 1fr;
+  }
+
+  .extension-custom-title-field .extension-custom-emoji-select {
+    width: 100%;
   }
 
   .extension-setting-row-split {
