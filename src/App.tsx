@@ -104,13 +104,15 @@ const customReminderScheduleOptions = [
   {
     value: "interval",
     label: "Micro Loops",
-    description: "Repeat every X minutes",
+    description:
+      "Schedule fast check-in to stay on top of things throughout the day",
     isPopular: false,
   },
   {
     value: "dailyInterval",
     label: "Daily-ish",
-    description: "Repeat every X days",
+    description:
+      "Set reminders on daily, weekly or monthly intervals... keep up with your car recurring maintenance or dental cleaning",
     isPopular: false,
   },
 ] as const;
