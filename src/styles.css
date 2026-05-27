@@ -573,6 +573,7 @@ input {
 }
 
 .field input,
+.field select,
 .field textarea {
   width: 100%;
   min-height: 2.75rem;
@@ -587,6 +588,34 @@ input {
 .field textarea {
   min-height: 7rem;
   resize: vertical;
+}
+
+.custom-interval-field {
+  border: 1px solid #e5e0d6;
+  border-radius: 10px;
+  padding: 0.9rem;
+}
+
+.custom-interval-field > span {
+  color: var(--color-ink);
+  font-weight: 800;
+}
+
+.custom-interval-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.custom-interval-row input {
+  flex: 0 0 9ch;
+  width: 9ch;
+}
+
+.custom-interval-row select {
+  flex: 0 1 10rem;
+  cursor: pointer;
 }
 
 .field-hint,
@@ -672,6 +701,7 @@ input {
 
 .settings-actions button:focus-visible,
 .field input:focus-visible,
+.field select:focus-visible,
 .field textarea:focus-visible,
 .checkbox-row input:focus-visible,
 .choice-card input:focus-visible {

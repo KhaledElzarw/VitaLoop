@@ -160,8 +160,17 @@ describe("ExtensionOptions", () => {
       target: { value: "Reset your desk and posture." },
     });
     fireEvent.click(screen.getByRole("radio", { name: "Micro Loops" }));
-    fireEvent.change(screen.getByLabelText(/Custom reminder interval minutes/), {
+    expect(screen.queryByText("Whole number, 5-1440 minutes.")).toBeNull();
+    const intervalAmount = screen.getByLabelText(
+      "Custom reminder interval amount",
+    ) as HTMLInputElement;
+    expect(fireEvent.keyDown(intervalAmount, { key: "." })).toBe(false);
+    fireEvent.change(intervalAmount, {
       target: { value: "4.5" },
+    });
+    expect(intervalAmount.value).toBe("45");
+    fireEvent.change(intervalAmount, {
+      target: { value: "4" },
     });
     saveCustomReminderFromWizard();
 
@@ -301,8 +310,15 @@ describe("ExtensionOptions", () => {
       target: { value: "Reset your desk and posture." },
     });
     fireEvent.click(within(reopenedWizard).getByRole("radio", { name: "Micro Loops" }));
-    fireEvent.change(screen.getByLabelText(/Custom reminder interval minutes/), {
-      target: { value: "25" },
+    fireEvent.change(screen.getByLabelText("Custom reminder interval unit"), {
+      target: { value: "hours" },
+    });
+    expect(
+      (screen.getByLabelText("Custom reminder interval amount") as HTMLInputElement)
+        .value,
+    ).toBe("1");
+    fireEvent.change(screen.getByLabelText("Custom reminder interval amount"), {
+      target: { value: "2" },
     });
     saveCustomReminderFromWizard();
 
@@ -323,7 +339,7 @@ describe("ExtensionOptions", () => {
         description: "Reset your desk and posture.",
         schedule: {
           type: "interval",
-          intervalMinutes: 25,
+          intervalMinutes: 120,
         },
         respectReminderWindows: true,
       }),

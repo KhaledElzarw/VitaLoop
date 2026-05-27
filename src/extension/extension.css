@@ -798,6 +798,33 @@ textarea:focus-visible {
   cursor: pointer;
 }
 
+.extension-custom-interval-field {
+  align-items: center;
+}
+
+.extension-custom-interval-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.extension-custom-interval-row input {
+  flex: 0 0 9ch;
+  width: 9ch;
+  min-width: 9ch;
+}
+
+.extension-custom-interval-row select {
+  flex: 0 1 116px;
+  min-width: 116px;
+}
+
+.extension-custom-interval-field .extension-field-error {
+  grid-column: 1 / -1;
+}
+
 .extension-field textarea {
   min-height: 110px;
   resize: vertical;

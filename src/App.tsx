@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type KeyboardEvent, useState } from "react";
 import { reminders } from "./data/reminders";
 import {
   CUSTOM_REMINDER_CATEGORY_MAX_LENGTH,
@@ -76,6 +76,11 @@ const reminderIntensityOptions = [
   { value: "active", label: "Active" },
 ] as const;
 
+const customIntervalUnitOptions = [
+  { value: "minutes", label: "minutes" },
+  { value: "hours", label: "hours" },
+] as const;
+
 const customReminderScheduleOptions = [
   {
     value: "oneTime",
@@ -114,8 +119,10 @@ type OneTimeCustomReminderSchedule = Extract<
   CustomReminderSchedule,
   { type: "oneTime" }
 >;
+type CustomIntervalUnit = (typeof customIntervalUnitOptions)[number]["value"];
 
 const defaultPreviewDate = new Date(2026, 4, 15, 10, 0);
+const blockedIntegerInputKeys = new Set([".", ",", "e", "E", "+", "-"]);
 
 const backlogCategories = [
   "P0 Foundation",
@@ -136,6 +143,31 @@ function getCharacterLimitHintClassName(status: CharacterLimitStatus) {
   return status.tone === "near-limit"
     ? "character-limit-hint character-limit-hint-danger"
     : "character-limit-hint";
+}
+
+function preventNonIntegerNumberInput(event: KeyboardEvent<HTMLInputElement>) {
+  if (blockedIntegerInputKeys.has(event.key)) {
+    event.preventDefault();
+  }
+}
+
+function parseIntegerInputValue(value: string) {
+  const integerValue = value.replace(/\D/g, "");
+  return integerValue === "" ? 0 : Number(integerValue);
+}
+
+function getCustomIntervalAmount(
+  intervalMinutes: number,
+  intervalUnit: CustomIntervalUnit,
+) {
+  return intervalUnit === "hours" ? intervalMinutes / 60 : intervalMinutes;
+}
+
+function getCustomIntervalMinutes(
+  amount: number,
+  intervalUnit: CustomIntervalUnit,
+) {
+  return intervalUnit === "hours" ? amount * 60 : amount;
 }
 
 function SettingsIcon({ label }: { label: string }) {
@@ -569,6 +601,8 @@ export function SettingsScreen({
     useState<SettingsPanelId>("general");
   const [isCustomReminderWizardOpen, setIsCustomReminderWizardOpen] =
     useState(false);
+  const [customIntervalUnit, setCustomIntervalUnit] =
+    useState<CustomIntervalUnit>("minutes");
   const [customRecommendations, setCustomRecommendations] = useState(() =>
     getRecommendedCustomReminders(),
   );
@@ -665,6 +699,10 @@ export function SettingsScreen({
   }
 
   function updateCustomScheduleType(type: CustomReminderSchedule["type"]) {
+    if (type === "interval") {
+      setCustomIntervalUnit("minutes");
+    }
+
     updateCustomSchedule(createDefaultCustomReminderSchedule(type));
   }
 
@@ -673,6 +711,35 @@ export function SettingsScreen({
       type: "interval",
       intervalMinutes,
     });
+  }
+
+  function updateCustomIntervalAmount(value: string) {
+    updateCustomIntervalMinutes(
+      getCustomIntervalMinutes(
+        parseIntegerInputValue(value),
+        customIntervalUnit,
+      ),
+    );
+  }
+
+  function updateCustomIntervalUnit(intervalUnit: CustomIntervalUnit) {
+    setCustomIntervalUnit(intervalUnit);
+
+    if (customDraft.schedule.type !== "interval") {
+      return;
+    }
+
+    if (intervalUnit === "hours") {
+      const intervalHours = Math.min(
+        24,
+        Math.max(1, Math.round(customDraft.schedule.intervalMinutes / 60)),
+      );
+
+      updateCustomIntervalMinutes(intervalHours * 60);
+      return;
+    }
+
+    updateCustomIntervalMinutes(customDraft.schedule.intervalMinutes);
   }
 
   function updateCustomDayInterval(dayIntervalDays: number) {
@@ -762,6 +829,7 @@ export function SettingsScreen({
     recommendation: (typeof customRecommendations)[number],
   ) {
     setCustomDraft(getCustomReminderDraftFromRecommendation(recommendation));
+    setCustomIntervalUnit("minutes");
     setCustomDraftErrors({});
     setPendingDeleteCustomReminderId(null);
     setStatus("idle");
@@ -770,6 +838,7 @@ export function SettingsScreen({
 
   function resetCustomDraft() {
     setCustomDraft({ ...defaultCustomReminderDraft });
+    setCustomIntervalUnit("minutes");
     setCustomRecommendations(getRecommendedCustomReminders());
     setCustomDraftErrors({});
   }
@@ -833,6 +902,7 @@ export function SettingsScreen({
         settings.preferredReminderCategories.includes(reminder.id),
       ),
     );
+    setCustomIntervalUnit("minutes");
     setCustomDraftErrors({});
     setPendingDeleteCustomReminderId(null);
     setStatus("idle");
@@ -1027,34 +1097,53 @@ export function SettingsScreen({
         </div>
       ) : null}
       {customDraft.schedule.type === "interval" ? (
-        <label className="field">
-          <span>Repeat every minutes</span>
-          <input
-            type="number"
-            aria-label="Custom reminder interval minutes"
-            min="5"
-            max="1440"
-            step="1"
-            value={customDraft.schedule.intervalMinutes}
-            onChange={(event) =>
-              updateCustomIntervalMinutes(Number(event.currentTarget.value))
-            }
-            aria-describedby={`custom-reminder-interval-hint${
-              customDraftErrors.intervalMinutes
-                ? " custom-reminder-interval-error"
-                : ""
-            }`}
-            aria-invalid={Boolean(customDraftErrors.intervalMinutes)}
-          />
-          <small id="custom-reminder-interval-hint" className="field-hint">
-            Whole number, 5-1440 minutes.
-          </small>
+        <div className="field custom-interval-field">
+          <span>Every</span>
+          <div className="custom-interval-row">
+            <input
+              type="number"
+              aria-label="Custom reminder interval amount"
+              min={customIntervalUnit === "hours" ? "1" : "5"}
+              max={customIntervalUnit === "hours" ? "24" : "1440"}
+              step="1"
+              inputMode="numeric"
+              value={getCustomIntervalAmount(
+                customDraft.schedule.intervalMinutes,
+                customIntervalUnit,
+              )}
+              onKeyDown={preventNonIntegerNumberInput}
+              onChange={(event) =>
+                updateCustomIntervalAmount(event.currentTarget.value)
+              }
+              aria-describedby={
+                customDraftErrors.intervalMinutes
+                  ? "custom-reminder-interval-error"
+                  : undefined
+              }
+              aria-invalid={Boolean(customDraftErrors.intervalMinutes)}
+            />
+            <select
+              aria-label="Custom reminder interval unit"
+              value={customIntervalUnit}
+              onChange={(event) =>
+                updateCustomIntervalUnit(
+                  event.currentTarget.value as CustomIntervalUnit,
+                )
+              }
+            >
+              {customIntervalUnitOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
           {customDraftErrors.intervalMinutes ? (
             <small id="custom-reminder-interval-error" className="field-error">
               {customDraftErrors.intervalMinutes}
             </small>
           ) : null}
-        </label>
+        </div>
       ) : null}
       {customDraft.schedule.type === "dailyInterval" ? (
         <div className="settings-columns">
