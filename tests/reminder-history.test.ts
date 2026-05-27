@@ -4,6 +4,7 @@ import {
   appendReminderHistoryEntry,
   createReminderHistoryEntry,
   REMINDER_HISTORY_LIMIT,
+  removeReminderHistoryEntriesForDate,
   type ReminderHistoryEntry,
 } from "../src/domain/reminderHistory";
 import {
@@ -100,5 +101,31 @@ describe("reminder history", () => {
     expect(history[0].occurredAt).toEqual(
       new Date(currentDate.getTime() + (REMINDER_HISTORY_LIMIT + 1) * 1000),
     );
+  });
+
+  it("removes only history entries from the requested local date", () => {
+    const todayEntry = {
+      id: "today-entry",
+      reminderId: "eye-strain",
+      reminderTitle: "Eye strain",
+      actionType: "done",
+      occurredAt: new Date(2026, 4, 15, 9, 30),
+    } satisfies ReminderHistoryEntry;
+    const olderEntry = {
+      id: "older-entry",
+      reminderId: "hydration",
+      reminderTitle: "Hydration",
+      actionType: "snooze",
+      occurredAt: new Date(2026, 4, 14, 23, 45),
+      snoozedUntil: new Date(2026, 4, 15, 0, 0),
+    } satisfies ReminderHistoryEntry;
+
+    const resetHistory = removeReminderHistoryEntriesForDate(
+      [todayEntry, olderEntry],
+      currentDate,
+    );
+
+    expect(resetHistory).toEqual([olderEntry]);
+    expect(resetHistory[0]).not.toBe(olderEntry);
   });
 });
