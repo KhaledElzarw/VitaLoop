@@ -57,8 +57,9 @@ export const defaultCustomReminderDraft: CustomReminderDraft = {
   description: "",
   category: "Custom",
   schedule: {
-    type: "interval",
-    intervalMinutes: 60,
+    type: "oneTime",
+    date: getTomorrowDateInputValue(),
+    timeOfDay: "09:00",
   },
   respectReminderWindows: true,
   enabled: true,

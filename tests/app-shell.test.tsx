@@ -60,17 +60,13 @@ function expandCustomReminders() {
   }
 }
 
-function openCustomReminderWizard(step: "Details" | "Review") {
+function openCustomReminderWizard() {
   expandCustomReminders();
   fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
-  fireEvent.click(screen.getByRole("button", { name: step }));
 }
 
 function saveCustomReminderFromWizard() {
-  fireEvent.click(screen.getByRole("button", { name: "Review" }));
-  fireEvent.click(
-    screen.getByRole("button", { name: "Save custom reminder" }),
-  );
+  fireEvent.click(screen.getByRole("button", { name: "Add Reminder" }));
 }
 
 describe("VitaLoop app shell", () => {
@@ -344,13 +340,12 @@ describe("VitaLoop app shell", () => {
 
     expandCustomReminders();
     fireEvent.click(screen.getByRole("button", { name: /Review calendar/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Details" }));
 
-    expect(screen.getByLabelText(/Custom reminder title/)).toHaveProperty(
+    expect(screen.getByLabelText(/Title/)).toHaveProperty(
       "value",
       "Review calendar",
     );
-    expect(screen.getByLabelText(/Custom reminder message/)).toHaveProperty(
+    expect(screen.getByLabelText(/Message/)).toHaveProperty(
       "value",
       "Look over upcoming meetings and plans.",
     );
@@ -363,14 +358,14 @@ describe("VitaLoop app shell", () => {
 
     render(<SettingsScreen service={service} reminderList={reminders} />);
 
-    expect(screen.queryByLabelText(/Custom reminder title/)).toBeNull();
-    openCustomReminderWizard("Details");
+    expect(screen.queryByLabelText(/Title/)).toBeNull();
+    openCustomReminderWizard();
     expect(screen.queryByText("0/48")).toBeNull();
     expect(
       screen.queryByText("Maximum limit of characters is 32/48"),
     ).toBeNull();
 
-    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
+    fireEvent.change(screen.getByLabelText(/Title/), {
       target: { value: "A".repeat(33) },
     });
     const warningLimit = screen.getByText(
@@ -381,14 +376,14 @@ describe("VitaLoop app shell", () => {
       "character-limit-hint-danger",
     );
 
-    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
+    fireEvent.change(screen.getByLabelText(/Title/), {
       target: { value: "A".repeat(38) },
     });
     const nearLimit = screen.getByText("Maximum limit of characters is 38/48");
 
     expect(nearLimit.className).toContain("character-limit-hint-danger");
 
-    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
+    fireEvent.change(screen.getByLabelText(/Title/), {
       target: { value: "A".repeat(32) },
     });
     expect(
@@ -421,18 +416,19 @@ describe("VitaLoop app shell", () => {
 
     render(<SettingsScreen service={service} reminderList={reminders} />);
 
-    openCustomReminderWizard("Review");
+    openCustomReminderWizard();
     saveCustomReminderFromWizard();
 
     expect(screen.getByText("Enter a title.")).toBeTruthy();
     expect(screen.getByText("Enter a message.")).toBeTruthy();
 
-    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
+    fireEvent.change(screen.getByLabelText(/Title/), {
       target: { value: "Desk reset" },
     });
-    fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
+    fireEvent.change(screen.getByLabelText(/Message/), {
       target: { value: "Reset your desk and posture." },
     });
+    fireEvent.click(screen.getByRole("radio", { name: "Micro Loops" }));
     fireEvent.change(screen.getByLabelText(/Custom reminder interval minutes/), {
       target: { value: "4.5" },
     });
@@ -448,18 +444,70 @@ describe("VitaLoop app shell", () => {
 
     render(<SettingsScreen service={service} reminderList={reminders} />);
 
-    openCustomReminderWizard("Details");
+    openCustomReminderWizard();
     expect(
       screen.getByRole("group", { name: "Manage Custom Reminders" }),
     ).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Recurrence" })).toBeNull();
-    expect(screen.getByRole("heading", { name: "Recurrence" })).toBeTruthy();
-    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
+    const wizard = screen.getByRole("dialog", {
+      name: "New custom reminder",
+    });
+    expect(within(wizard).getByRole("heading", { name: "Details" })).toBeTruthy();
+    expect(within(wizard).getByRole("button", { name: "Add Reminder" })).toBeTruthy();
+    expect(within(wizard).queryByRole("button", { name: "Back" })).toBeNull();
+    expect(within(wizard).queryByRole("button", { name: "Next" })).toBeNull();
+    expect(within(wizard).queryByRole("button", { name: "Review" })).toBeNull();
+    expect(within(wizard).queryByRole("heading", { name: "Review" })).toBeNull();
+    expect(
+      within(wizard).getByRole("heading", { name: "Remind me on:" }),
+    ).toBeTruthy();
+    expect(within(wizard).getByLabelText("Date")).toBeTruthy();
+    expect(within(wizard).getByLabelText("Time")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Frequency" })).toBeNull();
+    expect(within(wizard).getByRole("heading", { name: "Frequency" })).toBeTruthy();
+    expect(
+      (
+        within(wizard).getByRole("radio", {
+          name: "Remind me once",
+        }) as HTMLInputElement
+      ).checked,
+    ).toBe(true);
+    expect(
+      within(wizard).queryByRole("radio", { name: "Date and time" }),
+    ).toBeNull();
+    const recurrenceLabels = within(wizard)
+      .getAllByRole("radio")
+      .map((radio) => radio.closest("label")?.textContent?.replace(/\s+/g, " ").trim());
+
+    expect(recurrenceLabels).toEqual([
+      expect.stringContaining("Remind me once"),
+      expect.stringContaining("Weekday Routines"),
+      expect.stringContaining("Micro Loops"),
+      expect.stringContaining("Daily-ish"),
+    ]);
+    expect(recurrenceLabels[1]).toContain("🔥 Popular");
+    fireEvent.click(within(wizard).getByRole("radio", { name: "Weekday Routines" }));
+    const weekdayTimeField = within(wizard)
+      .getByLabelText("Time")
+      .closest("label");
+    const weekdayGroup = within(wizard).getByRole("group", {
+      name: "Repeat on",
+    });
+    expect(
+      (weekdayTimeField?.compareDocumentPosition(weekdayGroup) ?? 0) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    fireEvent.click(within(wizard).getByRole("radio", { name: "Daily-ish" }));
+    expect(within(wizard).queryByLabelText("Date")).toBeNull();
+    expect(within(wizard).queryByLabelText("Time")).toBeNull();
+    expect(within(wizard).getByLabelText("Repeat every days")).toBeTruthy();
+    expect(within(wizard).getByLabelText("Time of day")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/Title/), {
       target: { value: "Desk reset" },
     });
-    fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
+    fireEvent.change(screen.getByLabelText(/Message/), {
       target: { value: "Reset your desk and posture." },
     });
+    fireEvent.click(within(wizard).getByRole("radio", { name: "Micro Loops" }));
     fireEvent.change(screen.getByLabelText(/Custom reminder interval minutes/), {
       target: { value: "25" },
     });
@@ -488,8 +536,7 @@ describe("VitaLoop app shell", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Edit Desk reset" }));
-    fireEvent.click(screen.getByRole("button", { name: "Details" }));
-    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
+    fireEvent.change(screen.getByLabelText(/Title/), {
       target: { value: "Desk walk" },
     });
     saveCustomReminderFromWizard();
@@ -513,15 +560,15 @@ describe("VitaLoop app shell", () => {
 
     render(<SettingsScreen service={service} reminderList={reminders} />);
 
-    openCustomReminderWizard("Details");
-    fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
+    openCustomReminderWizard();
+    fireEvent.change(screen.getByLabelText(/Title/), {
       target: { value: "Water plants" },
     });
-    fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
+    fireEvent.change(screen.getByLabelText(/Message/), {
       target: { value: "Check plant soil." },
     });
-    fireEvent.click(screen.getByRole("radio", { name: "Weekdays" }));
-    fireEvent.change(screen.getByLabelText("Reminder time"), {
+    fireEvent.click(screen.getByRole("radio", { name: "Weekday Routines" }));
+    fireEvent.change(screen.getByLabelText("Time"), {
       target: { value: "08:30" },
     });
     saveCustomReminderFromWizard();
