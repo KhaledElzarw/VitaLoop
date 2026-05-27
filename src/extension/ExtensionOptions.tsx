@@ -1158,11 +1158,58 @@ export function ExtensionOptions({
       <div className="extension-save-row extension-custom-reminder-actions">
         <button
           type="button"
-          aria-label="Add custom reminder"
-          onClick={openNewCustomReminderWizard}
+          aria-controls="extension-custom-reminder-inline-form"
+          aria-expanded={isCustomReminderWizardOpen}
+          aria-label={
+            isCustomReminderWizardOpen ? "Cancel" : "Add custom reminder"
+          }
+          onClick={
+            isCustomReminderWizardOpen
+              ? closeCustomReminderWizard
+              : openNewCustomReminderWizard
+          }
         >
-          + Add custom reminder
+          {isCustomReminderWizardOpen ? "Cancel" : "+ Add custom reminder"}
         </button>
+      </div>
+      <div
+        id="extension-custom-reminder-inline-form"
+        className="extension-custom-reminder-collapsible"
+        data-expanded={isCustomReminderWizardOpen}
+        aria-hidden={!isCustomReminderWizardOpen}
+      >
+        <div className="extension-custom-reminder-collapsible-inner">
+          <section
+            className="extension-custom-wizard"
+            role="region"
+            aria-labelledby="extension-custom-wizard-heading"
+          >
+            <header className="extension-custom-wizard-header">
+              <h2 id="extension-custom-wizard-heading">New custom reminder</h2>
+            </header>
+            <div className="extension-custom-wizard-body">
+              <div className="extension-custom-wizard-panel">
+                <h3>Details</h3>
+                {customReminderForm}
+                <div className="extension-custom-wizard-subsection">
+                  <h4>Remind me on:</h4>
+                  {reminderTimingControls}
+                </div>
+                <div className="extension-custom-wizard-subsection">
+                  <h4>Frequency</h4>
+                  <p>Choose how often this reminder repeats.</p>
+                  {recurrenceControls}
+                </div>
+                {reminderWindowControl}
+              </div>
+            </div>
+            <footer className="extension-custom-wizard-footer">
+              <button type="button" onClick={saveCustomReminder}>
+                Add Reminder
+              </button>
+            </footer>
+          </section>
+        </div>
       </div>
       <fieldset className="extension-nested-group extension-custom-reminder-management">
         <legend>Manage Custom Reminders</legend>
@@ -1458,49 +1505,6 @@ export function ExtensionOptions({
         </section>
       </form>
 
-      {isCustomReminderWizardOpen ? (
-        <div className="extension-wizard-backdrop" role="presentation">
-          <section
-            className="extension-custom-wizard"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="extension-custom-wizard-heading"
-          >
-            <header className="extension-custom-wizard-header">
-              <h2 id="extension-custom-wizard-heading">New custom reminder</h2>
-              <button
-                type="button"
-                className="extension-icon-button"
-                aria-label="Close custom reminder wizard"
-                onClick={closeCustomReminderWizard}
-              >
-                ×
-              </button>
-            </header>
-            <div className="extension-custom-wizard-body">
-              <div className="extension-custom-wizard-panel">
-                <h3>Details</h3>
-                {customReminderForm}
-                <div className="extension-custom-wizard-subsection">
-                  <h4>Remind me on:</h4>
-                  {reminderTimingControls}
-                </div>
-                <div className="extension-custom-wizard-subsection">
-                  <h4>Frequency</h4>
-                  <p>Choose how often this reminder repeats.</p>
-                  {recurrenceControls}
-                </div>
-                {reminderWindowControl}
-              </div>
-            </div>
-            <footer className="extension-custom-wizard-footer">
-              <button type="button" onClick={saveCustomReminder}>
-                Add Reminder
-              </button>
-            </footer>
-          </section>
-        </div>
-      ) : null}
     </main>
   );
 }

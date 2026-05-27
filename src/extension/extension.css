@@ -970,6 +970,7 @@ textarea:focus-visible {
 
   .extension-actions button,
   .extension-save-row button,
+  .extension-custom-reminder-collapsible,
   .extension-titlebar-action {
     transition: none;
   }
@@ -1572,26 +1573,50 @@ body {
   color: #ffffff;
 }
 
-.extension-wizard-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
+.extension-custom-reminder-collapsible {
   display: grid;
-  place-items: center;
-  background: rgba(10, 16, 13, 0.18);
-  padding: 24px;
+  grid-template-rows: 0fr;
+  margin-top: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    grid-template-rows 340ms cubic-bezier(0.22, 1, 0.36, 1),
+    margin-top 340ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms ease,
+    transform 340ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s linear 340ms;
+  visibility: hidden;
+}
+
+.extension-custom-reminder-collapsible[data-expanded="true"] {
+  grid-template-rows: 1fr;
+  margin-top: 16px;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    grid-template-rows 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    margin-top 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 260ms ease,
+    transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s;
+  visibility: visible;
+}
+
+.extension-custom-reminder-collapsible-inner {
+  min-height: 0;
+  overflow: hidden;
 }
 
 .extension-custom-wizard {
   display: flex;
   flex-direction: column;
-  width: min(100%, 1120px);
-  max-height: calc(100vh - 48px);
+  width: 100%;
+  max-height: none;
   overflow: hidden;
   border: 1px solid #d8ded8;
   border-radius: 10px;
   background: #ffffff;
-  box-shadow: 0 22px 52px rgba(20, 30, 24, 0.22);
+  box-shadow: 0 18px 40px rgba(20, 30, 24, 0.1);
 }
 
 .extension-custom-wizard-header,
@@ -1609,20 +1634,12 @@ body {
   font-size: 1.1rem;
 }
 
-.extension-icon-button {
-  width: 30px;
-  height: 30px;
-  border: 0;
-  background: transparent;
-  font-size: 1.4rem;
-}
-
 .extension-custom-wizard-body {
   display: grid;
   flex: 1 1 auto;
   grid-template-columns: minmax(0, 1fr);
-  min-height: min(470px, 58vh);
-  overflow: auto;
+  min-height: 0;
+  overflow: visible;
 }
 
 .extension-custom-wizard-panel {

@@ -1209,11 +1209,58 @@ export function SettingsScreen({
       <div className="settings-actions custom-reminder-actions">
         <button
           type="button"
-          aria-label="Add custom reminder"
-          onClick={openNewCustomReminderWizard}
+          aria-controls="custom-reminder-inline-form"
+          aria-expanded={isCustomReminderWizardOpen}
+          aria-label={
+            isCustomReminderWizardOpen ? "Cancel" : "Add custom reminder"
+          }
+          onClick={
+            isCustomReminderWizardOpen
+              ? closeCustomReminderWizard
+              : openNewCustomReminderWizard
+          }
         >
-          + Add custom reminder
+          {isCustomReminderWizardOpen ? "Cancel" : "+ Add custom reminder"}
         </button>
+      </div>
+      <div
+        id="custom-reminder-inline-form"
+        className="custom-reminder-collapsible"
+        data-expanded={isCustomReminderWizardOpen}
+        aria-hidden={!isCustomReminderWizardOpen}
+      >
+        <div className="custom-reminder-collapsible-inner">
+          <section
+            className="custom-wizard"
+            role="region"
+            aria-labelledby="custom-wizard-heading"
+          >
+            <header className="custom-wizard-header">
+              <h2 id="custom-wizard-heading">New custom reminder</h2>
+            </header>
+            <div className="custom-wizard-body">
+              <div className="custom-wizard-panel">
+                <h3>Details</h3>
+                {customReminderForm}
+                <div className="custom-wizard-subsection">
+                  <h4>Remind me on:</h4>
+                  {reminderTimingControls}
+                </div>
+                <div className="custom-wizard-subsection">
+                  <h4>Frequency</h4>
+                  <p>Choose how often this reminder repeats.</p>
+                  {recurrenceControls}
+                </div>
+                {reminderWindowControl}
+              </div>
+            </div>
+            <footer className="custom-wizard-footer">
+              <button type="button" onClick={saveCustomReminder}>
+                Add Reminder
+              </button>
+            </footer>
+          </section>
+        </div>
       </div>
       <fieldset className="settings-subgroup custom-reminder-management">
         <legend>Manage Custom Reminders</legend>
@@ -1559,49 +1606,6 @@ export function SettingsScreen({
         </form>
       </div>
 
-      {isCustomReminderWizardOpen ? (
-        <div className="custom-wizard-backdrop" role="presentation">
-          <section
-            className="custom-wizard"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="custom-wizard-heading"
-          >
-            <header className="custom-wizard-header">
-              <h2 id="custom-wizard-heading">New custom reminder</h2>
-              <button
-                type="button"
-                className="icon-button"
-                aria-label="Close custom reminder wizard"
-                onClick={closeCustomReminderWizard}
-              >
-                ×
-              </button>
-            </header>
-            <div className="custom-wizard-body">
-              <div className="custom-wizard-panel">
-                <h3>Details</h3>
-                {customReminderForm}
-                <div className="custom-wizard-subsection">
-                  <h4>Remind me on:</h4>
-                  {reminderTimingControls}
-                </div>
-                <div className="custom-wizard-subsection">
-                  <h4>Frequency</h4>
-                  <p>Choose how often this reminder repeats.</p>
-                  {recurrenceControls}
-                </div>
-                {reminderWindowControl}
-              </div>
-            </div>
-            <footer className="custom-wizard-footer">
-              <button type="button" onClick={saveCustomReminder}>
-                Add Reminder
-              </button>
-            </footer>
-          </section>
-        </div>
-      ) : null}
     </section>
   );
 }

@@ -444,11 +444,18 @@ describe("VitaLoop app shell", () => {
 
     render(<SettingsScreen service={service} reminderList={reminders} />);
 
-    openCustomReminderWizard();
+    expandCustomReminders();
+    expect(
+      screen.queryByRole("region", { name: "New custom reminder" }),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
+    expect(
+      screen.getByRole("button", { name: "Cancel" }).getAttribute("aria-expanded"),
+    ).toBe("true");
     expect(
       screen.getByRole("group", { name: "Manage Custom Reminders" }),
     ).toBeTruthy();
-    const wizard = screen.getByRole("dialog", {
+    const wizard = screen.getByRole("region", {
       name: "New custom reminder",
     });
     expect(within(wizard).getByRole("heading", { name: "Details" })).toBeTruthy();
@@ -485,29 +492,39 @@ describe("VitaLoop app shell", () => {
       expect.stringContaining("Daily-ish"),
     ]);
     expect(recurrenceLabels[1]).toContain("🔥 Popular");
-    fireEvent.click(within(wizard).getByRole("radio", { name: "Weekday Routines" }));
-    const weekdayTimeField = within(wizard)
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(
+      screen.queryByRole("region", { name: "New custom reminder" }),
+    ).toBeNull();
+    openCustomReminderWizard();
+    const reopenedWizard = screen.getByRole("region", {
+      name: "New custom reminder",
+    });
+    fireEvent.click(
+      within(reopenedWizard).getByRole("radio", { name: "Weekday Routines" }),
+    );
+    const weekdayTimeField = within(reopenedWizard)
       .getByLabelText("Time")
       .closest("label");
-    const weekdayGroup = within(wizard).getByRole("group", {
+    const weekdayGroup = within(reopenedWizard).getByRole("group", {
       name: "Repeat on",
     });
     expect(
       (weekdayTimeField?.compareDocumentPosition(weekdayGroup) ?? 0) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    fireEvent.click(within(wizard).getByRole("radio", { name: "Daily-ish" }));
-    expect(within(wizard).queryByLabelText("Date")).toBeNull();
-    expect(within(wizard).queryByLabelText("Time")).toBeNull();
-    expect(within(wizard).getByLabelText("Repeat every days")).toBeTruthy();
-    expect(within(wizard).getByLabelText("Time of day")).toBeTruthy();
+    fireEvent.click(within(reopenedWizard).getByRole("radio", { name: "Daily-ish" }));
+    expect(within(reopenedWizard).queryByLabelText("Date")).toBeNull();
+    expect(within(reopenedWizard).queryByLabelText("Time")).toBeNull();
+    expect(within(reopenedWizard).getByLabelText("Repeat every days")).toBeTruthy();
+    expect(within(reopenedWizard).getByLabelText("Time of day")).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/Title/), {
       target: { value: "Desk reset" },
     });
     fireEvent.change(screen.getByLabelText(/Message/), {
       target: { value: "Reset your desk and posture." },
     });
-    fireEvent.click(within(wizard).getByRole("radio", { name: "Micro Loops" }));
+    fireEvent.click(within(reopenedWizard).getByRole("radio", { name: "Micro Loops" }));
     fireEvent.change(screen.getByLabelText(/Custom reminder interval minutes/), {
       target: { value: "25" },
     });
