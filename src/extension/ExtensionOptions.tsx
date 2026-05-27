@@ -83,7 +83,7 @@ const customReminderScheduleOptions = [
     value: "dailyInterval",
     label: "Daily-ish",
     description:
-      "Set reminders on daily, weekly or monthly intervals... keep up with your car recurring maintenance or dental cleaning",
+      "Set loops on daily, weekly or monthly intervals... keep up with your car recurring maintenance or dental cleaning",
     isPopular: false,
   },
 ] as const;
@@ -707,7 +707,7 @@ export function ExtensionOptions({
     if (!reminder) {
       setStatus("test-unavailable");
       setTestNotificationMessage(
-        "No reminder copy is available for a test notification.",
+        "No loop copy is available for a test notification.",
       );
       return;
     }
@@ -757,7 +757,7 @@ export function ExtensionOptions({
           });
           setStatus("test-sent");
           setTestNotificationMessage(
-            `${reason} Fallback browser notification was sent from the Options page. If no macOS banner appeared, system or browser notification settings are suppressing it. Scheduled reminders still require extension notification support.`,
+            `${reason} Fallback browser notification was sent from the Options page. If no macOS banner appeared, system or browser notification settings are suppressing it. Scheduled loops still require extension notification support.`,
           );
         } catch (error) {
           showTestUnavailable(
@@ -955,7 +955,7 @@ export function ExtensionOptions({
 
   const optionsNavItems: Array<{ id: OptionsPanelId; label: string }> = [
     { id: "general", label: "General" },
-    { id: "reminders", label: "Reminders" },
+    { id: "reminders", label: "Loop" },
   ];
 
   const customReminderOnSchedule: OneTimeCustomReminderSchedule =
@@ -1099,7 +1099,7 @@ export function ExtensionOptions({
           <div className="extension-custom-interval-row">
             <input
               type="number"
-              aria-label="Custom reminder interval amount"
+              aria-label="Custom loop interval amount"
               min={customIntervalUnit === "hours" ? "1" : "5"}
               max={customIntervalUnit === "hours" ? "24" : "1440"}
               step="1"
@@ -1120,7 +1120,7 @@ export function ExtensionOptions({
               aria-invalid={Boolean(customDraftErrors.intervalMinutes)}
             />
             <select
-              aria-label="Custom reminder interval unit"
+              aria-label="Custom loop interval unit"
               value={customIntervalUnit}
               onChange={(event) =>
                 updateCustomIntervalUnit(
@@ -1151,7 +1151,7 @@ export function ExtensionOptions({
           <div className="extension-custom-interval-row">
             <input
               type="number"
-              aria-label="Custom reminder daily interval amount"
+              aria-label="Custom loop daily interval amount"
               min="1"
               max={getCustomDayIntervalUnitOption(
                 customDayIntervalUnit,
@@ -1174,7 +1174,7 @@ export function ExtensionOptions({
               aria-invalid={Boolean(customDraftErrors.dayIntervalDays)}
             />
             <select
-              aria-label="Custom reminder daily interval unit"
+              aria-label="Custom loop daily interval unit"
               value={customDayIntervalUnit}
               onChange={(event) =>
                 updateCustomDayIntervalUnit(
@@ -1269,7 +1269,7 @@ export function ExtensionOptions({
     <label className="extension-switch-row">
       <span>
         <strong>Respect quiet hours and workday</strong>
-        <small>Delay reminders to allowed times.</small>
+        <small>Delay loops to allowed times.</small>
       </span>
       <input
         type="checkbox"
@@ -1288,18 +1288,18 @@ export function ExtensionOptions({
   const proactiveReminderControls = (
     <section
       className="extension-reminder-preferences"
-      aria-label="Proactive reminder preferences"
+      aria-label="Proactive loop preferences"
     >
       <label className="extension-switch-row">
         <span>
-          <strong>Proactive reminders</strong>
+          <strong>Proactive loops</strong>
           <small>
-            Enable local proactive reminders throughout your day.
+            Enable local proactive loops throughout your day.
           </small>
         </span>
         <input
           type="checkbox"
-          aria-label="Enable proactive reminders"
+          aria-label="Enable proactive loops"
           checked={settings.proactiveRemindersEnabled}
           onChange={(event) =>
             updateSetting(
@@ -1310,9 +1310,9 @@ export function ExtensionOptions({
         />
       </label>
       <label className="extension-setting-row extension-field">
-        <span>Reminder intensity</span>
+        <span>Loop intensity</span>
         <select
-          aria-label="Reminder intensity"
+          aria-label="Loop intensity"
           value={settings.reminderIntensity}
           onChange={(event) =>
             updateSetting(
@@ -1336,7 +1336,7 @@ export function ExtensionOptions({
     <details className="extension-schedule-subsection extension-custom-subsection">
       <summary>
         <span>👨🏻‍💻 Working Hours</span>
-        <small>Set the workday window for reminders.</small>
+        <small>Set the workday window for loops.</small>
       </summary>
       <div className="extension-field-grid">
         <label className="extension-setting-row extension-field">
@@ -1366,8 +1366,8 @@ export function ExtensionOptions({
   const customRemindersSection = (
     <details className="extension-schedule-subsection extension-custom-panel extension-custom-subsection">
       <summary>
-        <span>Custom reminders</span>
-        <small>Create and manage your own reminders.</small>
+        <span>Custom loops</span>
+        <small>Create and manage your own loops.</small>
       </summary>
       <div className="extension-custom-header">
         <h3>Recommended for you</h3>
@@ -1380,7 +1380,7 @@ export function ExtensionOptions({
       </div>
       <div
         className="extension-recommendation-grid"
-        aria-label="Recommended custom reminders"
+        aria-label="Recommended custom loops"
       >
         {customRecommendations.map((recommendation) => (
           <button
@@ -1403,7 +1403,7 @@ export function ExtensionOptions({
           aria-controls="extension-custom-reminder-inline-form"
           aria-expanded={isCustomReminderWizardOpen}
           aria-label={
-            isCustomReminderWizardOpen ? "Cancel" : "Add custom reminder"
+            isCustomReminderWizardOpen ? "Cancel" : "Add custom loop"
           }
           onClick={
             isCustomReminderWizardOpen
@@ -1411,7 +1411,7 @@ export function ExtensionOptions({
               : openNewCustomReminderWizard
           }
         >
-          {isCustomReminderWizardOpen ? "Cancel" : "+ Add custom reminder"}
+          {isCustomReminderWizardOpen ? "Cancel" : "+ Add custom loop"}
         </button>
       </div>
       <div
@@ -1427,7 +1427,7 @@ export function ExtensionOptions({
             aria-labelledby="extension-custom-wizard-heading"
           >
             <header className="extension-custom-wizard-header">
-              <h2 id="extension-custom-wizard-heading">New custom reminder</h2>
+              <h2 id="extension-custom-wizard-heading">New custom loop</h2>
             </header>
             <div className="extension-custom-wizard-body">
               <div className="extension-custom-wizard-panel">
@@ -1439,7 +1439,7 @@ export function ExtensionOptions({
                 </div>
                 <div className="extension-custom-wizard-subsection">
                   <h4>Frequency</h4>
-                  <p>Choose how often this reminder repeats.</p>
+                  <p>Choose how often this loop repeats.</p>
                   {recurrenceControls}
                 </div>
                 {reminderWindowControl}
@@ -1447,16 +1447,16 @@ export function ExtensionOptions({
             </div>
             <footer className="extension-custom-wizard-footer">
               <button type="button" onClick={saveCustomReminder}>
-                Add Reminder
+                Add Loop
               </button>
             </footer>
           </section>
         </div>
       </div>
       <fieldset className="extension-nested-group extension-custom-reminder-management">
-        <legend>Manage Custom Reminders</legend>
+        <legend>Manage Custom Loops</legend>
         {settings.customReminders.length > 0 ? (
-          <ul className="extension-custom-list" aria-label="Custom reminders">
+          <ul className="extension-custom-list" aria-label="Custom loops">
             {settings.customReminders.map((reminder) => (
               <li key={reminder.id} aria-label={reminder.title}>
                 {pendingDeleteCustomReminderId === reminder.id ? (
@@ -1503,7 +1503,7 @@ export function ExtensionOptions({
             ))}
           </ul>
         ) : (
-          <p className="extension-options-footnote">No custom reminders yet.</p>
+          <p className="extension-options-footnote">No custom loops yet.</p>
         )}
       </fieldset>
     </details>
@@ -1668,12 +1668,12 @@ export function ExtensionOptions({
           ) : null}
           {status === "custom-error" && (
             <p className="extension-error" role="alert">
-              Check the highlighted custom reminder fields and try again.
+              Check the highlighted custom loop fields and try again.
             </p>
           )}
           {status === "custom-removed" && (
             <p className="extension-live-status" role="status" aria-live="polite">
-              Custom reminder removed. Save settings to apply.
+              Custom loop removed. Save settings to apply.
             </p>
           )}
         </section>

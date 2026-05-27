@@ -37,6 +37,6 @@ export function createReminderNotificationCopy(
     message:
       notificationMessages[reminder.id as BuiltinReminderId] ??
       reminder.description,
-    contextMessage: "Local browser reminder",
+    contextMessage: "Local browser loop",
   };
 }

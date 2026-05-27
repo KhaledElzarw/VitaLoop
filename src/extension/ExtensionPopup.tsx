@@ -75,10 +75,10 @@ function getTimingStatus(
 
 function getCountdownTimingLabel(countdown: string, reminderTime: string) {
   if (countdown === "Due now") {
-    return `Next reminder is due now at ${reminderTime}`;
+    return `Next loop is due now at ${reminderTime}`;
   }
 
-  return `Next reminder in ${countdown} at ${reminderTime}`;
+  return `Next loop in ${countdown} at ${reminderTime}`;
 }
 
 function ExtensionBrandMark() {
@@ -196,7 +196,7 @@ function ExtensionHeadsUp({
         </ul>
       ) : (
         <p className="extension-heads-up-empty">
-          No upcoming reminders right now.
+          No upcoming loops right now.
         </p>
       )}
     </section>
@@ -358,7 +358,7 @@ export function ExtensionPopup({
             <small>Completed</small>
           </div>
           <div className="extension-popup-next-copy">
-            <p>Next reminder</p>
+            <p>Next loop</p>
             <h2>{nextSchedule.reminder.title}</h2>
             <p
               className="extension-reminder-time"
@@ -404,11 +404,11 @@ export function ExtensionPopup({
             <small>Completed</small>
           </div>
           <div className="extension-popup-next-copy">
-            <p>Next reminder</p>
-            <h2>No reminders due right now.</h2>
+            <p>Next loop</p>
+            <h2>No loops due right now.</h2>
             {nextSnoozedReminder ? (
               <p>
-                Next reminder: {nextSnoozedReminder.reminder.title} at{" "}
+                Next loop: {nextSnoozedReminder.reminder.title} at{" "}
                 {formatReminderTime(nextSnoozedReminder.nextAt)}.
               </p>
             ) : (
@@ -439,7 +439,7 @@ export function ExtensionPopup({
         </ul>
       </section>
 
-      <div className="extension-popup-actions" aria-label="Reminder actions">
+      <div className="extension-popup-actions" aria-label="Loop actions">
         <button
           type="button"
           aria-label="Done"
@@ -453,7 +453,7 @@ export function ExtensionPopup({
           aria-label="Snooze"
           onClick={() => handleReminderAction("snooze")}
         >
-          <span>Pause reminders</span>
+          <span>Pause loops</span>
           <strong>30 min⌄</strong>
         </button>
         <button
@@ -469,15 +469,15 @@ export function ExtensionPopup({
       </div>
       <p
         className="extension-popup-hidden-status"
-        aria-label="Proactive reminder status"
+        aria-label="Proactive loop status"
       >
         <strong>
           {settings.proactiveRemindersEnabled ? "Enabled" : "Disabled"}
         </strong>
         <span>
           {settings.proactiveRemindersEnabled
-            ? "Proactive reminders are enabled."
-            : "Enable proactive reminders in Options to use local browser notifications."}
+            ? "Proactive loops are enabled."
+            : "Enable proactive loops in Options to use local browser notifications."}
         </span>
       </p>
 

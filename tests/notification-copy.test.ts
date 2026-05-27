@@ -26,7 +26,7 @@ describe("notification copy", () => {
 
       expect(copy.title).toBe(`VitaLoop: ${reminder.title}`);
       expect(copy.message.length).toBeGreaterThan(0);
-      expect(copy.contextMessage).toBe("Local browser reminder");
+      expect(copy.contextMessage).toBe("Local browser loop");
     }
   });
 
@@ -65,7 +65,7 @@ describe("notification copy", () => {
     expect(copy).toMatchObject({
       title: "VitaLoop: Desk reset",
       message: "Reset your desk and posture.",
-      contextMessage: "Local browser reminder",
+      contextMessage: "Local browser loop",
     });
   });
 
