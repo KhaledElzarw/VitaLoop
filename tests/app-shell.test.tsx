@@ -403,7 +403,7 @@ describe("VitaLoop app shell", () => {
     ).toBeNull();
 
     fireEvent.change(screen.getByLabelText(/Title/), {
-      target: { value: "A".repeat(33) },
+      target: { value: "A".repeat(30) },
     });
     const warningLimit = screen.getByText(
       "Maximum limit of characters is 33/48",
@@ -414,14 +414,14 @@ describe("VitaLoop app shell", () => {
     );
 
     fireEvent.change(screen.getByLabelText(/Title/), {
-      target: { value: "A".repeat(38) },
+      target: { value: "A".repeat(35) },
     });
     const nearLimit = screen.getByText("Maximum limit of characters is 38/48");
 
     expect(nearLimit.className).toContain("character-limit-hint-danger");
 
     fireEvent.change(screen.getByLabelText(/Title/), {
-      target: { value: "A".repeat(32) },
+      target: { value: "A".repeat(29) },
     });
     expect(
       screen.queryByText("Maximum limit of characters is 32/48"),
@@ -505,6 +505,16 @@ describe("VitaLoop app shell", () => {
     const wizard = screen.getByRole("region", {
       name: "New custom reminder",
     });
+    const emojiSelect = within(wizard).getByLabelText(
+      "Custom reminder emoji",
+    ) as HTMLSelectElement;
+    const titleInput = within(wizard).getByLabelText(/Title/) as HTMLInputElement;
+
+    expect(emojiSelect.value).toBe("📝");
+    expect(
+      emojiSelect.compareDocumentPosition(titleInput) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(within(wizard).getByRole("heading", { name: "Details" })).toBeTruthy();
     expect(within(wizard).getByRole("button", { name: "Add Reminder" })).toBeTruthy();
     expect(within(wizard).queryByRole("button", { name: "Back" })).toBeNull();
@@ -589,6 +599,9 @@ describe("VitaLoop app shell", () => {
     fireEvent.change(screen.getByLabelText(/Title/), {
       target: { value: "Desk reset" },
     });
+    fireEvent.change(screen.getByLabelText("Custom reminder emoji"), {
+      target: { value: "🛒" },
+    });
     fireEvent.change(screen.getByLabelText(/Message/), {
       target: { value: "Reset your desk and posture." },
     });
@@ -605,7 +618,7 @@ describe("VitaLoop app shell", () => {
     });
     saveCustomReminderFromWizard();
 
-    expect(screen.getByLabelText("Desk reset")).toBeTruthy();
+    expect(screen.getByLabelText("🛒 Desk reset")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
@@ -614,7 +627,7 @@ describe("VitaLoop app shell", () => {
     expect(savedSettings.customReminders).toEqual([
       expect.objectContaining({
         id: expect.stringMatching(/^custom-/),
-        title: "Desk reset",
+        title: "🛒 Desk reset",
         description: "Reset your desk and posture.",
         schedule: {
           type: "interval",
@@ -627,21 +640,29 @@ describe("VitaLoop app shell", () => {
       savedSettings.customReminders[0].id,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Edit Desk reset" }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit 🛒 Desk reset" }));
+    expect(screen.getByLabelText(/Title/)).toHaveProperty(
+      "value",
+      "Desk reset",
+    );
+    expect(screen.getByLabelText("Custom reminder emoji")).toHaveProperty(
+      "value",
+      "🛒",
+    );
     fireEvent.change(screen.getByLabelText(/Title/), {
       target: { value: "Desk walk" },
     });
     saveCustomReminderFromWizard();
 
-    expect(screen.getByLabelText("Desk walk")).toBeTruthy();
+    expect(screen.getByLabelText("🛒 Desk walk")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete Desk walk" }));
-    expect(screen.getByText("Delete Desk walk?")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Delete 🛒 Desk walk" }));
+    expect(screen.getByText("Delete 🛒 Desk walk?")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(screen.getByLabelText("Desk walk")).toBeTruthy();
+    expect(screen.getByLabelText("🛒 Desk walk")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete Desk walk" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete 🛒 Desk walk" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm delete" }));
     expect(screen.getByText("No custom reminders yet.")).toBeTruthy();
     expect(screen.getByText("Custom reminder removed. Save settings to apply.")).toBeTruthy();
@@ -669,7 +690,7 @@ describe("VitaLoop app shell", () => {
     const savedSettings = service.saveSettings.mock.calls[0][0];
 
     expect(savedSettings.customReminders[0]).toMatchObject({
-      title: "Water plants",
+      title: "📝 Water plants",
       schedule: {
         type: "weekdayInterval",
         weekdays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
@@ -711,7 +732,7 @@ describe("VitaLoop app shell", () => {
     const savedSettings = service.saveSettings.mock.calls[0][0];
 
     expect(savedSettings.customReminders[0]).toMatchObject({
-      title: "Plan review",
+      title: "📝 Plan review",
       schedule: {
         type: "dailyInterval",
         dayIntervalDays: 14,

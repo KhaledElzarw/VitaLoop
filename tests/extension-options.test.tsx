@@ -227,7 +227,7 @@ describe("ExtensionOptions", () => {
     expect(screen.queryByText("0/48")).toBeNull();
 
     fireEvent.change(screen.getByLabelText(/Title/), {
-      target: { value: "A".repeat(33) },
+      target: { value: "A".repeat(30) },
     });
     const warningLimit = screen.getByText(
       "Maximum limit of characters is 33/48",
@@ -238,7 +238,7 @@ describe("ExtensionOptions", () => {
     );
 
     fireEvent.change(screen.getByLabelText(/Title/), {
-      target: { value: "A".repeat(38) },
+      target: { value: "A".repeat(35) },
     });
 
     expect(
@@ -246,7 +246,7 @@ describe("ExtensionOptions", () => {
     ).toContain("extension-character-limit-hint-danger");
 
     fireEvent.change(screen.getByLabelText(/Title/), {
-      target: { value: "A".repeat(32) },
+      target: { value: "A".repeat(29) },
     });
 
     expect(
@@ -277,6 +277,16 @@ describe("ExtensionOptions", () => {
     const wizard = screen.getByRole("region", {
       name: "New custom loop",
     });
+    const emojiSelect = within(wizard).getByLabelText(
+      "Custom loop emoji",
+    ) as HTMLSelectElement;
+    const titleInput = within(wizard).getByLabelText(/Title/) as HTMLInputElement;
+
+    expect(emojiSelect.value).toBe("📝");
+    expect(
+      emojiSelect.compareDocumentPosition(titleInput) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(within(wizard).getByRole("heading", { name: "Details" })).toBeTruthy();
     expect(within(wizard).getByRole("button", { name: "Add Loop" })).toBeTruthy();
     expect(within(wizard).queryByRole("button", { name: "Back" })).toBeNull();
@@ -361,6 +371,9 @@ describe("ExtensionOptions", () => {
     fireEvent.change(screen.getByLabelText(/Title/), {
       target: { value: "Desk reset" },
     });
+    fireEvent.change(screen.getByLabelText("Custom loop emoji"), {
+      target: { value: "🛒" },
+    });
     fireEvent.change(screen.getByLabelText(/Message/), {
       target: { value: "Reset your desk and posture." },
     });
@@ -377,7 +390,7 @@ describe("ExtensionOptions", () => {
     });
     saveCustomReminderFromWizard();
 
-    expect(screen.getByLabelText("Desk reset")).toBeTruthy();
+    expect(screen.getByLabelText("🛒 Desk reset")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
@@ -390,7 +403,7 @@ describe("ExtensionOptions", () => {
     expect(savedSettings.customReminders).toEqual([
       expect.objectContaining({
         id: expect.stringMatching(/^custom-/),
-        title: "Desk reset",
+        title: "🛒 Desk reset",
         description: "Reset your desk and posture.",
         schedule: {
           type: "interval",
@@ -403,21 +416,29 @@ describe("ExtensionOptions", () => {
       savedSettings.customReminders[0].id,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Edit Desk reset" }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit 🛒 Desk reset" }));
+    expect(screen.getByLabelText(/Title/)).toHaveProperty(
+      "value",
+      "Desk reset",
+    );
+    expect(screen.getByLabelText("Custom loop emoji")).toHaveProperty(
+      "value",
+      "🛒",
+    );
     fireEvent.change(screen.getByLabelText(/Title/), {
       target: { value: "Desk walk" },
     });
     saveCustomReminderFromWizard();
 
-    expect(screen.getByLabelText("Desk walk")).toBeTruthy();
+    expect(screen.getByLabelText("🛒 Desk walk")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete Desk walk" }));
-    expect(screen.getByText("Delete Desk walk?")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Delete 🛒 Desk walk" }));
+    expect(screen.getByText("Delete 🛒 Desk walk?")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(screen.getByLabelText("Desk walk")).toBeTruthy();
+    expect(screen.getByLabelText("🛒 Desk walk")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete Desk walk" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete 🛒 Desk walk" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm delete" }));
     expect(screen.getByText("No custom loops yet.")).toBeTruthy();
     expect(
@@ -457,7 +478,7 @@ describe("ExtensionOptions", () => {
       expect(storage.saveSettings).toHaveBeenCalledTimes(1);
     });
     expect(storage.saveSettings.mock.calls[0][0].customReminders[0]).toMatchObject({
-      title: "Appointment prep",
+      title: "📝 Appointment prep",
       schedule: {
         type: "oneTime",
         date: "2026-12-31",
@@ -506,7 +527,7 @@ describe("ExtensionOptions", () => {
     });
 
     expect(storage.saveSettings.mock.calls[0][0].customReminders[0]).toMatchObject({
-      title: "Plan review",
+      title: "📝 Plan review",
       schedule: {
         type: "dailyInterval",
         dayIntervalDays: 14,

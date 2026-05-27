@@ -2,19 +2,24 @@ import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { reminders as defaultReminders } from "../data/reminders";
 import {
   CUSTOM_REMINDER_CATEGORY_MAX_LENGTH,
+  CUSTOM_REMINDER_EMOJI_OPTIONS,
   CUSTOM_REMINDER_MESSAGE_MAX_LENGTH,
   CUSTOM_REMINDER_TITLE_MAX_LENGTH,
   createCustomReminderDefinition,
   createDefaultCustomReminderSchedule,
+  DEFAULT_CUSTOM_REMINDER_EMOJI,
   defaultCustomReminderDraft,
   deleteCustomReminderSettingsFor,
   formatCustomReminderSchedule,
+  formatCustomReminderTitleWithEmoji,
   formatDateInputValue,
   getCustomReminderDraft,
   getCustomReminderDraftFromRecommendation,
   getCustomReminderCharacterLimitStatus,
+  getCustomReminderTitleEmoji,
   getRecommendedCustomReminders,
   getReminderListWithCustomReminders,
+  stripCustomReminderTitleEmoji,
   upsertCustomReminderSettingsFor,
   validateCustomReminderDraft,
   weekdayLabels,
@@ -274,6 +279,9 @@ export function ExtensionOptions({
   const [customDraft, setCustomDraft] = useState<CustomReminderDraft>({
     ...defaultCustomReminderDraft,
   });
+  const [customDraftEmoji, setCustomDraftEmoji] = useState<string>(
+    DEFAULT_CUSTOM_REMINDER_EMOJI,
+  );
   const [isCustomReminderWizardOpen, setIsCustomReminderWizardOpen] =
     useState(false);
   const [customIntervalUnit, setCustomIntervalUnit] =
@@ -294,8 +302,16 @@ export function ExtensionOptions({
     settings,
   );
   const reminderCategories = reminderList;
-  const titleLimitStatus = getCustomReminderCharacterLimitStatus(
+  const customDraftTitleWithEmoji = formatCustomReminderTitleWithEmoji(
+    customDraftEmoji,
     customDraft.title,
+  );
+  const customDraftTitleInputMaxLength = Math.max(
+    1,
+    CUSTOM_REMINDER_TITLE_MAX_LENGTH - `${customDraftEmoji} `.length,
+  );
+  const titleLimitStatus = getCustomReminderCharacterLimitStatus(
+    customDraftTitleWithEmoji,
     CUSTOM_REMINDER_TITLE_MAX_LENGTH,
   );
   const categoryLimitStatus = getCustomReminderCharacterLimitStatus(
@@ -552,7 +568,14 @@ export function ExtensionOptions({
   function applyCustomRecommendation(
     recommendation: (typeof customRecommendations)[number],
   ) {
-    setCustomDraft(getCustomReminderDraftFromRecommendation(recommendation));
+    const recommendationDraft =
+      getCustomReminderDraftFromRecommendation(recommendation);
+
+    setCustomDraft({
+      ...recommendationDraft,
+      title: stripCustomReminderTitleEmoji(recommendationDraft.title),
+    });
+    setCustomDraftEmoji(getCustomReminderTitleEmoji(recommendationDraft.title));
     setCustomIntervalUnit("minutes");
     setCustomDayIntervalUnit("days");
     setCustomDraftErrors({});
@@ -564,6 +587,7 @@ export function ExtensionOptions({
 
   function resetCustomDraft() {
     setCustomDraft({ ...defaultCustomReminderDraft });
+    setCustomDraftEmoji(DEFAULT_CUSTOM_REMINDER_EMOJI);
     setCustomIntervalUnit("minutes");
     setCustomDayIntervalUnit("days");
     setCustomRecommendations(getRecommendedCustomReminders());
@@ -584,7 +608,14 @@ export function ExtensionOptions({
   }
 
   function saveCustomReminder() {
-    const validationResult = validateCustomReminderDraft(customDraft);
+    const draftWithEmoji = {
+      ...customDraft,
+      title: formatCustomReminderTitleWithEmoji(
+        customDraftEmoji,
+        customDraft.title,
+      ),
+    };
+    const validationResult = validateCustomReminderDraft(draftWithEmoji);
 
     if (!validationResult.success) {
       setCustomDraftErrors(validationResult.errors);
@@ -594,7 +625,7 @@ export function ExtensionOptions({
 
     setSettings((currentSettings) => {
       const existingReminder = currentSettings.customReminders.find(
-        (reminder) => reminder.id === customDraft.id,
+        (reminder) => reminder.id === draftWithEmoji.id,
       );
       const reminder = createCustomReminderDefinition({
         draft: validationResult.draft,
@@ -606,7 +637,7 @@ export function ExtensionOptions({
       return upsertCustomReminderSettingsFor({
         settings: currentSettings,
         reminder,
-        enabled: customDraft.enabled,
+        enabled: draftWithEmoji.enabled,
       });
     });
     resetCustomDraft();
@@ -625,12 +656,16 @@ export function ExtensionOptions({
       return;
     }
 
-    setCustomDraft(
-      getCustomReminderDraft(
-        reminder,
-        settings.preferredReminderCategories.includes(reminder.id),
-      ),
+    const reminderDraft = getCustomReminderDraft(
+      reminder,
+      settings.preferredReminderCategories.includes(reminder.id),
     );
+
+    setCustomDraft({
+      ...reminderDraft,
+      title: stripCustomReminderTitleEmoji(reminderDraft.title),
+    });
+    setCustomDraftEmoji(getCustomReminderTitleEmoji(reminderDraft.title));
     setCustomIntervalUnit("minutes");
     setCustomDayIntervalUnit("days");
     setCustomDraftErrors({});
@@ -968,15 +1003,34 @@ export function ExtensionOptions({
   const customReminderForm = (
     <>
       <div className="extension-field-grid">
-        <label className="extension-setting-row extension-field">
-          <span>Title</span>
+        <div className="extension-setting-row extension-field extension-custom-title-field">
+          <label
+            id="extension-custom-reminder-title-label"
+            htmlFor="extension-custom-reminder-title"
+          >
+            Title
+          </label>
+          <select
+            aria-label="Custom loop emoji"
+            className="extension-custom-emoji-select"
+            value={customDraftEmoji}
+            onChange={(event) => setCustomDraftEmoji(event.currentTarget.value)}
+          >
+            {CUSTOM_REMINDER_EMOJI_OPTIONS.map((emoji) => (
+              <option key={emoji} value={emoji}>
+                {emoji}
+              </option>
+            ))}
+          </select>
           <input
+            id="extension-custom-reminder-title"
             type="text"
-            maxLength={CUSTOM_REMINDER_TITLE_MAX_LENGTH}
+            maxLength={customDraftTitleInputMaxLength}
             value={customDraft.title}
             onChange={(event) =>
               updateCustomDraft("title", event.currentTarget.value)
             }
+            aria-labelledby="extension-custom-reminder-title-label"
             aria-describedby={titleDescriptionIds || undefined}
             aria-invalid={Boolean(customDraftErrors.title)}
           />
@@ -996,7 +1050,7 @@ export function ExtensionOptions({
               {customDraftErrors.title}
             </small>
           ) : null}
-        </label>
+        </div>
         <label className="extension-setting-row extension-field">
           <span>Category</span>
           <input

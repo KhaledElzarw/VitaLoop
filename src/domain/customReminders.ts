@@ -21,6 +21,19 @@ export const CUSTOM_REMINDER_MESSAGE_MAX_LENGTH = 120;
 export const CUSTOM_REMINDER_CATEGORY_MAX_LENGTH = 32;
 export const CUSTOM_REMINDER_CHARACTER_LIMIT_WARNING_THRESHOLD = 15;
 export const CUSTOM_REMINDER_CHARACTER_LIMIT_NEAR_THRESHOLD = 10;
+export const CUSTOM_REMINDER_EMOJI_OPTIONS = [
+  "📝",
+  "⭐",
+  "📌",
+  "📅",
+  "✅",
+  "🛒",
+  "💸",
+  "🧹",
+  "🚗",
+  "🦷",
+] as const;
+export const DEFAULT_CUSTOM_REMINDER_EMOJI = CUSTOM_REMINDER_EMOJI_OPTIONS[0];
 
 export type CustomReminderDraftField =
   | "title"
@@ -84,6 +97,44 @@ export function getCustomReminderCharacterLimitStatus(
         ? "near-limit"
         : "warning",
   };
+}
+
+export function stripCustomReminderTitleEmoji(title: string) {
+  const trimmedTitle = title.trimStart();
+
+  for (const emoji of CUSTOM_REMINDER_EMOJI_OPTIONS) {
+    if (trimmedTitle === emoji) {
+      return "";
+    }
+
+    if (trimmedTitle.startsWith(`${emoji} `)) {
+      return trimmedTitle.slice(emoji.length).trimStart();
+    }
+  }
+
+  return trimmedTitle;
+}
+
+export function getCustomReminderTitleEmoji(title: string) {
+  const trimmedTitle = title.trimStart();
+
+  return (
+    CUSTOM_REMINDER_EMOJI_OPTIONS.find(
+      (emoji) => trimmedTitle === emoji || trimmedTitle.startsWith(`${emoji} `),
+    ) ?? DEFAULT_CUSTOM_REMINDER_EMOJI
+  );
+}
+
+export function formatCustomReminderTitleWithEmoji(
+  emoji: string,
+  title: string,
+) {
+  const titleWithoutEmoji = stripCustomReminderTitleEmoji(title).trim();
+  const normalizedEmoji =
+    CUSTOM_REMINDER_EMOJI_OPTIONS.find((option) => option === emoji) ??
+    DEFAULT_CUSTOM_REMINDER_EMOJI;
+
+  return titleWithoutEmoji ? `${normalizedEmoji} ${titleWithoutEmoji}` : "";
 }
 
 export function formatDateInputValue(date: Date) {
