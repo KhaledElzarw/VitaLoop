@@ -89,35 +89,11 @@ export const activityFunFactsByReminderId = {
     "A breathing reset works best when it feels comfortable, not forced.",
     "Pairing a breath with a hand on your chest or belly can make the cue easier to notice.",
   ],
-  "sleep-routine": [
-    "A consistent sleep and wake time helps your body learn when to wind down.",
-    "Turning off devices at least 30 minutes before bed is a CDC sleep-hygiene tip.",
-    "A small routine tells your brain the day is closing, even when the routine is simple.",
-    "Cooler, darker, quieter rooms are commonly recommended for better sleep hygiene.",
-    "Caffeine late in the day can linger, so an evening check-in can protect bedtime.",
-    "Bright screens close to bed can make it harder for your body to shift into night mode.",
-    "Preparing tomorrow's first step can keep bedtime from becoming planning time.",
-    "A repeatable wind-down works better when it is realistic on busy nights.",
-    "Keeping weekends close to your usual schedule can make Mondays feel less jarring.",
-    "Gentle evening cues work best when they feel like permission, not pressure.",
-  ],
-  "mood-energy": [
-    "A quick mood label can turn a vague feeling into useful information.",
-    "Physical activity is linked with less anxiety and better mood for many adults.",
-    "Energy often changes with sleep, food, hydration, movement, and stress all at once.",
-    "Naming one need, like water, quiet, or movement, makes the next step smaller.",
-    "A midday check-in can catch low energy before it drives your whole afternoon.",
-    "Mood tracking is most useful when it stays practical and judgment-free.",
-    "A short walk, stretch, or breath can be a tiny experiment when energy dips.",
-    "Noticing patterns over time can help you plan kinder work blocks.",
-    "Low energy is data, not a flaw; it may be asking for a simpler next step.",
-    "Checking in before switching tasks can help you choose the right pace.",
-  ],
-} satisfies Record<BuiltinReminderId, TenActivityFacts>;
+} satisfies Partial<Record<BuiltinReminderId, TenActivityFacts>>;
 
 function hasActivityFunFacts(
   reminderId: ReminderDefinition["id"],
-): reminderId is BuiltinReminderId {
+): reminderId is keyof typeof activityFunFactsByReminderId {
   return reminderId in activityFunFactsByReminderId;
 }
 
