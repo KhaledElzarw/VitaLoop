@@ -39,7 +39,20 @@ afterEach(() => {
 });
 
 function expandCustomReminders() {
-  fireEvent.click(screen.getByRole("checkbox", { name: "Custom reminders" }));
+  fireEvent.click(screen.getByRole("button", { name: "Custom reminders" }));
+}
+
+function openCustomReminderWizard(step: "Details" | "Recurrence" | "Review") {
+  expandCustomReminders();
+  fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
+  fireEvent.click(screen.getByRole("button", { name: step }));
+}
+
+function saveCustomReminderFromWizard() {
+  fireEvent.click(screen.getByRole("button", { name: "Review" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Save custom reminder" }),
+  );
 }
 
 describe("ExtensionOptions", () => {
@@ -47,23 +60,30 @@ describe("ExtensionOptions", () => {
     render(<ExtensionOptions storage={createStorageMock()} />);
 
     expect(screen.getByLabelText("Enable proactive reminders")).toBeTruthy();
-    expect(screen.getByLabelText("Quiet hours enabled")).toBeTruthy();
-    expect(screen.getByLabelText("Quiet hours start")).toBeTruthy();
-    expect(screen.getByLabelText("Quiet hours end")).toBeTruthy();
     expect(screen.getByRole("radio", { name: "Balanced" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "About" })).toBeNull();
+    expect(screen.getByText("👨🏻‍💻 Working Hours")).toBeTruthy();
+    expect(
+      screen.getByText("👨🏻‍💻 Working Hours").closest("details")?.hasAttribute("open"),
+    ).toBe(false);
+    expect(screen.queryByRole("button", { name: "Schedule" })).toBeNull();
+    fireEvent.click(screen.getByText("👨🏻‍💻 Working Hours"));
+    expect(
+      screen.getByText("👨🏻‍💻 Working Hours").closest("details")?.hasAttribute("open"),
+    ).toBe(true);
     expect(screen.getByLabelText("Workday start")).toBeTruthy();
     expect(screen.getByLabelText("Workday end")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Notifications" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Appearance" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Data & privacy" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
     expect(screen.getByLabelText("Hydration")).toBeTruthy();
     expect(screen.getByLabelText("Eye strain")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "General" }));
     expect(
       screen.getByRole("button", { name: "Send test notification" }),
     ).toBeTruthy();
-    expect(
-      screen.getByText(
-        "VitaLoop uses local browser alarms and notifications for proactive reminders in Chromium-based browsers. Notification permission is needed for this local extension feature.",
-      ),
-    ).toBeTruthy();
-    expect(screen.getByText("Proactive reminders are disabled.")).toBeTruthy();
+    expect(screen.getByText("Local status")).toBeTruthy();
   });
 
   it("saves settings through the storage adapter", async () => {
@@ -73,10 +93,11 @@ describe("ExtensionOptions", () => {
 
     fireEvent.click(screen.getByLabelText("Enable proactive reminders"));
     fireEvent.click(screen.getByRole("radio", { name: "Active" }));
+    fireEvent.click(screen.getByText("👨🏻‍💻 Working Hours"));
     fireEvent.change(screen.getByLabelText("Workday start"), {
       target: { value: "09:00" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
     await waitFor(() => {
       expect(storage.saveSettings).toHaveBeenCalledTimes(1);
@@ -95,11 +116,13 @@ describe("ExtensionOptions", () => {
     render(<ExtensionOptions storage={storage} />);
 
     await waitFor(() => {
-      expect(screen.getByText("Proactive reminders are disabled.")).toBeTruthy();
+      expect(screen.getByRole("heading", { name: "Options" })).toBeTruthy();
     });
 
-    expandCustomReminders();
-    fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
+    openCustomReminderWizard("Review");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save custom reminder" }),
+    );
 
     expect(screen.getByText("Enter a title.")).toBeTruthy();
     expect(screen.getByText("Enter a message.")).toBeTruthy();
@@ -110,10 +133,11 @@ describe("ExtensionOptions", () => {
     fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
       target: { value: "Reset your desk and posture." },
     });
+    fireEvent.click(screen.getByRole("button", { name: "Recurrence" }));
     fireEvent.change(screen.getByLabelText(/Custom reminder interval minutes/), {
       target: { value: "4.5" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
+    saveCustomReminderFromWizard();
 
     expect(screen.getByText("Use a whole number from 5 to 1440.")).toBeTruthy();
     expect(screen.queryByLabelText("Desk reset")).toBeNull();
@@ -126,11 +150,11 @@ describe("ExtensionOptions", () => {
     render(<ExtensionOptions storage={storage} />);
 
     await waitFor(() => {
-      expect(screen.getByText("Proactive reminders are disabled.")).toBeTruthy();
+      expect(screen.getByRole("heading", { name: "Options" })).toBeTruthy();
     });
 
     expect(screen.queryByLabelText(/Custom reminder title/)).toBeNull();
-    expandCustomReminders();
+    openCustomReminderWizard("Details");
     expect(screen.queryByText("0/48")).toBeNull();
 
     fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
@@ -167,27 +191,30 @@ describe("ExtensionOptions", () => {
     render(<ExtensionOptions storage={storage} />);
 
     await waitFor(() => {
-      expect(screen.getByText("Proactive reminders are disabled.")).toBeTruthy();
+      expect(screen.getByRole("heading", { name: "Options" })).toBeTruthy();
     });
 
-    expandCustomReminders();
+    openCustomReminderWizard("Details");
+    fireEvent.click(screen.getByRole("button", { name: "Custom reminders" }));
     expect(
       screen.getByRole("group", { name: "Manage Custom Reminders" }),
     ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Details" }));
     fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
       target: { value: "Desk reset" },
     });
     fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
       target: { value: "Reset your desk and posture." },
     });
+    fireEvent.click(screen.getByRole("button", { name: "Recurrence" }));
     fireEvent.change(screen.getByLabelText(/Custom reminder interval minutes/), {
       target: { value: "25" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
+    saveCustomReminderFromWizard();
 
     expect(screen.getByLabelText("Desk reset")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
     await waitFor(() => {
       expect(storage.saveSettings).toHaveBeenCalledTimes(1);
@@ -211,23 +238,22 @@ describe("ExtensionOptions", () => {
       savedSettings.customReminders[0].id,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit Desk reset" }));
+    fireEvent.click(screen.getByRole("button", { name: "Details" }));
     fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
       target: { value: "Desk walk" },
     });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Update custom reminder" }),
-    );
+    saveCustomReminderFromWizard();
 
     expect(screen.getByLabelText("Desk walk")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete Desk walk" }));
     expect(screen.getByText("Delete Desk walk?")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(screen.getByLabelText("Desk walk")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete Desk walk" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm delete" }));
     expect(screen.getByText("No custom reminders yet.")).toBeTruthy();
     expect(
@@ -241,16 +267,17 @@ describe("ExtensionOptions", () => {
     render(<ExtensionOptions storage={storage} />);
 
     await waitFor(() => {
-      expect(screen.getByText("Proactive reminders are disabled.")).toBeTruthy();
+      expect(screen.getByRole("heading", { name: "Options" })).toBeTruthy();
     });
 
-    expandCustomReminders();
+    openCustomReminderWizard("Details");
     fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
       target: { value: "Appointment prep" },
     });
     fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
       target: { value: "Gather appointment notes." },
     });
+    fireEvent.click(screen.getByRole("button", { name: "Recurrence" }));
     fireEvent.click(screen.getByRole("radio", { name: "Date and time" }));
     fireEvent.change(screen.getByLabelText("Reminder date"), {
       target: { value: "2026-12-31" },
@@ -261,8 +288,8 @@ describe("ExtensionOptions", () => {
     fireEvent.click(
       screen.getByLabelText("Respect quiet hours and workday"),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    saveCustomReminderFromWizard();
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
     await waitFor(() => {
       expect(storage.saveSettings).toHaveBeenCalledTimes(1);
@@ -308,6 +335,63 @@ describe("ExtensionOptions", () => {
     ).toBe(true);
     expect(screen.getByRole("status").textContent).toContain(
       "Defaults restored.",
+    );
+  });
+
+  it("resets only today's progress through the storage adapter", async () => {
+    const todayEntry = {
+      id: "today-entry",
+      reminderId: "eye-strain",
+      reminderTitle: "Eye strain",
+      actionType: "done",
+      occurredAt: new Date(2026, 4, 15, 9, 0),
+    } satisfies ExtensionSettings["reminderHistory"][number];
+    const olderEntry = {
+      id: "older-entry",
+      reminderId: "hydration",
+      reminderTitle: "Hydration",
+      actionType: "snooze",
+      occurredAt: new Date(2026, 4, 14, 23, 30),
+      snoozedUntil: new Date(2026, 4, 15, 0, 0),
+    } satisfies ExtensionSettings["reminderHistory"][number];
+    const storage = createStorageMock({
+      ...getDefaultExtensionSettings(),
+      proactiveRemindersEnabled: true,
+      snoozedUntilByReminderId: {
+        "eye-strain": new Date(2026, 4, 15, 10, 15),
+      },
+      reminderHistory: [todayEntry, olderEntry],
+    });
+
+    render(
+      <ExtensionOptions
+        storage={storage}
+        currentDate={new Date(2026, 4, 15, 12, 0)}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(
+        (screen.getByLabelText("Enable proactive reminders") as HTMLInputElement)
+          .checked,
+      ).toBe(true);
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Reset today's progress" }),
+    );
+
+    await waitFor(() => {
+      expect(storage.saveSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          proactiveRemindersEnabled: true,
+          snoozedUntilByReminderId: {},
+          reminderHistory: [olderEntry],
+        }),
+      );
+    });
+    expect(screen.getByRole("status").textContent).toContain(
+      "Today's progress reset.",
     );
   });
 

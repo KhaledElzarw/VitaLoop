@@ -336,13 +336,12 @@ input:focus-visible {
   pointer-events: none;
 }
 
-.extension-activity-icon img {
+.extension-activity-icon-glyph {
   position: relative;
   z-index: 1;
   display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+  font-size: 1.8rem;
+  line-height: 1;
 }
 
 .extension-activity-icon-hydration {
@@ -943,7 +942,7 @@ input:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .extension-activity-icon,
   .extension-activity-icon::after,
-  .extension-activity-icon img {
+  .extension-activity-icon-glyph {
     animation: none !important;
     filter: none !important;
     transform: none !important;
@@ -959,5 +958,832 @@ input:focus-visible {
   .extension-save-row button:hover,
   .extension-titlebar-action:hover {
     transform: none;
+  }
+}
+
+/* VitaLoop mockup implementation */
+:root {
+  --extension-bg: #f6f7f5;
+  --extension-surface: #ffffff;
+  --extension-surface-elevated: #ffffff;
+  --extension-border: #dce2dd;
+  --extension-text: #121a16;
+  --extension-muted: #657169;
+  --extension-accent: #2f7047;
+  --extension-accent-strong: #184f3d;
+  --extension-accent-soft: #eaf2ec;
+  --extension-focus-ring: #2f7047;
+  --extension-shadow: 0 16px 36px rgba(24, 38, 30, 0.16);
+}
+
+body {
+  background: #f6f7f5;
+}
+
+.extension-popup-mockup {
+  width: 372px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #cfd6d0;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 16px 34px rgba(25, 36, 30, 0.18);
+}
+
+.extension-popup-browserbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 34px;
+  background: #1c2326;
+  color: #f7faf8;
+  padding: 0 12px;
+}
+
+.extension-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 62px;
+  background: linear-gradient(135deg, #164b43, #0f403b);
+  color: #ffffff;
+  padding: 0 20px;
+}
+
+.extension-popup-header h1 {
+  color: #ffffff;
+  font-size: 1.25rem;
+}
+
+.extension-popup-settings {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 1.1rem;
+}
+
+.extension-popup-next {
+  display: grid;
+  grid-template-columns: 142px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  padding: 30px 24px 22px;
+}
+
+.extension-progress-ring {
+  display: grid;
+  place-items: center;
+  width: 126px;
+  height: 126px;
+  border: 10px solid #e4e6e5;
+  border-right-color: #3dab57;
+  border-top-color: #3dab57;
+  border-radius: 999px;
+}
+
+.extension-progress-ring span {
+  color: #2f7047;
+  font-weight: 900;
+}
+
+.extension-progress-ring strong {
+  color: #101713;
+  font-size: 1.1rem;
+}
+
+.extension-progress-ring small {
+  color: #657169;
+  font-size: 0.72rem;
+}
+
+.extension-popup-next-copy > p:first-child {
+  margin: 0;
+  color: #657169;
+  font-size: 0.82rem;
+}
+
+.extension-popup-next-copy h2 {
+  margin: 2px 0;
+  color: #151d18;
+  font-size: 1.08rem;
+}
+
+.extension-popup-next-copy .extension-reminder-time {
+  margin: 4px 0;
+}
+
+.extension-popup-fact,
+.extension-popup-hidden-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.extension-popup-next-copy .extension-activity-icon {
+  display: none;
+}
+
+.extension-popup-next-copy button {
+  min-height: 38px;
+  min-width: 120px;
+  border: 1px solid #88aa95;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #245f41;
+  font-weight: 800;
+  margin-top: 10px;
+}
+
+.extension-popup-progress,
+.extension-popup-actions {
+  margin: 0 16px 14px;
+  border: 1px solid #e0e5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.extension-popup-progress > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.extension-popup-progress h2 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.extension-popup-progress button {
+  border: 0;
+  background: transparent;
+  color: #657169;
+  font-size: 0.78rem;
+}
+
+.extension-popup-progress ul {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.extension-popup-progress li,
+.extension-popup-progress li > button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: #edf6f0;
+}
+
+.extension-popup-progress .extension-activity-icon {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  animation: none;
+}
+
+.extension-popup-actions {
+  display: grid;
+  gap: 0;
+  padding: 0;
+}
+
+.extension-popup-actions button {
+  display: flex;
+  justify-content: space-between;
+  min-height: 48px;
+  border: 0;
+  border-bottom: 1px solid #e5e9e5;
+  background: #ffffff;
+  color: #26312b;
+  padding: 0 16px;
+  font-weight: 750;
+}
+
+.extension-popup-actions button:last-child {
+  border-bottom: 0;
+}
+
+.extension-popup-actions strong {
+  border: 1px solid #d8ded8;
+  border-radius: 7px;
+  color: #657169;
+  padding: 4px 8px;
+}
+
+.extension-popup-running {
+  margin: 18px 0 24px;
+  color: #79847d;
+  text-align: center;
+  font-size: 0.78rem;
+}
+
+.extension-popup-running span {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #35a852;
+  margin-left: 8px;
+}
+
+.extension-popup-mockup .extension-heads-up-panel {
+  display: none;
+}
+
+.extension-options-mockup {
+  width: min(100vw - 32px, 1180px);
+  padding: 18px 0;
+}
+
+.extension-options-frame {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  min-height: 620px;
+  overflow: hidden;
+  border: 1px solid #d9dfd8;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(25, 36, 30, 0.14);
+}
+
+.extension-options-sidebar {
+  border-right: 1px solid #e5e9e5;
+  padding: 32px 20px;
+}
+
+.extension-options-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #122019;
+  font-size: 1.35rem;
+  font-weight: 850;
+  margin-bottom: 34px;
+}
+
+.extension-options-brand img {
+  width: 28px;
+  height: 28px;
+}
+
+.extension-options-sidebar nav {
+  display: grid;
+  gap: 10px;
+}
+
+.extension-options-sidebar button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #303a34;
+  font-weight: 750;
+  padding: 8px 10px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.extension-options-sidebar button.is-active,
+.extension-options-sidebar button:hover {
+  background: #eaf2ec;
+  color: #173f34;
+}
+
+.extension-nav-icon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.62rem;
+}
+
+.extension-options-main {
+  min-width: 0;
+  padding: 34px 32px;
+}
+
+.extension-options-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.extension-options-heading h1 {
+  margin: 0;
+  color: #111915;
+  font-size: 1.25rem;
+}
+
+.extension-saved-indicator {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: #347a4d;
+  color: #ffffff;
+  font-weight: 850;
+}
+
+.extension-options-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 20px;
+}
+
+.extension-card {
+  border: 1px solid #dfe5e0;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(38, 50, 42, 0.04);
+  padding: 18px;
+}
+
+.extension-card h2,
+.extension-custom-panel h2 {
+  margin: 0;
+  color: #121a16;
+  font-size: 0.95rem;
+}
+
+.extension-switch-row,
+.extension-radio-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  border-top: 1px solid #e8ece8;
+  padding: 16px 0;
+}
+
+.extension-card > .extension-switch-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.extension-switch-row span,
+.extension-radio-row span {
+  display: grid;
+  gap: 3px;
+}
+
+.extension-switch-row strong,
+.extension-radio-row strong {
+  color: #19221d;
+  font-size: 0.86rem;
+}
+
+.extension-switch-row small,
+.extension-radio-row small {
+  color: #657169;
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.extension-switch-row input[type="checkbox"] {
+  appearance: none;
+  position: relative;
+  width: 44px;
+  height: 25px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 999px;
+  background: #cdd3d1;
+  box-shadow: inset 0 0 0 1px rgba(20, 35, 28, 0.08);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.extension-switch-row input[type="checkbox"]::before {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(15, 23, 18, 0.22);
+  content: "";
+  transition: transform 160ms ease;
+}
+
+.extension-switch-row input[type="checkbox"]:checked {
+  background: #3f7b4e;
+}
+
+.extension-switch-row input[type="checkbox"]:checked::before {
+  transform: translateX(19px);
+}
+
+.extension-switch-row input[type="checkbox"]:disabled {
+  background: #dfe3e2;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.extension-inline-fieldset {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid #e8ece8;
+  padding: 16px 0 0;
+}
+
+.extension-inline-fieldset legend {
+  margin-bottom: 8px;
+  font-weight: 850;
+}
+
+.extension-schedule-subsection {
+  margin: 18px 0 0;
+  border: 1px solid #dce4de;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, #fbfdfb 0%, #ffffff 100%),
+    #ffffff;
+  padding: 16px;
+}
+
+.extension-schedule-subsection summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 14px;
+  align-items: center;
+  color: #173f34;
+  cursor: pointer;
+  list-style: none;
+}
+
+.extension-schedule-subsection summary::-webkit-details-marker {
+  display: none;
+}
+
+.extension-schedule-subsection summary::after {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #c8d7cd;
+  border-radius: 7px;
+  color: #2f7047;
+  content: "+";
+  font-weight: 850;
+}
+
+.extension-schedule-subsection[open] summary::after {
+  content: "−";
+}
+
+.extension-schedule-subsection summary span {
+  color: #173f34;
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+.extension-schedule-subsection summary small {
+  grid-column: 1;
+  color: #657169;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.extension-schedule-subsection .extension-field-grid {
+  margin-top: 14px;
+}
+
+.extension-schedule-subsection .extension-field span {
+  white-space: nowrap;
+}
+
+.extension-radio-row {
+  justify-content: flex-start;
+  border: 0;
+  padding: 8px 0;
+}
+
+.extension-options-rail {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.extension-status-list {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0 0;
+}
+
+.extension-status-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.extension-status-list dt {
+  color: #3a463f;
+}
+
+.extension-status-list dd {
+  margin: 0;
+  color: #2f7047;
+  font-weight: 850;
+}
+
+.extension-secondary-action {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #d9dfd8;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #213028;
+  font-weight: 750;
+  margin-top: 10px;
+}
+
+.extension-custom-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.extension-custom-header button {
+  border: 0;
+  background: transparent;
+  color: #657169;
+  font-weight: 750;
+}
+
+.extension-custom-panel .extension-recommendation-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.extension-recommendation-card {
+  position: relative;
+  min-height: 178px;
+  border-color: #dce2dd;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.extension-recommendation-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background: #edf4ee;
+  color: #2f7a4f;
+  font-size: 1.3rem;
+}
+
+.extension-recommendation-card em {
+  justify-self: end;
+  min-width: 54px;
+  border: 1px solid #9ab7a4;
+  border-radius: 6px;
+  color: #2b6845;
+  font-style: normal;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 5px 10px;
+  text-align: center;
+}
+
+.extension-custom-reminder-management {
+  margin-top: 24px;
+  border: 0;
+  border-top: 1px solid #e4e9e4;
+  padding: 18px 0 0;
+}
+
+.extension-custom-list li {
+  background: #ffffff;
+}
+
+.extension-options-footer {
+  justify-content: flex-end;
+  margin-top: 22px;
+}
+
+.extension-options-footer button:last-child,
+.extension-custom-reminder-actions button:first-child {
+  background: #2f7047;
+  color: #ffffff;
+}
+
+.extension-wizard-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 16, 13, 0.18);
+  padding: 24px;
+}
+
+.extension-custom-wizard {
+  width: min(100%, 1120px);
+  overflow: hidden;
+  border: 1px solid #d8ded8;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 22px 52px rgba(20, 30, 24, 0.22);
+}
+
+.extension-custom-wizard-header,
+.extension-custom-wizard-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid #e4e9e4;
+  padding: 20px 28px;
+}
+
+.extension-custom-wizard-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.extension-icon-button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  font-size: 1.4rem;
+}
+
+.extension-custom-wizard-body {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  min-height: 470px;
+}
+
+.extension-custom-wizard-steps {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  border-right: 1px solid #e4e9e4;
+  padding: 28px;
+}
+
+.extension-custom-wizard-steps button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-weight: 800;
+  text-align: left;
+}
+
+.extension-custom-wizard-steps button.is-active {
+  background: #e9f1eb;
+}
+
+.extension-custom-wizard-steps span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid #9fb3a6;
+  border-radius: 999px;
+}
+
+.extension-custom-wizard-steps button.is-active span {
+  background: #2f7047;
+  color: #ffffff;
+}
+
+.extension-custom-wizard-panel {
+  padding: 28px 32px;
+}
+
+.extension-custom-wizard-panel h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.extension-custom-wizard-panel > p {
+  margin: 4px 0 18px;
+  color: #657169;
+}
+
+.extension-wizard-recurrence-grid {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 22px;
+}
+
+.extension-wizard-recurrence-options,
+.extension-wizard-recurrence-detail {
+  display: grid;
+  gap: 10px;
+}
+
+.extension-wizard-recurrence-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 10px;
+  align-items: center;
+  border: 1px solid #e0e6e1;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.extension-wizard-recurrence-card:has(input:checked) {
+  background: #eaf2ec;
+}
+
+.extension-wizard-recurrence-card small {
+  grid-column: 2;
+  color: #657169;
+}
+
+.extension-weekday-pill-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.extension-weekday-pill input {
+  position: absolute;
+  opacity: 0;
+}
+
+.extension-weekday-pill span {
+  display: inline-flex;
+  min-width: 56px;
+  justify-content: center;
+  border: 1px solid #d6ddd7;
+  border-radius: 7px;
+  background: #ffffff;
+  padding: 10px 14px;
+  font-weight: 800;
+}
+
+.extension-weekday-pill input:checked + span {
+  background: #2f7047;
+  color: #ffffff;
+}
+
+.extension-custom-wizard-footer {
+  justify-content: flex-end;
+  border-top: 1px solid #e4e9e4;
+  border-bottom: 0;
+}
+
+.extension-custom-wizard-footer button {
+  min-width: 118px;
+  min-height: 40px;
+  border: 1px solid #cbd5cf;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #18231d;
+  font-weight: 800;
+}
+
+.extension-custom-wizard-footer button:last-child {
+  border-color: #2f7047;
+  background: #2f7047;
+  color: #ffffff;
+}
+
+@media (max-width: 860px) {
+  .extension-options-frame,
+  .extension-options-grid,
+  .extension-custom-wizard-body,
+  .extension-wizard-recurrence-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .extension-options-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid #e5e9e5;
   }
 }

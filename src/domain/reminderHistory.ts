@@ -51,6 +51,23 @@ export function cloneReminderHistory(
   return history.map(cloneHistoryEntry);
 }
 
+function isSameLocalDate(firstDate: Date, secondDate: Date) {
+  return (
+    firstDate.getFullYear() === secondDate.getFullYear() &&
+    firstDate.getMonth() === secondDate.getMonth() &&
+    firstDate.getDate() === secondDate.getDate()
+  );
+}
+
+export function removeReminderHistoryEntriesForDate(
+  history: ReminderHistoryEntry[],
+  date: Date,
+): ReminderHistoryEntry[] {
+  return history
+    .filter((entry) => !isSameLocalDate(entry.occurredAt, date))
+    .map(cloneHistoryEntry);
+}
+
 export function createReminderHistoryEntry({
   actionType,
   schedule,

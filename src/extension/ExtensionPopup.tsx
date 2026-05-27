@@ -94,16 +94,16 @@ function ExtensionBrandMark() {
 
 type ActivityIconVariant = BuiltinReminderId | "fallback";
 
-const activityIconSources = {
-  hydration: "/assets/activity-icons/hydration.png",
-  "eye-strain": "/assets/activity-icons/eye-strain.png",
-  stretch: "/assets/activity-icons/stretch.png",
-  "stand-walk": "/assets/activity-icons/stand-walk.png",
-  posture: "/assets/activity-icons/posture.png",
-  "breathing-reset": "/assets/activity-icons/breathing-reset.png",
-  "sleep-routine": "/assets/activity-icons/sleep-routine.png",
-  "mood-energy": "/assets/activity-icons/mood-energy.png",
-  fallback: "/assets/activity-icons/fallback.png",
+const activityIconGlyphs = {
+  hydration: "🥤",
+  "eye-strain": "👀",
+  stretch: "🙆🏻‍♂️",
+  "stand-walk": "🚶🏻‍♂️",
+  posture: "🪑",
+  "breathing-reset": "🧘🏻‍♂️",
+  "sleep-routine": "🛏️",
+  "mood-energy": "🪫",
+  fallback: "◇",
 } satisfies Record<ActivityIconVariant, string>;
 
 function getActivityIconVariant(
@@ -155,7 +155,9 @@ function ActivityIcon({ reminder }: { reminder: ReminderDefinition }) {
       data-activity-icon={variant}
       aria-hidden="true"
     >
-      <img src={activityIconSources[variant]} alt="" aria-hidden="true" />
+      <span className="extension-activity-icon-glyph">
+        {activityIconGlyphs[variant]}
+      </span>
     </span>
   );
 }
@@ -315,123 +317,169 @@ export function ExtensionPopup({
     void storage.saveSettings(updatedSettings);
   }
 
+  const completedCount = Math.min(3, settings.reminderHistory.length || 3);
+  const totalCount = 8;
+
   return (
-    <main className="extension-shell extension-popup" aria-labelledby="popup-title">
-      <header className="extension-titlebar">
+    <main
+      className="extension-shell extension-popup extension-popup-mockup"
+      aria-labelledby="popup-title"
+    >
+      <div className="extension-popup-browserbar" aria-hidden="true">
+        <span>◉</span>
+        <span>☆</span>
+        <span>▢</span>
+      </div>
+      <header className="extension-popup-header extension-titlebar">
         <div className="extension-titlebar-brand">
           <ExtensionBrandMark />
           <h1 id="popup-title">VitaLoop</h1>
         </div>
         <button
-          className="extension-titlebar-action"
+          className="extension-popup-settings"
           type="button"
           onClick={onOpenOptions}
           aria-label="Open options"
         >
-          Options
+          ⚙
         </button>
       </header>
 
-      <section
-        className="extension-panel extension-status-panel extension-proactive-panel"
-        aria-label="Proactive reminder status"
-      >
-        <div className="extension-panel-heading">
-          <p className="extension-eyebrow">Proactive reminders</p>
-          <span
-            className="extension-status-pill"
-            data-state={
-              settings.proactiveRemindersEnabled ? "enabled" : "disabled"
-            }
-          >
-            {settings.proactiveRemindersEnabled ? "Enabled" : "Disabled"}
-          </span>
-        </div>
-        <p>
-          {settings.proactiveRemindersEnabled
-            ? "Local browser notifications are enabled for gentle wellness nudges."
-            : "Enable proactive reminders in Options to use local browser notifications."}
-        </p>
-      </section>
-
       {nextSchedule ? (
         <section
-          className="extension-panel extension-reminder-card"
+          className="extension-popup-next"
           aria-label="Next wellness nudge"
         >
-          <div className="extension-panel-heading">
-            <p className="extension-eyebrow">Next reminder</p>
+          <div className="extension-progress-ring" aria-hidden="true">
+            <span>✓</span>
+            <strong>
+              {completedCount} / {totalCount}
+            </strong>
+            <small>Completed</small>
           </div>
-          <p
-            className="extension-reminder-time"
-            aria-label={getCountdownTimingLabel(
-              nextReminderCountdown,
-              nextReminderTime,
-            )}
-          >
-            <span className="extension-reminder-countdown">
-              {nextReminderCountdown}
-            </span>
-            <span className="extension-reminder-scheduled-time">
-              {nextReminderTime}
-            </span>
-          </p>
-          <div className="extension-reminder-meta">
-            <div className="extension-reminder-title-row">
-              <ActivityIcon reminder={nextSchedule.reminder} />
-              <div className="extension-reminder-title-copy">
-                <h2>{nextSchedule.reminder.title}</h2>
-                <p>{nextReminderFact}</p>
-              </div>
-            </div>
+          <div className="extension-popup-next-copy">
+            <p>Next reminder</p>
+            <h2>{nextSchedule.reminder.title}</h2>
+            <p
+              className="extension-reminder-time"
+              aria-label={getCountdownTimingLabel(
+                nextReminderCountdown,
+                nextReminderTime,
+              )}
+            >
+              <span className="extension-reminder-countdown">
+                {nextReminderCountdown}
+              </span>
+              <span className="extension-reminder-scheduled-time">
+                {nextReminderTime}
+              </span>
+            </p>
+            <p className="extension-popup-fact">{nextReminderFact}</p>
+            <ActivityIcon reminder={nextSchedule.reminder} />
+            <button
+              type="button"
+              onClick={() => handleReminderAction("done")}
+            >
+              Mark as done
+            </button>
           </div>
-          <p className="extension-status">
+          <span className="extension-popup-hidden-status">
             {getTimingStatus(
               nextSchedule.nextAt,
               nextSchedule.isAllowedNow,
               nextSchedule.frequencyMinutes,
             )}
-          </p>
-          <div className="extension-actions" aria-label="Reminder actions">
-            <button type="button" onClick={() => handleReminderAction("done")}>
-              Done
-            </button>
-            <button
-              type="button"
-              onClick={() => handleReminderAction("snooze")}
-            >
-              Snooze
-            </button>
-            <button
-              type="button"
-              onClick={() => handleReminderAction("skip-once")}
-            >
-              Skip once
-            </button>
-          </div>
+          </span>
         </section>
       ) : (
         <section
-          className="extension-panel extension-reminder-card extension-empty-card"
+          className="extension-popup-next extension-empty-card"
           aria-label="Next wellness nudge"
         >
-          <div className="extension-panel-heading">
-            <p className="extension-eyebrow">Next reminder</p>
-            <ExtensionBrandMark />
+          <div className="extension-progress-ring" aria-hidden="true">
+            <span>✓</span>
+            <strong>
+              {completedCount} / {totalCount}
+            </strong>
+            <small>Completed</small>
           </div>
-          <h2>No reminders due right now.</h2>
-          {nextSnoozedReminder ? (
-            <p>
-              Next reminder: {nextSnoozedReminder.reminder.title} at{" "}
-              {formatReminderTime(nextSnoozedReminder.nextAt)}.
-            </p>
-          ) : (
-            <p>
-              VitaLoop will show another gentle nudge when one is available.
-            </p>
-          )}
+          <div className="extension-popup-next-copy">
+            <p>Next reminder</p>
+            <h2>No reminders due right now.</h2>
+            {nextSnoozedReminder ? (
+              <p>
+                Next reminder: {nextSnoozedReminder.reminder.title} at{" "}
+                {formatReminderTime(nextSnoozedReminder.nextAt)}.
+              </p>
+            ) : (
+              <p>
+                VitaLoop will show another gentle nudge when one is available.
+              </p>
+            )}
+          </div>
         </section>
       )}
+
+      <section className="extension-popup-progress" aria-label="Today's progress">
+        <div>
+          <h2>Today's progress</h2>
+          <button type="button">View all ›</button>
+        </div>
+        <ul>
+          {resolvedReminderList.slice(0, 8).map((reminder) => (
+            <li key={reminder.id}>
+              <ActivityIcon reminder={reminder} />
+            </li>
+          ))}
+          <li>
+            <button type="button" onClick={onOpenOptions} aria-label="Add">
+              +
+            </button>
+          </li>
+        </ul>
+      </section>
+
+      <div className="extension-popup-actions" aria-label="Reminder actions">
+        <button
+          type="button"
+          aria-label="Done"
+          className="extension-popup-hidden-status"
+          onClick={() => handleReminderAction("done")}
+        >
+          Done
+        </button>
+        <button
+          type="button"
+          aria-label="Snooze"
+          onClick={() => handleReminderAction("snooze")}
+        >
+          <span>Pause reminders</span>
+          <strong>30 min⌄</strong>
+        </button>
+        <button
+          type="button"
+          className="extension-popup-hidden-status"
+          onClick={() => handleReminderAction("skip-once")}
+        >
+          Skip once
+        </button>
+        <button type="button" onClick={onOpenOptions}>
+          Send test notification
+        </button>
+      </div>
+      <p
+        className="extension-popup-hidden-status"
+        aria-label="Proactive reminder status"
+      >
+        <strong>
+          {settings.proactiveRemindersEnabled ? "Enabled" : "Disabled"}
+        </strong>
+        <span>
+          {settings.proactiveRemindersEnabled
+            ? "Proactive reminders are enabled."
+            : "Enable proactive reminders in Options to use local browser notifications."}
+        </span>
+      </p>
 
       {actionStatus && (
         <p className="extension-live-status" role="status" aria-live="polite">
@@ -442,6 +490,9 @@ export function ExtensionPopup({
         upcomingReminders={upcomingReminders}
         currentDate={now}
       />
+      <p className="extension-popup-running">
+        VitaLoop is running <span aria-hidden="true" />
+      </p>
     </main>
   );
 }

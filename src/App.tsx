@@ -34,6 +34,7 @@ import {
 import {
   appendReminderHistoryEntry,
   createReminderHistoryEntry,
+  removeReminderHistoryEntriesForDate,
   type ReminderHistoryEntry,
 } from "./domain/reminderHistory";
 import {
@@ -84,6 +85,13 @@ const customReminderScheduleOptions = [
 
 type ScreenId = (typeof screens)[number]["id"];
 type ReminderId = AppSettings["preferredReminderCategories"][number];
+type SettingsPanelId =
+  | "general"
+  | "quiet-hours"
+  | "categories"
+  | "custom-reminders"
+  | "advanced";
+type CustomReminderWizardStep = "details" | "recurrence" | "review";
 
 const defaultPreviewDate = new Date(2026, 4, 15, 10, 0);
 
@@ -108,6 +116,16 @@ function getCharacterLimitHintClassName(status: CharacterLimitStatus) {
     : "character-limit-hint";
 }
 
+function SettingsIcon({ label }: { label: string }) {
+  const glyph = label.slice(0, 1).toUpperCase();
+
+  return (
+    <span className="settings-icon" aria-hidden="true">
+      {glyph}
+    </span>
+  );
+}
+
 function App() {
   const [activeScreen, setActiveScreen] = useState<ScreenId>("home");
   const [appSettings, setAppSettings] = useState<AppSettings>(() =>
@@ -121,7 +139,7 @@ function App() {
   const activeLabel = screens.find((screen) => screen.id === activeScreen)?.label;
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell app-screen-${activeScreen}`}>
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
@@ -497,12 +515,15 @@ type SettingsScreenProps = {
   reminderList?: ReminderDefinition[];
   initialSettings?: AppSettings;
   onSettingsChange?: (settings: AppSettings) => void;
+  historyService?: ReminderHistoryService;
+  currentDate?: Date;
 };
 
 type SettingsStatus =
   | "idle"
   | "saved"
   | "reset"
+  | "progress-reset"
   | "error"
   | "custom-error"
   | "custom-removed";
@@ -512,6 +533,8 @@ export function SettingsScreen({
   reminderList = reminders,
   initialSettings,
   onSettingsChange,
+  historyService = reminderHistoryService,
+  currentDate = new Date(),
 }: SettingsScreenProps) {
   const [settings, setSettings] = useState<AppSettings>(() =>
     initialSettings ?? service.loadSettings(),
@@ -520,8 +543,12 @@ export function SettingsScreen({
   const [customDraft, setCustomDraft] = useState<CustomReminderDraft>({
     ...defaultCustomReminderDraft,
   });
-  const [isCustomRemindersExpanded, setIsCustomRemindersExpanded] =
+  const [activeSettingsPanel, setActiveSettingsPanel] =
+    useState<SettingsPanelId>("general");
+  const [isCustomReminderWizardOpen, setIsCustomReminderWizardOpen] =
     useState(false);
+  const [customReminderWizardStep, setCustomReminderWizardStep] =
+    useState<CustomReminderWizardStep>("recurrence");
   const [customRecommendations, setCustomRecommendations] = useState(() =>
     getRecommendedCustomReminders(),
   );
@@ -715,11 +742,26 @@ export function SettingsScreen({
     setCustomDraftErrors({});
     setPendingDeleteCustomReminderId(null);
     setStatus("idle");
+    setCustomReminderWizardStep("recurrence");
+    setIsCustomReminderWizardOpen(true);
   }
 
   function resetCustomDraft() {
     setCustomDraft({ ...defaultCustomReminderDraft });
     setCustomRecommendations(getRecommendedCustomReminders());
+    setCustomDraftErrors({});
+  }
+
+  function openNewCustomReminderWizard() {
+    resetCustomDraft();
+    setPendingDeleteCustomReminderId(null);
+    setStatus("idle");
+    setCustomReminderWizardStep("recurrence");
+    setIsCustomReminderWizardOpen(true);
+  }
+
+  function closeCustomReminderWizard() {
+    setIsCustomReminderWizardOpen(false);
     setCustomDraftErrors({});
   }
 
@@ -729,6 +771,13 @@ export function SettingsScreen({
     if (!validationResult.success) {
       setCustomDraftErrors(validationResult.errors);
       setStatus("custom-error");
+      setCustomReminderWizardStep(
+        validationResult.errors.title ||
+          validationResult.errors.category ||
+          validationResult.errors.description
+          ? "details"
+          : "recurrence",
+      );
       return;
     }
 
@@ -751,6 +800,7 @@ export function SettingsScreen({
     });
     resetCustomDraft();
     setPendingDeleteCustomReminderId(null);
+    setIsCustomReminderWizardOpen(false);
     setStatus("idle");
   }
 
@@ -772,6 +822,8 @@ export function SettingsScreen({
     setCustomDraftErrors({});
     setPendingDeleteCustomReminderId(null);
     setStatus("idle");
+    setCustomReminderWizardStep("recurrence");
+    setIsCustomReminderWizardOpen(true);
   }
 
   function deleteCustomReminder(reminderId: ReminderId) {
@@ -820,557 +872,796 @@ export function SettingsScreen({
     setStatus(didSave ? "reset" : "error");
   }
 
-  return (
-    <section className="screen-panel">
-      <h1 id="settings-heading">Settings</h1>
-      <p>
-        Keep recurring nudges useful by choosing quiet hours, workday timing,
-        and the reminder categories that fit your day.
-      </p>
-      <form
-        className="settings-form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          saveCurrentSettings();
-        }}
-      >
+  function resetTodaysProgress() {
+    const nextHistory = removeReminderHistoryEntriesForDate(
+      historyService.loadReminderHistory(),
+      currentDate,
+    );
+    const didSave = historyService.saveReminderHistory(nextHistory);
+
+    setStatus(didSave ? "progress-reset" : "error");
+  }
+
+  const settingsNavItems: Array<{ id: SettingsPanelId; label: string }> = [
+    { id: "general", label: "General" },
+    { id: "quiet-hours", label: "Quiet hours" },
+    { id: "categories", label: "Reminder categories" },
+    { id: "custom-reminders", label: "Custom reminders" },
+    { id: "advanced", label: "Advanced" },
+  ];
+
+  const customReminderForm = (
+    <>
+      <div className="settings-columns">
         <label className="field">
-          <span>Timezone</span>
+          <span>Custom reminder title</span>
           <input
             type="text"
-            value={settings.timezone}
+            maxLength={CUSTOM_REMINDER_TITLE_MAX_LENGTH}
+            value={customDraft.title}
             onChange={(event) =>
-              updateSetting("timezone", event.currentTarget.value)
+              updateCustomDraft("title", event.currentTarget.value)
+            }
+            aria-describedby={titleDescriptionIds || undefined}
+            aria-invalid={Boolean(customDraftErrors.title)}
+          />
+          {titleLimitStatus ? (
+            <small
+              id="custom-reminder-title-limit"
+              className={getCharacterLimitHintClassName(titleLimitStatus)}
+            >
+              {titleLimitStatus.message}
+            </small>
+          ) : null}
+          {customDraftErrors.title ? (
+            <small id="custom-reminder-title-error" className="field-error">
+              {customDraftErrors.title}
+            </small>
+          ) : null}
+        </label>
+        <label className="field">
+          <span>Custom reminder category</span>
+          <input
+            type="text"
+            maxLength={CUSTOM_REMINDER_CATEGORY_MAX_LENGTH}
+            value={customDraft.category}
+            onChange={(event) =>
+              updateCustomDraft("category", event.currentTarget.value)
+            }
+            aria-describedby={categoryDescriptionIds || undefined}
+            aria-invalid={Boolean(customDraftErrors.category)}
+          />
+          {categoryLimitStatus ? (
+            <small
+              id="custom-reminder-category-limit"
+              className={getCharacterLimitHintClassName(categoryLimitStatus)}
+            >
+              {categoryLimitStatus.message}
+            </small>
+          ) : null}
+          {customDraftErrors.category ? (
+            <small id="custom-reminder-category-error" className="field-error">
+              {customDraftErrors.category}
+            </small>
+          ) : null}
+        </label>
+      </div>
+      <label className="field">
+        <span>Custom reminder message</span>
+        <input
+          type="text"
+          maxLength={CUSTOM_REMINDER_MESSAGE_MAX_LENGTH}
+          value={customDraft.description}
+          onChange={(event) =>
+            updateCustomDraft("description", event.currentTarget.value)
+          }
+          aria-describedby={messageDescriptionIds || undefined}
+          aria-invalid={Boolean(customDraftErrors.description)}
+        />
+        {messageLimitStatus ? (
+          <small
+            id="custom-reminder-message-limit"
+            className={getCharacterLimitHintClassName(messageLimitStatus)}
+          >
+            {messageLimitStatus.message}
+          </small>
+        ) : null}
+        {customDraftErrors.description ? (
+          <small id="custom-reminder-message-error" className="field-error">
+            {customDraftErrors.description}
+          </small>
+        ) : null}
+      </label>
+    </>
+  );
+
+  const recurrenceControls = (
+    <div className="wizard-recurrence-grid">
+      <div className="wizard-recurrence-options">
+        {customReminderScheduleOptions.map((option) => (
+          <label key={option.value} className="wizard-recurrence-card">
+            <input
+              type="radio"
+              aria-label={option.label}
+              name="customReminderScheduleType"
+              checked={customDraft.schedule.type === option.value}
+              onChange={() => updateCustomScheduleType(option.value)}
+            />
+            <span>{option.label}</span>
+            <small>
+              {option.value === "interval"
+                ? "Repeat every X minutes"
+                : option.value === "dailyInterval"
+                  ? "Repeat every X days"
+                  : option.value === "weekdayInterval"
+                    ? "Repeat on specific weekdays"
+                    : "Set a single date and time"}
+            </small>
+          </label>
+        ))}
+      </div>
+      <div className="wizard-recurrence-detail">
+        {customDraft.schedule.type === "interval" ? (
+          <label className="field">
+            <span>Repeat every minutes</span>
+            <input
+              type="number"
+              aria-label="Custom reminder interval minutes"
+              min="5"
+              max="1440"
+              step="1"
+              value={customDraft.schedule.intervalMinutes}
+              onChange={(event) =>
+                updateCustomIntervalMinutes(Number(event.currentTarget.value))
+              }
+              aria-describedby={`custom-reminder-interval-hint${
+                customDraftErrors.intervalMinutes
+                  ? " custom-reminder-interval-error"
+                  : ""
+              }`}
+              aria-invalid={Boolean(customDraftErrors.intervalMinutes)}
+            />
+            <small id="custom-reminder-interval-hint" className="field-hint">
+              Whole number, 5-1440 minutes.
+            </small>
+            {customDraftErrors.intervalMinutes ? (
+              <small id="custom-reminder-interval-error" className="field-error">
+                {customDraftErrors.intervalMinutes}
+              </small>
+            ) : null}
+          </label>
+        ) : null}
+        {customDraft.schedule.type === "dailyInterval" ? (
+          <div className="settings-columns">
+            <label className="field">
+              <span>Repeat every days</span>
+              <input
+                type="number"
+                min="1"
+                max="365"
+                step="1"
+                value={customDraft.schedule.dayIntervalDays}
+                onChange={(event) =>
+                  updateCustomDayInterval(Number(event.currentTarget.value))
+                }
+                aria-invalid={Boolean(customDraftErrors.dayIntervalDays)}
+              />
+              {customDraftErrors.dayIntervalDays ? (
+                <small className="field-error">
+                  {customDraftErrors.dayIntervalDays}
+                </small>
+              ) : null}
+            </label>
+            <label className="field">
+              <span>Time of day</span>
+              <input
+                type="time"
+                aria-label="Reminder time"
+                value={customDraft.schedule.timeOfDay}
+                onChange={(event) =>
+                  updateCustomDailyTime(event.currentTarget.value)
+                }
+                aria-invalid={Boolean(customDraftErrors.timeOfDay)}
+              />
+            </label>
+          </div>
+        ) : null}
+        {customDraft.schedule.type === "weekdayInterval" ? (
+          <>
+            <fieldset className="settings-subgroup">
+              <legend>Repeat on</legend>
+              <div className="weekday-pill-grid">
+                {weekdayOrder.map((weekday) => (
+                  <label key={weekday} className="weekday-pill">
+                    <input
+                      type="checkbox"
+                      checked={isCustomWeekdaySelected(weekday)}
+                      onChange={() => toggleCustomWeekday(weekday)}
+                    />
+                    <span>{weekdayLabels[weekday].slice(0, 3)}</span>
+                  </label>
+                ))}
+              </div>
+              {customDraftErrors.weekdays ? (
+                <small className="field-error">{customDraftErrors.weekdays}</small>
+              ) : null}
+            </fieldset>
+            <label className="field wizard-time-field">
+              <span>Time of day</span>
+              <input
+                type="time"
+                aria-label="Reminder time"
+                value={customDraft.schedule.timeOfDay}
+                onChange={(event) =>
+                  updateCustomWeekdayTime(event.currentTarget.value)
+                }
+                aria-invalid={Boolean(customDraftErrors.timeOfDay)}
+              />
+            </label>
+          </>
+        ) : null}
+        {customDraft.schedule.type === "oneTime" ? (
+          <div className="settings-columns">
+            <label className="field">
+              <span>Reminder date</span>
+              <input
+                type="date"
+                min={formatDateInputValue(new Date())}
+                value={customDraft.schedule.date}
+                onChange={(event) =>
+                  updateCustomOneTimeDate(event.currentTarget.value)
+                }
+                aria-invalid={Boolean(customDraftErrors.date)}
+              />
+              {customDraftErrors.date ? (
+                <small className="field-error">{customDraftErrors.date}</small>
+              ) : null}
+            </label>
+            <label className="field">
+              <span>Time of day</span>
+              <input
+                type="time"
+                aria-label="Reminder time"
+                value={customDraft.schedule.timeOfDay}
+                onChange={(event) =>
+                  updateCustomOneTimeTime(event.currentTarget.value)
+                }
+                aria-invalid={Boolean(customDraftErrors.timeOfDay)}
+              />
+            </label>
+          </div>
+        ) : null}
+        <label className="settings-switch-row wizard-window-row">
+          <span>
+            <strong>Respect quiet hours and workday</strong>
+            <small>Delay reminders to allowed times.</small>
+          </span>
+          <input
+            type="checkbox"
+            aria-label="Respect quiet hours and workday"
+            checked={customDraft.respectReminderWindows}
+            onChange={(event) =>
+              updateCustomDraft(
+                "respectReminderWindows",
+                event.currentTarget.checked,
+              )
             }
           />
         </label>
+        {customDraftErrors.timeOfDay ? (
+          <small className="field-error">{customDraftErrors.timeOfDay}</small>
+        ) : null}
+      </div>
+    </div>
+  );
 
-        <fieldset className="settings-group">
-          <legend>Quiet hours</legend>
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={settings.quietHoursEnabled}
-              onChange={(event) =>
-                updateSetting("quietHoursEnabled", event.currentTarget.checked)
-              }
-            />
-            <span>Quiet hours enabled</span>
-          </label>
-          <div className="settings-columns">
-            <label className="field">
-              <span>Quiet hours start</span>
-              <input
-                type="time"
-                value={settings.quietHoursStart}
-                onChange={(event) =>
-                  updateSetting("quietHoursStart", event.currentTarget.value)
-                }
-              />
-            </label>
-            <label className="field">
-              <span>Quiet hours end</span>
-              <input
-                type="time"
-                value={settings.quietHoursEnd}
-                onChange={(event) =>
-                  updateSetting("quietHoursEnd", event.currentTarget.value)
-                }
-              />
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset className="settings-group">
-          <legend>Reminder intensity</legend>
-          <div className="radio-grid">
-            {reminderIntensityOptions.map((option) => (
-              <label key={option.value} className="choice-card">
-                <input
-                  type="radio"
-                  name="reminderIntensity"
-                  value={option.value}
-                  checked={settings.reminderIntensity === option.value}
-                  onChange={() =>
-                    updateSetting("reminderIntensity", option.value)
-                  }
-                />
-                <span>{option.label}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        <fieldset className="settings-group">
-          <legend>Workday window</legend>
-          <div className="settings-columns">
-            <label className="field">
-              <span>Workday start</span>
-              <input
-                type="time"
-                value={settings.workdayStart}
-                onChange={(event) =>
-                  updateSetting("workdayStart", event.currentTarget.value)
-                }
-              />
-            </label>
-            <label className="field">
-              <span>Workday end</span>
-              <input
-                type="time"
-                value={settings.workdayEnd}
-                onChange={(event) =>
-                  updateSetting("workdayEnd", event.currentTarget.value)
-                }
-              />
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset className="settings-group">
-          <legend>Preferred reminder categories</legend>
-          <div className="category-grid">
-            {allReminders.map((reminder) => {
-              const isPreferred =
-                settings.preferredReminderCategories.includes(reminder.id);
-              const isOnlyPreferred =
-                isPreferred &&
-                settings.preferredReminderCategories.length === 1;
-
-              return (
-                <label key={reminder.id} className="checkbox-row">
-                  <input
-                    type="checkbox"
-                    checked={isPreferred}
-                    disabled={isOnlyPreferred}
-                    onChange={() => toggleReminderCategory(reminder.id)}
-                  />
-                  <span>{reminder.title}</span>
-                </label>
-              );
-            })}
-          </div>
-        </fieldset>
-
-        <fieldset className="settings-group custom-reminders-section">
-          <legend>
-            <label className="collapsible-legend-control">
-              <span>Custom reminders</span>
-              <input
-                type="checkbox"
-                checked={isCustomRemindersExpanded}
-                aria-controls="custom-reminders-panel"
-                onChange={(event) =>
-                  setIsCustomRemindersExpanded(event.currentTarget.checked)
-                }
-              />
-            </label>
-          </legend>
-          {isCustomRemindersExpanded ? (
-            <div id="custom-reminders-panel">
-              <div
-                className="custom-recommendation-grid"
-                aria-label="Recommended custom reminders"
-              >
-            {customRecommendations.map((recommendation) => (
+  return (
+    <section className="web-settings-shell" aria-labelledby="settings-heading">
+      <aside className="web-app-sidebar" aria-label="App navigation">
+        <div className="web-sidebar-brand">VitaLoop</div>
+        {["Dashboard", "Reminders", "Backlog", "Insights", "Settings"].map(
+          (item) => (
+            <button
+              key={item}
+              type="button"
+              className={item === "Settings" ? "is-active" : ""}
+            >
+              <SettingsIcon label={item} />
+              {item}
+            </button>
+          ),
+        )}
+        <div className="web-sidebar-spacer" />
+        <button type="button">Help</button>
+      </aside>
+      <div className="web-settings-content">
+        <h1 id="settings-heading">Settings</h1>
+        <form
+          className="settings-workspace"
+          onSubmit={(event) => {
+            event.preventDefault();
+            saveCurrentSettings();
+          }}
+        >
+          <nav className="settings-side-nav" aria-label="Settings sections">
+            {settingsNavItems.map((item) => (
               <button
-                key={recommendation.id}
+                key={item.id}
                 type="button"
-                className="custom-recommendation"
-                onClick={() => applyCustomRecommendation(recommendation)}
+                className={activeSettingsPanel === item.id ? "is-active" : ""}
+                onClick={() => setActiveSettingsPanel(item.id)}
               >
-                <strong>{recommendation.title}</strong>
-                <span>{formatCustomReminderSchedule(recommendation.schedule)}</span>
-                <small>{recommendation.description}</small>
+                <SettingsIcon label={item.label} />
+                {item.label}
               </button>
             ))}
-              </div>
-          <div className="settings-columns">
-            <label className="field">
-              <span>Custom reminder title</span>
-              <input
-                type="text"
-                maxLength={CUSTOM_REMINDER_TITLE_MAX_LENGTH}
-                value={customDraft.title}
-                onChange={(event) =>
-                  updateCustomDraft("title", event.currentTarget.value)
-                }
-                aria-describedby={titleDescriptionIds || undefined}
-                aria-invalid={Boolean(customDraftErrors.title)}
-              />
-              {titleLimitStatus ? (
-                <small
-                  id="custom-reminder-title-limit"
-                  className={getCharacterLimitHintClassName(titleLimitStatus)}
-                >
-                  {titleLimitStatus.message}
-                </small>
-              ) : null}
-              {customDraftErrors.title ? (
-                <small id="custom-reminder-title-error" className="field-error">
-                  {customDraftErrors.title}
-                </small>
-              ) : null}
-            </label>
-            <label className="field">
-              <span>Custom reminder category</span>
-              <input
-                type="text"
-                maxLength={CUSTOM_REMINDER_CATEGORY_MAX_LENGTH}
-                value={customDraft.category}
-                onChange={(event) =>
-                  updateCustomDraft("category", event.currentTarget.value)
-                }
-                aria-describedby={categoryDescriptionIds || undefined}
-                aria-invalid={Boolean(customDraftErrors.category)}
-              />
-              {categoryLimitStatus ? (
-                <small
-                  id="custom-reminder-category-limit"
-                  className={getCharacterLimitHintClassName(categoryLimitStatus)}
-                >
-                  {categoryLimitStatus.message}
-                </small>
-              ) : null}
-              {customDraftErrors.category ? (
-                <small
-                  id="custom-reminder-category-error"
-                  className="field-error"
-                >
-                  {customDraftErrors.category}
-                </small>
-              ) : null}
-            </label>
-          </div>
-          <label className="field">
-            <span>Custom reminder message</span>
-            <input
-              type="text"
-              maxLength={CUSTOM_REMINDER_MESSAGE_MAX_LENGTH}
-              value={customDraft.description}
-              onChange={(event) =>
-                updateCustomDraft("description", event.currentTarget.value)
-              }
-              aria-describedby={messageDescriptionIds || undefined}
-              aria-invalid={Boolean(customDraftErrors.description)}
-            />
-            {messageLimitStatus ? (
-              <small
-                id="custom-reminder-message-limit"
-                className={getCharacterLimitHintClassName(messageLimitStatus)}
-              >
-                {messageLimitStatus.message}
-              </small>
-            ) : null}
-            {customDraftErrors.description ? (
-              <small id="custom-reminder-message-error" className="field-error">
-                {customDraftErrors.description}
-              </small>
-            ) : null}
-          </label>
-          <fieldset className="settings-subgroup">
-            <legend>Custom recurrence</legend>
-            <div className="segmented-options">
-              {customReminderScheduleOptions.map((option) => (
-                <label key={option.value} className="radio-pill">
+          </nav>
+          <div className="settings-primary-column">
+            {activeSettingsPanel === "general" ? (
+              <section className="settings-card">
+                <h2>General</h2>
+                <label className="settings-switch-row">
+                  <span>
+                    <strong>Proactive reminders</strong>
+                    <small>Enable local proactive reminders.</small>
+                  </span>
                   <input
-                    type="radio"
-                    name="customReminderScheduleType"
-                    checked={customDraft.schedule.type === option.value}
-                    onChange={() => updateCustomScheduleType(option.value)}
-                  />
-                  <span>{option.label}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          {customDraft.schedule.type === "interval" ? (
-            <label className="field">
-              <span>Custom reminder interval minutes</span>
-              <input
-                type="number"
-                min="5"
-                max="1440"
-                step="1"
-                value={customDraft.schedule.intervalMinutes}
-                onChange={(event) =>
-                  updateCustomIntervalMinutes(Number(event.currentTarget.value))
-                }
-                aria-describedby={`custom-reminder-interval-hint${
-                  customDraftErrors.intervalMinutes
-                    ? " custom-reminder-interval-error"
-                    : ""
-                }`}
-                aria-invalid={Boolean(customDraftErrors.intervalMinutes)}
-              />
-              <small id="custom-reminder-interval-hint" className="field-hint">
-                Whole number, 5-1440 minutes.
-              </small>
-              {customDraftErrors.intervalMinutes ? (
-                <small
-                  id="custom-reminder-interval-error"
-                  className="field-error"
-                >
-                  {customDraftErrors.intervalMinutes}
-                </small>
-              ) : null}
-            </label>
-          ) : null}
-          {customDraft.schedule.type === "dailyInterval" ? (
-            <div className="settings-columns">
-              <label className="field">
-                <span>Repeat every days</span>
-                <input
-                  type="number"
-                  min="1"
-                  max="365"
-                  step="1"
-                  value={customDraft.schedule.dayIntervalDays}
-                  onChange={(event) =>
-                    updateCustomDayInterval(Number(event.currentTarget.value))
-                  }
-                  aria-describedby={
-                    customDraftErrors.dayIntervalDays
-                      ? "custom-reminder-day-interval-error"
-                      : undefined
-                  }
-                  aria-invalid={Boolean(customDraftErrors.dayIntervalDays)}
-                />
-                {customDraftErrors.dayIntervalDays ? (
-                  <small
-                    id="custom-reminder-day-interval-error"
-                    className="field-error"
-                  >
-                    {customDraftErrors.dayIntervalDays}
-                  </small>
-                ) : null}
-              </label>
-              <label className="field">
-                <span>Reminder time</span>
-                <input
-                  type="time"
-                  value={customDraft.schedule.timeOfDay}
-                  onChange={(event) =>
-                    updateCustomDailyTime(event.currentTarget.value)
-                  }
-                  aria-describedby={
-                    customDraftErrors.timeOfDay
-                      ? "custom-reminder-time-error"
-                      : undefined
-                  }
-                  aria-invalid={Boolean(customDraftErrors.timeOfDay)}
-                />
-                {customDraftErrors.timeOfDay ? (
-                  <small id="custom-reminder-time-error" className="field-error">
-                    {customDraftErrors.timeOfDay}
-                  </small>
-                ) : null}
-              </label>
-            </div>
-          ) : null}
-          {customDraft.schedule.type === "weekdayInterval" ? (
-            <>
-              <fieldset className="settings-subgroup">
-                <legend>Reminder weekdays</legend>
-                <div className="weekday-grid">
-                  {weekdayOrder.map((weekday) => (
-                    <label key={weekday} className="checkbox-row">
-                      <input
                         type="checkbox"
-                        checked={isCustomWeekdaySelected(weekday)}
-                        onChange={() => toggleCustomWeekday(weekday)}
+                        aria-label="Enable proactive reminders"
+                        checked
+                        readOnly
                       />
-                      <span>{weekdayLabels[weekday]}</span>
+                </label>
+                <fieldset className="settings-inline-fieldset">
+                  <legend>Reminder intensity</legend>
+                  {reminderIntensityOptions.map((option) => (
+                    <label key={option.value} className="settings-radio-row">
+                      <input
+                          type="radio"
+                          aria-label={option.label}
+                          name="reminderIntensity"
+                          value={option.value}
+                          checked={settings.reminderIntensity === option.value}
+                        onChange={() =>
+                          updateSetting("reminderIntensity", option.value)
+                        }
+                      />
+                      <span>
+                        <strong>{option.label}</strong>
+                        <small>
+                          {option.value === "balanced"
+                            ? "Recommended"
+                            : option.value === "gentle"
+                              ? "Fewer reminders"
+                              : "More frequent reminders"}
+                        </small>
+                      </span>
                     </label>
                   ))}
+                </fieldset>
+                <label className="settings-switch-row">
+                  <span>
+                    <strong>Daily summary</strong>
+                    <small>Show a summary of your day.</small>
+                  </span>
+                  <input type="checkbox" checked readOnly />
+                </label>
+                <label className="settings-switch-row">
+                  <span>
+                    <strong>Start with system</strong>
+                    <small>Launch VitaLoop when you start your browser.</small>
+                  </span>
+                  <input type="checkbox" disabled />
+                </label>
+                <details className="settings-schedule-subsection">
+                  <summary>
+                    <span>👨🏻‍💻 Working Hours</span>
+                    <small>Set the workday window for reminders.</small>
+                  </summary>
+                  <div className="settings-columns">
+                    <label className="field">
+                      <span>Workday start</span>
+                      <input
+                        type="time"
+                        value={settings.workdayStart}
+                        onChange={(event) =>
+                          updateSetting("workdayStart", event.currentTarget.value)
+                        }
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Workday end</span>
+                      <input
+                        type="time"
+                        value={settings.workdayEnd}
+                        onChange={(event) =>
+                          updateSetting("workdayEnd", event.currentTarget.value)
+                        }
+                      />
+                    </label>
+                  </div>
+                </details>
+              </section>
+            ) : null}
+
+            {activeSettingsPanel === "custom-reminders" ? (
+              <section className="settings-card settings-custom-screen">
+                <div className="settings-section-heading">
+                  <h2>Custom reminders</h2>
+                  <button type="button" className="icon-button" aria-label="Saved">
+                    ✓
+                  </button>
                 </div>
-                {customDraftErrors.weekdays ? (
-                  <small className="field-error">
-                    {customDraftErrors.weekdays}
-                  </small>
-                ) : null}
-              </fieldset>
-              <label className="field">
-                <span>Reminder time</span>
-                <input
-                  type="time"
-                  value={customDraft.schedule.timeOfDay}
-                  onChange={(event) =>
-                    updateCustomWeekdayTime(event.currentTarget.value)
+                <div className="custom-recommendation-header">
+                  <h3>Recommended for you</h3>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCustomRecommendations(getRecommendedCustomReminders())
+                    }
+                  >
+                    Refresh
+                  </button>
+                </div>
+                <div
+                  className="custom-recommendation-grid"
+                  aria-label="Recommended custom reminders"
+                >
+                  {customRecommendations.map((recommendation) => (
+                    <button
+                      key={recommendation.id}
+                      type="button"
+                      className="custom-recommendation"
+                      onClick={() => applyCustomRecommendation(recommendation)}
+                    >
+                      <span className="recommendation-icon">◇</span>
+                      <strong>{recommendation.title}</strong>
+                      <small>{recommendation.description}</small>
+                      <span>{formatCustomReminderSchedule(recommendation.schedule)}</span>
+                      <em>Use</em>
+                    </button>
+                  ))}
+                </div>
+                <div className="settings-actions custom-reminder-actions">
+                  <button
+                    type="button"
+                    aria-label="Add custom reminder"
+                    onClick={openNewCustomReminderWizard}
+                  >
+                    + Add custom reminder
+                  </button>
+                </div>
+                <fieldset className="settings-subgroup custom-reminder-management">
+                  <legend>Manage Custom Reminders</legend>
+                  {settings.customReminders.length > 0 ? (
+                    <ul className="custom-reminder-list" aria-label="Custom reminders">
+                      {settings.customReminders.map((reminder) => (
+                        <li key={reminder.id} aria-label={reminder.title}>
+                          {pendingDeleteCustomReminderId === reminder.id ? (
+                            <>
+                              <div>
+                                <strong>Delete {reminder.title}?</strong>
+                                <span>Save settings to apply.</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  confirmDeleteCustomReminder(reminder.id)
+                                }
+                              >
+                                Confirm delete
+                              </button>
+                              <button type="button" onClick={cancelDeleteCustomReminder}>
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <div>
+                                <strong>{reminder.title}</strong>
+                                <span>
+                                  {formatCustomReminderSchedule(reminder.schedule)}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                aria-label={`Edit ${reminder.title}`}
+                                onClick={() => editCustomReminder(reminder.id)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                aria-label={`Delete ${reminder.title}`}
+                                onClick={() => deleteCustomReminder(reminder.id)}
+                              >
+                                Delete
+                              </button>
+                            </>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>No custom reminders yet.</p>
+                  )}
+                </fieldset>
+              </section>
+            ) : null}
+
+            {activeSettingsPanel !== "general" &&
+            activeSettingsPanel !== "custom-reminders" ? (
+              <section className="settings-card">
+                <h2>
+                  {
+                    settingsNavItems.find((item) => item.id === activeSettingsPanel)
+                      ?.label
                   }
-                  aria-invalid={Boolean(customDraftErrors.timeOfDay)}
-                />
-                {customDraftErrors.timeOfDay ? (
-                  <small className="field-error">
-                    {customDraftErrors.timeOfDay}
-                  </small>
+                </h2>
+                {activeSettingsPanel === "quiet-hours" ? (
+                  <>
+                    <label className="settings-switch-row">
+                      <span>
+                        <strong>Quiet hours enabled</strong>
+                        <small>Pause reminders during quiet hours.</small>
+                      </span>
+                      <input
+                        type="checkbox"
+                        aria-label="Quiet hours enabled"
+                        checked={settings.quietHoursEnabled}
+                        onChange={(event) =>
+                          updateSetting(
+                            "quietHoursEnabled",
+                            event.currentTarget.checked,
+                          )
+                        }
+                      />
+                    </label>
+                    <div className="settings-columns">
+                      <label className="field">
+                        <span>Quiet hours start</span>
+                        <input
+                          type="time"
+                          value={settings.quietHoursStart}
+                          onChange={(event) =>
+                            updateSetting(
+                              "quietHoursStart",
+                              event.currentTarget.value,
+                            )
+                          }
+                        />
+                      </label>
+                      <label className="field">
+                        <span>Quiet hours end</span>
+                        <input
+                          type="time"
+                          value={settings.quietHoursEnd}
+                          onChange={(event) =>
+                            updateSetting("quietHoursEnd", event.currentTarget.value)
+                          }
+                        />
+                      </label>
+                    </div>
+                  </>
                 ) : null}
-              </label>
-            </>
-          ) : null}
-          {customDraft.schedule.type === "oneTime" ? (
-            <div className="settings-columns">
-              <label className="field">
-                <span>Reminder date</span>
-                <input
-                  type="date"
-                  min={formatDateInputValue(new Date())}
-                  value={customDraft.schedule.date}
-                  onChange={(event) =>
-                    updateCustomOneTimeDate(event.currentTarget.value)
-                  }
-                  aria-describedby={
-                    customDraftErrors.date
-                      ? "custom-reminder-date-error"
-                      : undefined
-                  }
-                  aria-invalid={Boolean(customDraftErrors.date)}
-                />
-                {customDraftErrors.date ? (
-                  <small id="custom-reminder-date-error" className="field-error">
-                    {customDraftErrors.date}
-                  </small>
+                {activeSettingsPanel === "categories" ? (
+                  <div className="category-grid">
+                    {allReminders.map((reminder) => {
+                      const isPreferred =
+                        settings.preferredReminderCategories.includes(reminder.id);
+                      const isOnlyPreferred =
+                        isPreferred &&
+                        settings.preferredReminderCategories.length === 1;
+
+                      return (
+                        <label key={reminder.id} className="checkbox-row">
+                          <input
+                            type="checkbox"
+                            checked={isPreferred}
+                            disabled={isOnlyPreferred}
+                            onChange={() => toggleReminderCategory(reminder.id)}
+                          />
+                          <span>{reminder.title}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 ) : null}
-              </label>
-              <label className="field">
-                <span>Reminder time</span>
-                <input
-                  type="time"
-                  value={customDraft.schedule.timeOfDay}
-                  onChange={(event) =>
-                    updateCustomOneTimeTime(event.currentTarget.value)
-                  }
-                  aria-invalid={Boolean(customDraftErrors.timeOfDay)}
-                />
-                {customDraftErrors.timeOfDay ? (
-                  <small className="field-error">
-                    {customDraftErrors.timeOfDay}
-                  </small>
+                {activeSettingsPanel === "advanced" ? (
+                  <p>Settings stay local to this browser.</p>
                 ) : null}
-              </label>
+              </section>
+            ) : null}
+            <div className="settings-actions settings-footer-actions">
+              <button type="button" onClick={resetSettings}>
+                Reset to defaults
+              </button>
+              <button type="submit">Save changes</button>
             </div>
-          ) : null}
-          <div className="settings-columns">
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={customDraft.respectReminderWindows}
-                onChange={(event) =>
-                  updateCustomDraft(
-                    "respectReminderWindows",
-                    event.currentTarget.checked,
+            {status === "saved" && (
+              <p className="settings-status" role="status" aria-live="polite">
+                Settings saved.
+              </p>
+            )}
+            {status === "reset" && (
+              <p className="settings-status" role="status" aria-live="polite">
+                Defaults restored.
+              </p>
+            )}
+            {status === "progress-reset" && (
+              <p className="settings-status" role="status" aria-live="polite">
+                Today's progress reset.
+              </p>
+            )}
+            {status === "error" && (
+              <p className="settings-error" role="alert">
+                Settings could not be saved. Check the values and try again.
+              </p>
+            )}
+            {status === "custom-error" && (
+              <p className="settings-error" role="alert">
+                Check the highlighted custom reminder fields and try again.
+              </p>
+            )}
+            {status === "custom-removed" && (
+              <p className="settings-status" role="status" aria-live="polite">
+                Custom reminder removed. Save settings to apply.
+              </p>
+            )}
+          </div>
+          <aside className="settings-support-column" aria-label="Settings status">
+            <section className="settings-card">
+              <h2>Local services</h2>
+              <dl className="status-list">
+                <div>
+                  <dt>Alarms</dt>
+                  <dd>Active</dd>
+                </div>
+                <div>
+                  <dt>Notifications</dt>
+                  <dd>Enabled</dd>
+                </div>
+                <div>
+                  <dt>Storage</dt>
+                  <dd>Local only</dd>
+                </div>
+              </dl>
+            </section>
+            <section className="settings-card">
+              <h2>Actions</h2>
+              <button type="button" className="secondary-action">
+                Send test notification
+              </button>
+              <button
+                type="button"
+                className="secondary-action"
+                onClick={resetTodaysProgress}
+              >
+                Reset today's progress
+              </button>
+            </section>
+          </aside>
+        </form>
+      </div>
+
+      {isCustomReminderWizardOpen ? (
+        <div className="custom-wizard-backdrop" role="presentation">
+          <section
+            className="custom-wizard"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="custom-wizard-heading"
+          >
+            <header className="custom-wizard-header">
+              <h2 id="custom-wizard-heading">New custom reminder</h2>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="Close custom reminder wizard"
+                onClick={closeCustomReminderWizard}
+              >
+                ×
+              </button>
+            </header>
+            <div className="custom-wizard-body">
+              <nav className="custom-wizard-steps" aria-label="Custom reminder steps">
+                {(["details", "recurrence", "review"] as const).map((step, index) => (
+                  <button
+                    key={step}
+                    type="button"
+                    aria-label={
+                      step === "details"
+                        ? "Details"
+                        : step === "recurrence"
+                          ? "Recurrence"
+                          : "Review"
+                    }
+                    className={customReminderWizardStep === step ? "is-active" : ""}
+                    onClick={() => setCustomReminderWizardStep(step)}
+                  >
+                    <span aria-hidden="true">{index + 1}</span>
+                    {step === "details"
+                      ? "Details"
+                      : step === "recurrence"
+                        ? "Recurrence"
+                        : "Review"}
+                  </button>
+                ))}
+              </nav>
+              <div className="custom-wizard-panel">
+                {customReminderWizardStep === "details" ? (
+                  <>
+                    <h3>Details</h3>
+                    {customReminderForm}
+                  </>
+                ) : null}
+                {customReminderWizardStep === "recurrence" ? (
+                  <>
+                    <h3>Recurrence</h3>
+                    <p>Choose how often this reminder repeats.</p>
+                    {recurrenceControls}
+                  </>
+                ) : null}
+                {customReminderWizardStep === "review" ? (
+                  <>
+                    <h3>Review</h3>
+                    <dl className="status-list">
+                      <div>
+                        <dt>Title</dt>
+                        <dd>{customDraft.title || "Untitled reminder"}</dd>
+                      </div>
+                      <div>
+                        <dt>Schedule</dt>
+                        <dd>{formatCustomReminderSchedule(customDraft.schedule)}</dd>
+                      </div>
+                    </dl>
+                    <label className="settings-switch-row">
+                      <span>
+                        <strong>Enable custom reminder</strong>
+                        <small>Show this reminder in your active rhythm.</small>
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={customDraft.enabled}
+                        onChange={(event) =>
+                          updateCustomDraft("enabled", event.currentTarget.checked)
+                        }
+                      />
+                    </label>
+                  </>
+                ) : null}
+              </div>
+            </div>
+            <footer className="custom-wizard-footer">
+              <button
+                type="button"
+                onClick={() =>
+                  setCustomReminderWizardStep(
+                    customReminderWizardStep === "review" ? "recurrence" : "details",
                   )
                 }
-              />
-              <span>Respect quiet hours and workday</span>
-            </label>
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={customDraft.enabled}
-                onChange={(event) =>
-                  updateCustomDraft("enabled", event.currentTarget.checked)
-                }
-              />
-              <span>Enable custom reminder</span>
-            </label>
-          </div>
-          <div className="settings-actions custom-reminder-actions">
-            <button type="button" onClick={saveCustomReminder}>
-              {customDraft.id ? "Update custom reminder" : "Add custom reminder"}
-            </button>
-            {customDraft.id ? (
-              <button type="button" onClick={resetCustomDraft}>
-                Cancel edit
+              >
+                Back
               </button>
-            ) : null}
-          </div>
-          <fieldset className="settings-subgroup custom-reminder-management">
-            <legend>Manage Custom Reminders</legend>
-            {settings.customReminders.length > 0 ? (
-              <ul className="custom-reminder-list" aria-label="Custom reminders">
-                {settings.customReminders.map((reminder) => (
-                  <li key={reminder.id}>
-                    {pendingDeleteCustomReminderId === reminder.id ? (
-                      <>
-                        <div>
-                          <strong>Delete {reminder.title}?</strong>
-                          <span>Save settings to apply.</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => confirmDeleteCustomReminder(reminder.id)}
-                        >
-                          Confirm delete
-                        </button>
-                        <button type="button" onClick={cancelDeleteCustomReminder}>
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <div>
-                          <strong>{reminder.title}</strong>
-                          <span>{formatCustomReminderSchedule(reminder.schedule)}</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => editCustomReminder(reminder.id)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => deleteCustomReminder(reminder.id)}
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No custom reminders yet.</p>
-            )}
-          </fieldset>
-            </div>
-          ) : null}
-        </fieldset>
+              <button
+                type="button"
+                onClick={() => {
+                  if (customReminderWizardStep === "review") {
+                    saveCustomReminder();
+                    return;
+                  }
 
-        <div className="settings-actions">
-          <button type="submit">Save settings</button>
-          <button type="button" onClick={resetSettings}>
-            Reset to defaults
-          </button>
+                  setCustomReminderWizardStep(
+                    customReminderWizardStep === "details" ? "recurrence" : "review",
+                  );
+                }}
+              >
+                {customReminderWizardStep === "review" ? "Save custom reminder" : "Next"}
+              </button>
+            </footer>
+          </section>
         </div>
-
-        {status === "saved" && (
-          <p className="settings-status" role="status" aria-live="polite">
-            Settings saved.
-          </p>
-        )}
-        {status === "reset" && (
-          <p className="settings-status" role="status" aria-live="polite">
-            Defaults restored.
-          </p>
-        )}
-        {status === "error" && (
-          <p className="settings-error" role="alert">
-            Settings could not be saved. Check the values and try again.
-          </p>
-        )}
-        {status === "custom-error" && (
-          <p className="settings-error" role="alert">
-            Check the highlighted custom reminder fields and try again.
-          </p>
-        )}
-        {status === "custom-removed" && (
-          <p className="settings-status" role="status" aria-live="polite">
-            Custom reminder removed. Save settings to apply.
-          </p>
-        )}
-      </form>
+      ) : null}
     </section>
   );
 }
