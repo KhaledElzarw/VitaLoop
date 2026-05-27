@@ -39,7 +39,7 @@ afterEach(() => {
 });
 
 function expandCustomReminders() {
-  fireEvent.click(screen.getByRole("button", { name: "Custom reminders" }));
+  fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
 }
 
 function openCustomReminderWizard(step: "Details" | "Recurrence" | "Review") {
@@ -76,9 +76,13 @@ describe("ExtensionOptions", () => {
     expect(screen.queryByRole("button", { name: "Notifications" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Appearance" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Data & privacy" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Custom reminders" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Reminders" }));
     expect(screen.getByLabelText("Hydration")).toBeTruthy();
     expect(screen.getByLabelText("Eye strain")).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Custom reminders" }),
+    ).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "General" }));
     expect(
       screen.getByRole("button", { name: "Send test notification" }),
@@ -195,7 +199,6 @@ describe("ExtensionOptions", () => {
     });
 
     openCustomReminderWizard("Details");
-    fireEvent.click(screen.getByRole("button", { name: "Custom reminders" }));
     expect(
       screen.getByRole("group", { name: "Manage Custom Reminders" }),
     ).toBeTruthy();

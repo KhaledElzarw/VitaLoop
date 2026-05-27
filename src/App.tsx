@@ -89,7 +89,6 @@ type SettingsPanelId =
   | "general"
   | "quiet-hours"
   | "categories"
-  | "custom-reminders"
   | "advanced";
 type CustomReminderWizardStep = "details" | "recurrence" | "review";
 
@@ -556,10 +555,7 @@ export function SettingsScreen({
     useState<CustomReminderDraftErrors>({});
   const [pendingDeleteCustomReminderId, setPendingDeleteCustomReminderId] =
     useState<ReminderId | null>(null);
-  const allReminders = getReminderListWithCustomReminders(
-    reminderList,
-    settings,
-  );
+  const reminderCategories = getOrderedReminders(reminderList);
   const titleLimitStatus = getCustomReminderCharacterLimitStatus(
     customDraft.title,
     CUSTOM_REMINDER_TITLE_MAX_LENGTH,
@@ -886,7 +882,6 @@ export function SettingsScreen({
     { id: "general", label: "General" },
     { id: "quiet-hours", label: "Quiet hours" },
     { id: "categories", label: "Reminder categories" },
-    { id: "custom-reminders", label: "Custom reminders" },
     { id: "advanced", label: "Advanced" },
   ];
 
@@ -1155,6 +1150,110 @@ export function SettingsScreen({
     </div>
   );
 
+  const customRemindersSection = (
+    <section
+      className="settings-custom-screen settings-reminders-subsection"
+      aria-labelledby="custom-reminders-heading"
+    >
+      <div className="settings-section-heading">
+        <h2 id="custom-reminders-heading">Custom reminders</h2>
+        <button type="button" className="icon-button" aria-label="Saved">
+          ✓
+        </button>
+      </div>
+      <div className="custom-recommendation-header">
+        <h3>Recommended for you</h3>
+        <button
+          type="button"
+          onClick={() => setCustomRecommendations(getRecommendedCustomReminders())}
+        >
+          Refresh
+        </button>
+      </div>
+      <div
+        className="custom-recommendation-grid"
+        aria-label="Recommended custom reminders"
+      >
+        {customRecommendations.map((recommendation) => (
+          <button
+            key={recommendation.id}
+            type="button"
+            className="custom-recommendation"
+            onClick={() => applyCustomRecommendation(recommendation)}
+          >
+            <span className="recommendation-icon">◇</span>
+            <strong>{recommendation.title}</strong>
+            <small>{recommendation.description}</small>
+            <span>{formatCustomReminderSchedule(recommendation.schedule)}</span>
+            <em>Use</em>
+          </button>
+        ))}
+      </div>
+      <div className="settings-actions custom-reminder-actions">
+        <button
+          type="button"
+          aria-label="Add custom reminder"
+          onClick={openNewCustomReminderWizard}
+        >
+          + Add custom reminder
+        </button>
+      </div>
+      <fieldset className="settings-subgroup custom-reminder-management">
+        <legend>Manage Custom Reminders</legend>
+        {settings.customReminders.length > 0 ? (
+          <ul className="custom-reminder-list" aria-label="Custom reminders">
+            {settings.customReminders.map((reminder) => (
+              <li key={reminder.id} aria-label={reminder.title}>
+                {pendingDeleteCustomReminderId === reminder.id ? (
+                  <>
+                    <div>
+                      <strong>Delete {reminder.title}?</strong>
+                      <span>Save settings to apply.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => confirmDeleteCustomReminder(reminder.id)}
+                    >
+                      Confirm delete
+                    </button>
+                    <button type="button" onClick={cancelDeleteCustomReminder}>
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <strong>{reminder.title}</strong>
+                      <span>
+                        {formatCustomReminderSchedule(reminder.schedule)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={`Edit ${reminder.title}`}
+                      onClick={() => editCustomReminder(reminder.id)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Delete ${reminder.title}`}
+                      onClick={() => deleteCustomReminder(reminder.id)}
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No custom reminders yet.</p>
+        )}
+      </fieldset>
+    </section>
+  );
+
   return (
     <section className="web-settings-shell" aria-labelledby="settings-heading">
       <aside className="web-app-sidebar" aria-label="App navigation">
@@ -1284,113 +1383,7 @@ export function SettingsScreen({
               </section>
             ) : null}
 
-            {activeSettingsPanel === "custom-reminders" ? (
-              <section className="settings-card settings-custom-screen">
-                <div className="settings-section-heading">
-                  <h2>Custom reminders</h2>
-                  <button type="button" className="icon-button" aria-label="Saved">
-                    ✓
-                  </button>
-                </div>
-                <div className="custom-recommendation-header">
-                  <h3>Recommended for you</h3>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setCustomRecommendations(getRecommendedCustomReminders())
-                    }
-                  >
-                    Refresh
-                  </button>
-                </div>
-                <div
-                  className="custom-recommendation-grid"
-                  aria-label="Recommended custom reminders"
-                >
-                  {customRecommendations.map((recommendation) => (
-                    <button
-                      key={recommendation.id}
-                      type="button"
-                      className="custom-recommendation"
-                      onClick={() => applyCustomRecommendation(recommendation)}
-                    >
-                      <span className="recommendation-icon">◇</span>
-                      <strong>{recommendation.title}</strong>
-                      <small>{recommendation.description}</small>
-                      <span>{formatCustomReminderSchedule(recommendation.schedule)}</span>
-                      <em>Use</em>
-                    </button>
-                  ))}
-                </div>
-                <div className="settings-actions custom-reminder-actions">
-                  <button
-                    type="button"
-                    aria-label="Add custom reminder"
-                    onClick={openNewCustomReminderWizard}
-                  >
-                    + Add custom reminder
-                  </button>
-                </div>
-                <fieldset className="settings-subgroup custom-reminder-management">
-                  <legend>Manage Custom Reminders</legend>
-                  {settings.customReminders.length > 0 ? (
-                    <ul className="custom-reminder-list" aria-label="Custom reminders">
-                      {settings.customReminders.map((reminder) => (
-                        <li key={reminder.id} aria-label={reminder.title}>
-                          {pendingDeleteCustomReminderId === reminder.id ? (
-                            <>
-                              <div>
-                                <strong>Delete {reminder.title}?</strong>
-                                <span>Save settings to apply.</span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  confirmDeleteCustomReminder(reminder.id)
-                                }
-                              >
-                                Confirm delete
-                              </button>
-                              <button type="button" onClick={cancelDeleteCustomReminder}>
-                                Cancel
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <div>
-                                <strong>{reminder.title}</strong>
-                                <span>
-                                  {formatCustomReminderSchedule(reminder.schedule)}
-                                </span>
-                              </div>
-                              <button
-                                type="button"
-                                aria-label={`Edit ${reminder.title}`}
-                                onClick={() => editCustomReminder(reminder.id)}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                aria-label={`Delete ${reminder.title}`}
-                                onClick={() => deleteCustomReminder(reminder.id)}
-                              >
-                                Delete
-                              </button>
-                            </>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p>No custom reminders yet.</p>
-                  )}
-                </fieldset>
-              </section>
-            ) : null}
-
-            {activeSettingsPanel !== "general" &&
-            activeSettingsPanel !== "custom-reminders" ? (
+            {activeSettingsPanel !== "general" ? (
               <section className="settings-card">
                 <h2>
                   {
@@ -1445,27 +1438,32 @@ export function SettingsScreen({
                   </>
                 ) : null}
                 {activeSettingsPanel === "categories" ? (
-                  <div className="category-grid">
-                    {allReminders.map((reminder) => {
-                      const isPreferred =
-                        settings.preferredReminderCategories.includes(reminder.id);
-                      const isOnlyPreferred =
-                        isPreferred &&
-                        settings.preferredReminderCategories.length === 1;
+                  <>
+                    <div className="category-grid">
+                      {reminderCategories.map((reminder) => {
+                        const isPreferred =
+                          settings.preferredReminderCategories.includes(
+                            reminder.id,
+                          );
+                        const isOnlyPreferred =
+                          isPreferred &&
+                          settings.preferredReminderCategories.length === 1;
 
-                      return (
-                        <label key={reminder.id} className="checkbox-row">
-                          <input
-                            type="checkbox"
-                            checked={isPreferred}
-                            disabled={isOnlyPreferred}
-                            onChange={() => toggleReminderCategory(reminder.id)}
-                          />
-                          <span>{reminder.title}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
+                        return (
+                          <label key={reminder.id} className="checkbox-row">
+                            <input
+                              type="checkbox"
+                              checked={isPreferred}
+                              disabled={isOnlyPreferred}
+                              onChange={() => toggleReminderCategory(reminder.id)}
+                            />
+                            <span>{reminder.title}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {customRemindersSection}
+                  </>
                 ) : null}
                 {activeSettingsPanel === "advanced" ? (
                   <p>Settings stay local to this browser.</p>
