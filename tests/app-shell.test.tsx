@@ -54,7 +54,7 @@ function expandCustomReminders() {
   fireEvent.click(screen.getByRole("button", { name: "Reminder categories" }));
 }
 
-function openCustomReminderWizard(step: "Details" | "Recurrence" | "Review") {
+function openCustomReminderWizard(step: "Details" | "Review") {
   expandCustomReminders();
   fireEvent.click(screen.getByRole("button", { name: "Add custom reminder" }));
   fireEvent.click(screen.getByRole("button", { name: step }));
@@ -422,7 +422,6 @@ describe("VitaLoop app shell", () => {
     fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
       target: { value: "Reset your desk and posture." },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Recurrence" }));
     fireEvent.change(screen.getByLabelText(/Custom reminder interval minutes/), {
       target: { value: "4.5" },
     });
@@ -442,14 +441,14 @@ describe("VitaLoop app shell", () => {
     expect(
       screen.getByRole("group", { name: "Manage Custom Reminders" }),
     ).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Details" }));
+    expect(screen.queryByRole("button", { name: "Recurrence" })).toBeNull();
+    expect(screen.getByRole("heading", { name: "Recurrence" })).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/Custom reminder title/), {
       target: { value: "Desk reset" },
     });
     fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
       target: { value: "Reset your desk and posture." },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Recurrence" }));
     fireEvent.change(screen.getByLabelText(/Custom reminder interval minutes/), {
       target: { value: "25" },
     });
@@ -510,7 +509,6 @@ describe("VitaLoop app shell", () => {
     fireEvent.change(screen.getByLabelText(/Custom reminder message/), {
       target: { value: "Check plant soil." },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Recurrence" }));
     fireEvent.click(screen.getByRole("radio", { name: "Weekdays" }));
     fireEvent.change(screen.getByLabelText("Reminder time"), {
       target: { value: "08:30" },

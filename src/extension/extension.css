@@ -1627,7 +1627,10 @@ body {
 }
 
 .extension-custom-wizard {
+  display: flex;
+  flex-direction: column;
   width: min(100%, 1120px);
+  max-height: calc(100vh - 48px);
   overflow: hidden;
   border: 1px solid #d8ded8;
   border-radius: 10px;
@@ -1660,8 +1663,10 @@ body {
 
 .extension-custom-wizard-body {
   display: grid;
+  flex: 1 1 auto;
   grid-template-columns: 240px minmax(0, 1fr);
-  min-height: 470px;
+  min-height: min(470px, 58vh);
+  overflow: auto;
 }
 
 .extension-custom-wizard-steps {
@@ -1712,6 +1717,22 @@ body {
 }
 
 .extension-custom-wizard-panel > p {
+  margin: 4px 0 18px;
+  color: #657169;
+}
+
+.extension-custom-wizard-subsection {
+  margin-top: 24px;
+  border-top: 1px solid #e4e9e4;
+  padding-top: 22px;
+}
+
+.extension-custom-wizard-subsection h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.extension-custom-wizard-subsection > p {
   margin: 4px 0 18px;
   color: #657169;
 }
