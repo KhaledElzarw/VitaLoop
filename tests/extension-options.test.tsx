@@ -63,7 +63,9 @@ describe("ExtensionOptions", () => {
     render(<ExtensionOptions storage={createStorageMock()} />);
 
     expect(screen.getByLabelText("Enable proactive reminders")).toBeTruthy();
-    expect(screen.getByRole("radio", { name: "Balanced" })).toBeTruthy();
+    expect(
+      (screen.getByLabelText("Reminder intensity") as HTMLSelectElement).value,
+    ).toBe("balanced");
     expect(screen.queryByRole("button", { name: "About" })).toBeNull();
     expect(screen.getByText("👨🏻‍💻 Working Hours")).toBeTruthy();
     expect(
@@ -94,9 +96,13 @@ describe("ExtensionOptions", () => {
     expect(screen.getByRole("heading", { name: "Recommended for you" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "General" }));
     expect(
+      (screen.getByLabelText("Reminder intensity") as HTMLSelectElement).value,
+    ).toBe("balanced");
+    expect(
       screen.getByRole("button", { name: "Send test notification" }),
     ).toBeTruthy();
-    expect(screen.getByText("Local status")).toBeTruthy();
+    expect(screen.getByText("Quick actions")).toBeTruthy();
+    expect(screen.queryByText("Local status")).toBeNull();
   });
 
   it("saves settings through the storage adapter", async () => {
@@ -105,7 +111,9 @@ describe("ExtensionOptions", () => {
     render(<ExtensionOptions storage={storage} />);
 
     fireEvent.click(screen.getByLabelText("Enable proactive reminders"));
-    fireEvent.click(screen.getByRole("radio", { name: "Active" }));
+    fireEvent.change(screen.getByLabelText("Reminder intensity"), {
+      target: { value: "active" },
+    });
     fireEvent.click(screen.getByText("👨🏻‍💻 Working Hours"));
     fireEvent.change(screen.getByLabelText("Workday start"), {
       target: { value: "09:00" },
@@ -378,9 +386,9 @@ describe("ExtensionOptions", () => {
 
     await waitFor(() => {
       expect(
-        (screen.getByRole("radio", { name: "Active" }) as HTMLInputElement)
-          .checked,
-      ).toBe(true);
+        (screen.getByLabelText("Reminder intensity") as HTMLSelectElement)
+          .value,
+      ).toBe("active");
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Reset to defaults" }));
@@ -391,9 +399,8 @@ describe("ExtensionOptions", () => {
       );
     });
     expect(
-      (screen.getByRole("radio", { name: "Balanced" }) as HTMLInputElement)
-        .checked,
-    ).toBe(true);
+      (screen.getByLabelText("Reminder intensity") as HTMLSelectElement).value,
+    ).toBe("balanced");
     expect(screen.getByRole("status").textContent).toContain(
       "Defaults restored.",
     );

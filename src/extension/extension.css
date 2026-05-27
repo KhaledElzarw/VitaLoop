@@ -47,6 +47,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -58,6 +59,7 @@ button {
 
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
 textarea:focus-visible {
   outline: 3px solid var(--extension-focus-ring);
   outline-offset: 2px;
@@ -780,6 +782,7 @@ textarea:focus-visible {
 }
 
 .extension-field input,
+.extension-field select,
 .extension-field textarea {
   min-height: 34px;
   width: 100%;
@@ -789,6 +792,10 @@ textarea:focus-visible {
   background: rgba(255, 255, 255, 0.82);
   color: var(--extension-text);
   padding: 6px 8px;
+}
+
+.extension-field select {
+  cursor: pointer;
 }
 
 .extension-field textarea {
@@ -1327,8 +1334,7 @@ body {
   font-size: 0.95rem;
 }
 
-.extension-switch-row,
-.extension-radio-row {
+.extension-switch-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1342,20 +1348,17 @@ body {
   padding-top: 0;
 }
 
-.extension-switch-row span,
-.extension-radio-row span {
+.extension-switch-row span {
   display: grid;
   gap: 3px;
 }
 
-.extension-switch-row strong,
-.extension-radio-row strong {
+.extension-switch-row strong {
   color: #19221d;
   font-size: 0.86rem;
 }
 
-.extension-switch-row small,
-.extension-radio-row small {
+.extension-switch-row small {
   color: #657169;
   font-size: 0.76rem;
   font-weight: 650;
@@ -1402,18 +1405,6 @@ body {
   background: #dfe3e2;
   cursor: not-allowed;
   opacity: 0.8;
-}
-
-.extension-inline-fieldset {
-  margin: 0;
-  border: 0;
-  border-top: 1px solid #e8ece8;
-  padding: 16px 0 0;
-}
-
-.extension-inline-fieldset legend {
-  margin-bottom: 8px;
-  font-weight: 850;
 }
 
 .extension-schedule-subsection {
@@ -1477,38 +1468,10 @@ body {
   white-space: nowrap;
 }
 
-.extension-radio-row {
-  justify-content: flex-start;
-  border: 0;
-  padding: 8px 0;
-}
-
 .extension-options-rail {
   display: grid;
   gap: 14px;
   align-content: start;
-}
-
-.extension-status-list {
-  display: grid;
-  gap: 12px;
-  margin: 12px 0 0;
-}
-
-.extension-status-list div {
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.extension-status-list dt {
-  color: #3a463f;
-}
-
-.extension-status-list dd {
-  margin: 0;
-  color: #2f7047;
-  font-weight: 850;
 }
 
 .extension-secondary-action {
