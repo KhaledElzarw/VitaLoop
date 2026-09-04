@@ -1,123 +1,126 @@
 # VitaLoop
 
-VitaLoop is a recurring wellness companion for busy people. It helps users remember small self-care actions throughout the day through calm, practical wellness nudges.
+[![CI](https://github.com/KhaledElzarw/VitaLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/KhaledElzarw/VitaLoop/actions/workflows/ci.yml)
 
-VitaLoop is a wellness companion, not a medical app.
+Small loops for better days.
 
-## Local Development
+VitaLoop is a calm, local-first wellness companion for the moments that disappear inside a busy day. It turns everyday self-care intentions into lightweight, recurring nudges that are easy to complete, snooze, skip, or tune around real life.
 
-Install dependencies:
+VitaLoop supports general wellness routines. It is not a medical app and does not provide medical advice, diagnosis, treatment, prevention claims, or emergency guidance.
+
+## Product at a glance
+
+VitaLoop is designed for people who spend long stretches focused on work, study, travel, caregiving, or screens and want a little more structure without another demanding tracking system.
+
+- Notice the next small action with a clear home view and countdown.
+- Build a personal rhythm across hydration, eye breaks, stretching, standing or walking, posture, breathing resets, sleep routines, and mood or energy check-ins.
+- Keep control with quiet hours, workday windows, reminder intensity, preferred categories, and custom reminders.
+- Act in the moment with done, snooze, and skip-once actions.
+- Extend the same reminder model into a Chromium browser companion with opt-in local notifications.
+
+## The product journey
+
+The core loop is intentionally simple: see what is next, choose what fits, then make the reminder yours.
+
+### 1. See the day at a glance
+
+The home view surfaces the next wellness nudge, the current rhythm, and the upcoming “Head's up” queue without turning the day into a dashboard of scores.
+
+![VitaLoop Today overview showing the next wellness nudge and upcoming Head's up queue](docs/screenshots/web-home.png)
+
+### 2. Explore and choose reminders
+
+The Reminders screen makes the available categories legible, shows their calculated schedule, and provides a focused detail view for the selected loop.
+
+![VitaLoop Reminders screen showing reminder categories and selected reminder details](docs/screenshots/web-reminders.png)
+
+### 3. Tune the rhythm around real life
+
+Settings keep the user in control of timing, quiet hours, workday boundaries, reminder intensity, notification behavior, and custom loops. Preferences are stored locally in the current MVP.
+
+![VitaLoop Settings screen showing local services, general controls, and actions](docs/screenshots/web-settings.png)
+
+## Companion surfaces
+
+The Chromium extension is designed for low-friction moments during browser-heavy work. The popup provides an at-a-glance next loop and a direct completion action; the Options page exposes the controls needed for local notifications and reminder preferences.
+
+| Browser popup | Extension options |
+| --- | --- |
+| ![VitaLoop Chromium extension popup showing the next loop](docs/screenshots/extension-popup.png) | ![VitaLoop extension Options page showing local reminder controls](docs/screenshots/extension-options.png) |
+
+## Engineering overview
+
+VitaLoop is a small, typed frontend with a shared domain model across the web app and browser extension.
+
+- React 19, TypeScript, and Vite provide the application and build foundation.
+- `src/domain/` contains pure scheduling, reminder-action, history, schema, and custom-reminder logic.
+- Zod schemas validate reminder definitions and application settings at the storage boundary.
+- `src/services/` provides local persistence adapters for settings and reminder history.
+- `src/extension/` contains the Manifest V3 popup, Options page, background scheduler, notification copy, and extension storage adapter.
+- `public/manifest.json` defines the Chromium extension package and its narrowly scoped `storage`, `alarms`, and `notifications` permissions.
+- Vitest and React Testing Library cover scheduling, storage fallback, reminder actions, settings validation, extension behavior, and core screen rendering.
+- Capacitor is configured as a future packaging path for iOS and Android without generating native projects in the current web MVP.
+
+The central design constraint is shared behavior: the web experience and extension consume the same reminder definitions, settings model, scheduling helpers, and action semantics instead of maintaining separate implementations.
+
+## Privacy and safety boundaries
+
+The current product is local-first by design:
+
+- Settings, custom reminders, reminder actions, and recent history stay in browser-local storage.
+- There are no accounts, backend services, cloud sync, analytics SDKs, payment flows, external APIs, content scripts, host permissions, or page reading.
+- Browser notifications are opt-in and controlled by the user's browser and operating system.
+- Reminder language remains supportive and optional; VitaLoop does not claim to prevent, treat, diagnose, or cure health conditions.
+
+See [`docs/product-brief.md`](docs/product-brief.md) for the product vision, MVP boundaries, non-goals, and future platform direction. See [`docs/extension-notification-reliability.md`](docs/extension-notification-reliability.md) for the manual notification validation checklist and browser/OS limitations.
+
+## Run locally
+
+Requirements: Node.js 20 or newer and npm.
 
 ```bash
 npm install
-```
-
-Start the web app:
-
-```bash
 npm run dev
 ```
 
-Create a production build:
+Open the local Vite URL shown in the terminal. The web app includes Home, Reminders, Settings, Backlog, Watch Preview, and About surfaces.
 
-```bash
-npm run build
-```
+## Build and validate
 
-Run tests:
-
-```bash
-npm test -- --run
-```
-
-Run lint:
+The repository keeps the release checks intentionally small and reproducible:
 
 ```bash
 npm run lint
-```
-
-## Chromium Extension MVP
-
-Build the web app and extension files:
-
-```bash
+npm test -- --run
 npm run build
 ```
 
-Load the local extension in a Chromium-based browser:
+`npm run build` type-checks the project before producing the web app and Chromium extension artifacts in `dist/`. Build output is ignored by Git and should not be committed.
 
-1. Open the browser extension management page, such as `chrome://extensions`, `edge://extensions`, or `brave://extensions`.
-2. Enable Developer mode.
-3. Select Load unpacked.
-4. Choose the `dist` folder.
-5. Confirm the browser lists the `storage`, `alarms`, and `notifications` permissions.
-6. Open the VitaLoop Options page.
-7. Enable proactive reminders.
-8. Save the settings.
-9. Select Send test notification and confirm a VitaLoop notification appears.
-10. Confirm the popup shows proactive reminders as enabled and still previews the next wellness nudge.
-11. If practical during manual testing, trigger or wait for the named alarm and confirm a VitaLoop notification appears.
-12. When practical, repeat the notification check in another Chromium-based browser, such as Edge or Brave.
-13. Disable proactive reminders in Options, save, and confirm proactive reminders show as disabled.
+## Load the Chromium extension locally
 
-The MVP supports Chromium-based browsers such as Chrome, Edge, Brave, Atlas,
-and compatible Chromium browsers. It stores settings with `chrome.storage.local`
-only. Chromium extension platforms expose storage, alarms, and notifications
-through the standard `chrome.*` API namespace. Proactive reminders are opt-in,
-local browser notifications powered by a Manifest V3 background service worker
-and `chrome.alarms`. All current extension features are free and unlocked.
+The extension is an opt-in Manifest V3 MVP for Chromium-based browsers such as Chrome, Edge, Brave, Atlas, and compatible browsers.
 
-On macOS, if Send test notification reports success but no banner appears,
-check System Settings > Notifications for the active browser and its alert
-helper, then confirm notifications are allowed and Focus or Do Not Disturb is
-not suppressing banners.
+1. Run `npm run build`.
+2. Open the browser's extension management page, such as `chrome://extensions` or `edge://extensions`.
+3. Enable Developer mode and choose **Load unpacked**.
+4. Select the repository's `dist/` folder.
+5. Open VitaLoop Options, enable proactive reminders, and save.
+6. Use **Send test notification** to verify the browser notification path.
+7. Open the popup to verify the next loop, progress surface, and done action.
 
-Native notification layout and timing are controlled by the browser and
-operating system. VitaLoop requests persistent display with
-`requireInteraction: true`, but macOS, Windows, Focus, Do Not Disturb, and
-per-browser settings can still affect whether a banner stays visible. VitaLoop
-cannot place custom React UI, dropdowns, countdowns, or custom macOS-style
-surfaces inside the native notification banner. See
-`docs/extension-notification-reliability.md` for the manual validation checklist
-and platform limits.
+Native notification layout and timing are controlled by the browser and operating system. Focus modes, notification permissions, browser policy, and platform behavior can affect whether a banner appears or stays visible.
 
-The popup and options page use lightweight CSS-only macOS-inspired styling. No
-external assets, Apple assets, external fonts, or UI libraries are used.
+## Project status and next steps
 
-The extension does not include content scripts, host permissions, backend
-services, analytics, external APIs, cloud sync, accounts, payments, or page
-reading.
+The repository is an intentionally scoped product foundation: the core web journey, local-first settings model, scheduling helpers, custom reminders, reminder actions, and Chromium extension MVP are implemented and covered by automated tests.
 
-## Current Architecture
+The product backlog keeps future work explicit, including mobile packaging, a native Apple Watch companion, and additional product polish. Native iOS, Android, and watchOS source is not included until those surfaces are ready for platform-specific validation.
 
-- React, TypeScript, and Vite provide the web foundation.
-- The app uses simple React tab state for Home, Reminders, Settings, Backlog, Watch Preview, and About.
-- Zod schemas define reminder definitions and app settings.
-- Built-in reminder data covers hydration, eye strain, stretch, stand/walk, posture, breathing reset, sleep routine, and mood/energy check-in.
-- Settings use safe local defaults and a small localStorage-backed service for quiet hours, reminder intensity, workday window, timezone, preferred reminder categories, and custom reminders.
-- Pure scheduling helpers calculate quiet-hour blocks, workday eligibility, intensity-adjusted built-in frequencies, custom reminder frequencies, and next reminder times.
-- Reminder actions support done, snooze, and skip once, with local recent activity history for the web app and Chromium extension.
-- A Manifest V3 Chromium extension MVP builds popup, options, and an opt-in background reminder worker from the shared reminder settings, scheduling, custom reminder, and action logic.
-- Vitest with React Testing Library covers the app shell, navigation, reminders, backlog categories, and settings schema behavior.
-- Styling is minimal custom CSS with a mobile-first shell and bottom navigation.
-- Data is local, with static built-in reminder definitions and user-created custom reminders stored locally. There are no backend services, analytics SDKs, payments, accounts, external API calls, cloud sync, content scripts, host permissions, or page reading.
+## Contributing
 
-## Future iOS and Android Path
+Keep changes focused and maintain the product boundaries described above. For behavior changes, add or update focused tests, run lint, the full test suite, and the production build, and keep user-facing copy supportive, optional, and wellness-safe.
 
-Capacitor is configured with `appName: "VitaLoop"`, `appId: "com.vitaloop.app"`, and `webDir: "dist"` so the web app can later be packaged for iOS and Android.
+## License
 
-The current foundation intentionally does not generate `ios/` or `android/` folders. Native shells should be added only when mobile validation is explicitly requested.
-
-During future native packaging, Capacitor Preferences can replace browser localStorage for app settings without changing the user-facing settings model.
-
-## Future Apple Watch Strategy
-
-The Apple Watch direction is a future native SwiftUI companion app after the core mobile experience is stable. It should stay focused on glanceable reminders and simple done, snooze, or skip actions, with a clear WatchConnectivity contract before implementation.
-
-No watchOS source is included in this web foundation.
-
-## Product Positioning
-
-VitaLoop is calm, useful, and practical. It supports everyday self-care reminders such as hydration, eye strain breaks, stretching, standing or walking, posture checks, breathing and stress resets, sleep routine nudges, and mood or energy check-ins.
-
-VitaLoop supports general wellness routines and everyday self-care reminders. It is not medical advice, diagnosis, treatment, or emergency guidance.
+No open-source license has been selected for this repository yet. Until a license is added, GitHub visibility does not grant permission to reuse, modify, or redistribute the source.
